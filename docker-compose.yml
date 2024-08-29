@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  nest-app:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+
+    depends_on:
+      - mongodb-container
+      - redis-container
+    restart: always
+    ports:
+          - 8989:8989
+    # ports:
+    #   - 3005:3005
+    networks:
+      - common-network
+  mongodb-container:
+    image: mongo
+    volumes:
+      - /Users/zhangyangguang/Downloads/同步空间/docker/mongo:/data/db
+    ports:
+      - 27017:27017
+    networks:
+      - common-network
+  redis-container:
+    image: redis
+    volumes:
+      - /Users/zhangyangguang/Downloads/同步空间/docker/redis:/data
+    restart: always
+    networks:
+      - common-network
+  minio-container:
+    image: bitnami/minio:latest
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - /Users/zhangyangguang/Downloads/同步空间/docker/minio:/bitnami/minio/data
+    environment:
+      MINIO_ROOT_USER: guang
+      MINIO_ROOT_PASSWORD: dongdong
+    restart: always
+    networks:
+      - common-network
+networks:
+  common-network:
+    driver: bridge

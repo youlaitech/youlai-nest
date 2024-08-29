@@ -1,0 +1,100 @@
+[{
+  "_id": {
+    "$oid": "66d0359907d64388c50f711e"
+  },
+  "isDeleted": 1,
+  "deptTreePath": "0",
+  "createBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  },
+  "createTime": 1724921241,
+  "dictId": {
+    "$oid": "66d0359907d64388c50f711a"
+  },
+  "name": "男",
+  "value": "1",
+  "status": 1,
+  "sort": 1,
+  "updateTime": {
+    "$numberLong": "1724923490289"
+  },
+  "__v": 0,
+  "updateBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  }
+},
+{
+  "_id": {
+    "$oid": "66d03e91ffc177c22659e98e"
+  },
+  "isDeleted": 0,
+  "deptTreePath": "0",
+  "createBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  },
+  "createTime": 1724923537,
+  "dictId": {
+    "$oid": "66d03e91ffc177c22659e989"
+  },
+  "name": "女",
+  "value": "1",
+  "status": 1,
+  "sort": 1,
+  "updateTime": {
+    "$numberLong": "1724924062751"
+  },
+  "__v": 0,
+  "updateBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  }
+},
+{
+  "_id": {
+    "$oid": "66d03e91ffc177c22659e990"
+  },
+  "isDeleted": 0,
+  "deptTreePath": "0",
+  "createBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  },
+  "createTime": 1724923537,
+  "dictId": {
+    "$oid": "66d03e91ffc177c22659e989"
+  },
+  "name": "男",
+  "value": "2",
+  "status": 1,
+  "sort": 1,
+  "updateTime": {
+    "$numberLong": "1724924062751"
+  },
+  "__v": 0,
+  "updateBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  }
+},
+{
+  "_id": {
+    "$oid": "66d040953dd4c152d15a2ef8"
+  },
+  "isDeleted": 0,
+  "deptTreePath": "0",
+  "createBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  },
+  "createTime": 1724924053,
+  "dictId": {
+    "$oid": "66d03e91ffc177c22659e989"
+  },
+  "name": "保密",
+  "value": "3",
+  "status": 1,
+  "sort": 1,
+  "updateTime": {
+    "$numberLong": "1724924062751"
+  },
+  "__v": 0,
+  "updateBy": {
+    "$oid": "66c6e8664678bbec39adbaf2"
+  }
+}]
