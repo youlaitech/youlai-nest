@@ -1,7 +1,7 @@
 # youlai-nest
 
 #### 介绍
-基于 node18 + nest.js+ Ts +Mongoodb+ Vue3 + Element-Plus 构建的前后端分离单体权限管理系统。合适想做全栈的前端或者小白。持续优化更新中
+基于 node18 + nest.js+ Ts +Mongodb+ Vue3 + Element-Plus 构建的前后端分离单体权限管理系统。合适想做全栈的前端或者小白。持续优化更新中
 
 #### 软件架构
 软件架构说明
