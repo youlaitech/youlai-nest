@@ -1,6 +1,36 @@
+// [
+//   {
+//     name: string;          // 字典名称
+//     dictCode: string;      // 字典编码
+//     dictDataList: {        // 字典数据列表
+//       value: string;       // 字典项值
+//       label: string;       // 字典项标签
+//       tagType: string;     // 标签类型
+//     }[];
+//   }
+// ][
+//   {
+//     name: string;          // 字典名称
+//     dictCode: string;      // 字典编码
+//     dictDataList: {        // 字典数据列表
+//       value: string;       // 字典项值
+//       label: string;       // 字典项标签
+//       tagType: string;     // 标签类型
+//     }[];
+//   }
+// ]
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import { BaseEntity } from '../../common/schema/baseEntity.schema';
+
+// 定义标签类型枚举
+export enum TagType {
+  WARNING = 'warning',
+  SUCCESS = 'success',
+  PRIMARY = 'primary',
+  INFO = 'info',
+  DANGER = 'danger'
+}
 
 @Schema({
   // 指定集合名称
@@ -16,7 +46,7 @@ export class Dicts extends BaseEntity {
   name: string;
 
   @Prop({ type: String, required: true })
-  code: string;
+  dict_code: string;
 
   @Prop({ type: Number })
   status: number;
@@ -45,6 +75,10 @@ export class DictItems extends BaseEntity {
 
   @Prop({ type: String, required: true })
   value: string;
+
+  @Prop({ type: String, enum: TagType, default: TagType.INFO })
+  tagType: string;
+
   @Prop({ type: Number })
   status: number;
 

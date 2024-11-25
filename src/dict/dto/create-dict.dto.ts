@@ -3,7 +3,7 @@ import { BaseEntityDto } from '../../common/dto/BaseEntity.dto';
 import { IsOptional, IsString, IsNumber, IsArray, IsIn } from 'class-validator';
 
 export class CreateDictDto {
-  code: string;
+  dict_code: string;
   name: string;
   remark: string;
   status: number;
@@ -87,7 +87,7 @@ export class DictPageVoDto {
    * 字典编码
    */
   @IsString()
-  code: string;
+  dict_code: string;
 
   /**
    * 字典状态（1-启用，0-禁用）
@@ -125,7 +125,7 @@ export class DictFormDto extends BaseEntityDto {
    */
   @IsOptional()
   @IsString()
-  code?: string;
+  dict_code?: string;
 
   /**
    * 字典状态（1-启用，0-禁用）

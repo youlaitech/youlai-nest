@@ -9,7 +9,7 @@ import {
   Query,
   Put,
   HttpException,
-  HttpStatus,
+  HttpStatus, Req,
 } from '@nestjs/common';
 import { DictService } from './dict.service';
 import { DictFormDto } from './dto/create-dict.dto';
@@ -19,7 +19,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiException } from '../common/http-exception/api.exception';
 import { ApiErrorCode } from '../common/enums/api-error-code.enum';
 import { IsCreateBy, IsUpdateBy } from '../common/public/public.decorator';
-@ApiTags('字典模块')
+@ApiTags('字典类型')
 @Controller('dict')
 export class DictController {
   constructor(private readonly dictService: DictService) {}
@@ -40,8 +40,13 @@ export class DictController {
   })
   @IsCreateBy()
   @Post()
-  create(@Body() dictFormDto: DictFormDto) {
-    return this.dictService.create(dictFormDto);
+  create(@Req() request,@Body() dictFormDto: DictFormDto) {
+
+    return this.dictService.create({
+      ...dictFormDto,
+      createBy: request['user']?.sub,
+      deptTreePath: request['user']?.deptTreePath || '0',
+    });
   }
   @ApiOperation({
     summary: '字典项分页查询', // 接口描述信息
@@ -95,6 +100,14 @@ export class DictController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateDictDto: UpdateDictDto) {
     return await this.dictService.update(id, updateDictDto);
+  }
+
+  @ApiOperation({
+    summary: '获取字典列表', // 接口描述信息
+  })
+  @Get('list')
+  async getDictList() {
+    return await this.dictService.findDictList();
   }
 
   @ApiOperation({

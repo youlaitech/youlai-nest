@@ -24,7 +24,11 @@ export class MenuService {
   ) {}
   async create(createMenuDto: CreateMenuDto) {
     try {
-      const createdMenu = new this.menuModel(createMenuDto);
+      const createdMenu = new this.menuModel({
+        ...createMenuDto,
+        createTime: Math.floor(Date.now() / 1000),
+        // updateTime: Math.floor(Date.now() / 1000)
+      });
       await createdMenu.save();
       return '操作成功';
     } catch (error) {

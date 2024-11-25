@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DictService } from './dict.service';
 import { DictController } from './dict.controller';
+import { DictDataController } from './dict-data.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { dictItemSchema, dictSchema } from './schemas/dict.schemas';
 const DictsTable = MongooseModule.forFeature([
@@ -11,7 +12,7 @@ const DictItemsTable = MongooseModule.forFeature([
 ]);
 @Module({
   imports: [DictsTable, DictItemsTable],
-  controllers: [DictController],
+  controllers: [DictController, DictDataController],
   providers: [DictService],
 })
 export class DictModule {}

@@ -6,6 +6,7 @@ import { DictItems, Dicts } from './schemas/dict.schemas';
 import { ApiException } from '../common/http-exception/api.exception';
 import { ApiErrorCode } from '../common/enums/api-error-code.enum';
 import { UpdateDictDto } from './dto/update-dict.dto';
+import { CreateDictDataDto } from './dto/create-dict-data.dto'; // <--- Add this line
 
 @Injectable()
 export class DictService {
@@ -17,7 +18,7 @@ export class DictService {
   async create(dictFormDto: DictFormDto) {
     try {
       const {
-        code,
+        dict_code,
         name,
         status,
         dictItems,
@@ -25,11 +26,11 @@ export class DictService {
         createBy,
         createTime,
       } = dictFormDto;
-      const existCode = await this.dictModel.find({ code, isDeleted: 0 });
+      const existCode = await this.dictModel.find({ dict_code, isDeleted: 0 });
       if (existCode.length > 0)
         throw new ApiException('字典已存在', ApiErrorCode.USER_EXIST);
       const newDict = await this.dictModel.create({
-        code,
+        dict_code,
         name,
         status,
         deptTreePath,
@@ -91,7 +92,7 @@ export class DictService {
     if (keywords) {
       query.$or = [
         { name: { $regex: new RegExp(keywords, 'i') } },
-        { code: { $regex: new RegExp(keywords, 'i') } },
+        { dict_code: { $regex: new RegExp(keywords, 'i') } },
       ];
     }
 
@@ -99,45 +100,21 @@ export class DictService {
     const [dicts, total] = await Promise.all([
       this.dictModel
         .find(query)
+        .select('name dict_code status')
         .skip((pageNum - 1) * pageSize)
         .limit(pageSize)
-        .sort({ createdAt: -1 }) // 按照创建时间降序排序
+        .sort({ createTime: -1 }) // 按照创建时间降序排序
         .lean()
         .exec(),
       this.dictModel.countDocuments(query).exec(),
     ]);
-    // 查询所有字典项
-    const dictItems = await this.dictItemModel
-      .find({ isDeleted: 0 })
-      .lean()
-      .exec();
 
-    // 构建一个字典项数据的索引，以便快速查找
-    const dictItemsMap: { [key: string]: DictItems[] } = dictItems.reduce(
-      (map, item) => {
-        const dictIdStr = item.dictId.toString(); // 转换 ObjectId 为字符串
-        if (!map[dictIdStr]) {
-          map[dictIdStr] = [];
-        }
-        map[dictIdStr].push({
-          id: item._id,
-          name: item.name,
-          value: item.value,
-          sort: item.sort,
-          status: item.status,
-        });
-        return map;
-      },
-      {},
-    );
-
-    // 关联字典项到字典
+    // 转换返回结果格式
     const result = dicts.map((dict) => ({
       id: dict._id,
       name: dict.name,
-      code: dict.code,
+      dictCode: dict.dict_code,
       status: dict.status,
-      dictItems: dictItemsMap[dict._id.toString()] || [],
     }));
 
     return { list: result, total };
@@ -150,7 +127,7 @@ export class DictService {
       query = {
         $or: [
           { name: { $regex: new RegExp(keywords, 'i') } },
-          { code: { $regex: new RegExp(keywords, 'i') } },
+          { dict_code: { $regex: new RegExp(keywords, 'i') } },
         ],
         isDeleted: 0,
       };
@@ -175,23 +152,11 @@ export class DictService {
         throw new ApiException('字典项没有找到', ApiErrorCode.USER_EXIST);
       }
 
-      // 查询字典项
-      const dictItems = await this.dictItemModel
-        .find({ dictId: id })
-        .lean()
-        .exec();
       return {
         id: dict._id,
         name: dict.name,
-        code: dict.code,
+        dictCode: dict.dict_code,
         status: dict.status,
-        dictItems: dictItems.map((item) => ({
-          id: item._id,
-          name: item.name,
-          value: item.value,
-          sort: item.sort,
-          status: item.status,
-        })),
       };
     } catch (error) {
       throw new ApiException(
@@ -217,7 +182,7 @@ export class DictService {
   async updateDict(id: string, updateData: DictFormDto) {
     try {
       const {
-        code,
+        dict_code,
         name,
         status,
         dictItems = [],
@@ -232,7 +197,7 @@ export class DictService {
       const dict = await this.dictModel
         .findByIdAndUpdate(
           id,
-          { code, name, status, updateBy, updateTime },
+          { dict_code, name, status, updateBy, updateTime },
           { new: true },
         )
         .exec();
@@ -311,6 +276,94 @@ export class DictService {
     }
   }
 
+  async findDictList() {
+    const dictTypes = await this.dictModel
+      .find({ isDeleted: 0 })
+      .select('name dict_code')
+      .lean();
+
+    const result = await Promise.all(
+      dictTypes.map(async (dict) => {
+        const dictItems = await this.dictItemModel
+          .find({ dictId: dict._id, isDeleted: 0, status: 1 })
+          .select('value name tagType -_id')
+          .sort({ sort: 1 })
+          .lean();
+
+        return {
+          name: dict.name,
+          dictCode: dict.dict_code,
+          dictDataList: dictItems.map((item) => ({
+            value: item.value,
+            label: item.name,
+            tagType: item.tagType || 'info', // 默认使用info类型
+          })),
+        };
+      }),
+    );
+
+    return result;
+  }
+
+  async findDictDataPage(pageNum: number, pageSize: number, dictCode: string, keywords?: string) {
+    try {
+      // 先查找对应的字典
+      const dict = await this.dictModel.findOne({
+        dict_code: dictCode,
+        isDeleted: 0,
+      });
+      if (!dict) {
+        throw new ApiException('字典不存在', ApiErrorCode.USER_EXIST);
+      }
+
+      // 构建查询条件
+      const query: any = {
+        dictId: dict._id,
+        isDeleted: 0,
+      };
+
+      // 如果有关键词，添加名称或值的模糊查询
+      if (keywords) {
+        query.$or = [
+          { name: { $regex: new RegExp(keywords, 'i') } },
+          { value: { $regex: new RegExp(keywords, 'i') } },
+        ];
+      }
+
+      // 查询字典项总数
+      const total = await this.dictItemModel.countDocuments(query);
+
+      // 查询字典项
+      const dictItems = await this.dictItemModel
+        .find(query)
+        .sort({ sort: 1 })
+        .skip((pageNum - 1) * pageSize)
+        .limit(pageSize)
+        .lean();
+
+      // 格式化返回数据
+      const result = dictItems.map((item) => ({
+        id: item._id,
+        dictCode: dictCode,
+        label: item.name,
+        value: item.value,
+        sort: item.sort,
+        status: item.status,
+        tagType: item.tagType,
+      }));
+
+      return {
+        list: result,
+        total,
+      };
+    } catch (error) {
+      throw new ApiException(
+        error?.errorResponse?.errmsg || error?.errorResponse || error,
+        ApiErrorCode.DATABASE_ERROR,
+      );
+    }
+  }
+
   async updateItem(id: string, updateDictDto: UpdateDictDto) {
     return await this.dictItemModel
       .findByIdAndUpdate(id, updateDictDto, { new: true })
@@ -345,6 +398,161 @@ export class DictService {
         { isDeleted: 1, updateBy, updateTime },
       );
       return true;
+    } catch (error) {
+      throw new ApiException(
+        error?.errorResponse?.errmsg || error?.errorResponse || error,
+        ApiErrorCode.DATABASE_ERROR,
+      );
+    }
+  }
+
+  async findDictDataById(id: string) {
+    try {
+      const dictItem = await this.dictItemModel.findById(id).lean();
+      if (!dictItem) {
+        throw new ApiException('字典数据不存在', ApiErrorCode.USER_EXIST);
+      }
+
+      // 查找对应的字典类型
+      const dict = await this.dictModel.findById(dictItem.dictId).lean();
+      if (!dict) {
+        throw new ApiException('字典类型不存在', ApiErrorCode.USER_EXIST);
+      }
+
+      return {
+        id: dictItem._id,
+        dictCode: dict.dict_code,
+        label: dictItem.name,
+        value: dictItem.value,
+        sort: dictItem.sort,
+        status: dictItem.status,
+      };
+    } catch (error) {
+      throw new ApiException(
+        error?.errorResponse?.errmsg || error?.errorResponse || error,
+        ApiErrorCode.DATABASE_ERROR,
+      );
+    }
+  }
+
+  async updateDictData(id: string, updateData: any) {
+    try {
+      const dictItem = await this.dictItemModel.findById(id);
+      if (!dictItem) {
+        throw new ApiException('字典数据不存在', ApiErrorCode.USER_EXIST);
+      }
+
+      // 更新字典项
+      const updatedDictItem = await this.dictItemModel.findByIdAndUpdate(
+        id,
+        {
+          name: updateData.label,
+          value: updateData.value,
+          sort: updateData.sort,
+          status: updateData.status,
+          updateBy: updateData.updateBy,
+          updateTime: updateData.updateTime,
+        },
+        { new: true },
+      );
+
+      return updatedDictItem;
+    } catch (error) {
+      throw new ApiException(
+        error?.errorResponse?.errmsg || error?.errorResponse || error,
+        ApiErrorCode.DATABASE_ERROR,
+      );
+    }
+  }
+
+  async removeDictData(id: string, updateBy: string, updateTime: number) {
+    try {
+      const dictItem = await this.dictItemModel.findById(id);
+      if (!dictItem) {
+        throw new ApiException('字典数据不存在', ApiErrorCode.USER_EXIST);
+      }
+
+      // 软删除字典项
+      await this.dictItemModel.findByIdAndUpdate(
+        id,
+        {
+          isDeleted: 1,
+          updateBy,
+          updateTime,
+        },
+        { new: true },
+      );
+
+      return true;
+    } catch (error) {
+      throw new ApiException(
+        error?.errorResponse?.errmsg || error?.errorResponse || error,
+        ApiErrorCode.DATABASE_ERROR,
+      );
+    }
+  }
+
+  async createDictData(createDictDataDto: CreateDictDataDto) {
+    try {
+      const {
+        dictCode,
+        label,
+        value,
+        sort,
+        status,
+        tagType,
+        createBy,
+        createTime,
+        deptTreePath,
+      } = createDictDataDto;
+
+      // 查找对应的字典
+      const dict = await this.dictModel.findOne({
+        dict_code: dictCode,
+        isDeleted: 0,
+      });
+      if (!dict) {
+        throw new ApiException('字典不存在', ApiErrorCode.USER_EXIST);
+      }
+
+      // 检查值是否已存在
+      const existItem = await this.dictItemModel.findOne({
+        dictId: dict._id,
+        value,
+        isDeleted: 0,
+      });
+      if (existItem) {
+        throw new ApiException(
+          `字典项值 "${value}" 已存在`,
+          ApiErrorCode.USER_EXIST,
+        );
+      }
+
+      // 创建新的字典项
+      const newDictItem = new this.dictItemModel({
+        dictId: dict._id,
+        name: label,
+        value,
+        sort,
+        status,
+        tagType,
+        createBy,
+        createTime,
+        deptTreePath,
+      });
+
+      // 保存字典项
+      const savedDictItem = await newDictItem.save();
+
+      return {
+        id: savedDictItem._id,
+        dictCode,
+        label: savedDictItem.name,
+        value: savedDictItem.value,
+        sort: savedDictItem.sort,
+        status: savedDictItem.status,
+        tagType: savedDictItem.tagType,
+      };
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
