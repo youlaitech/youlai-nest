@@ -164,6 +164,220 @@ src/
    - 检查阿里云 OSS 配置是否正确
    - 确认 OSS Bucket 权限设置
 
+## NestJS 基础使用指南
+
+### 1. 创建新模块
+
+在 NestJS 中，模块是组织应用程序结构的基本单位。使用以下命令创建新模块：
+
+```bash
+# 创建名为 example 的新模块
+nest generate module example
+```
+
+这将创建以下文件结构：
+```
+src/example/
+└── example.module.ts
+```
+
+### 2. 创建控制器
+
+控制器负责处理传入的请求和向客户端返回响应：
+
+```bash
+# 创建控制器
+nest generate controller example
+```
+
+控制器示例：
+```typescript
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+
+@Controller('example')
+export class ExampleController {
+  @Get()
+  findAll() {
+    return 'This action returns all examples';
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return `This action returns example #${id}`;
+  }
+
+  @Post()
+  create(@Body() createExampleDto: any) {
+    return 'This action adds a new example';
+  }
+}
+```
+
+### 3. 创建服务
+
+服务用于封装业务逻辑：
+
+```bash
+# 创建服务
+nest generate service example
+```
+
+服务示例：
+```typescript
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class ExampleService {
+  private readonly examples = [];
+
+  create(example: any) {
+    this.examples.push(example);
+    return example;
+  }
+
+  findAll() {
+    return this.examples;
+  }
+
+  findOne(id: string) {
+    return this.examples.find(item => item.id === id);
+  }
+}
+```
+
+### 4. 创建 DTO（数据传输对象）
+
+DTO 用于定义数据的结构：
+
+```typescript
+// create-example.dto.ts
+export class CreateExampleDto {
+  readonly name: string;
+  readonly description: string;
+}
+```
+
+### 5. 使用中间件
+
+中间件示例：
+
+```typescript
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    console.log('Request...');
+    next();
+  }
+}
+```
+
+在模块中应用中间件：
+
+```typescript
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { LoggerMiddleware } from './logger.middleware';
+
+@Module({})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('example');
+  }
+}
+```
+
+### 6. 使用管道
+
+管道用于数据转换和验证：
+
+```typescript
+import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
+
+@Injectable()
+export class ValidationPipe implements PipeTransform {
+  transform(value: any, metadata: ArgumentMetadata) {
+    return value;
+  }
+}
+```
+
+### 7. 异常处理
+
+使用内置的异常过滤器：
+
+```typescript
+import { HttpException, HttpStatus } from '@nestjs/common';
+
+// 在控制器或服务中抛出异常
+throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+```
+
+### 8. 使用守卫
+
+守卫用于身份验证和授权：
+
+```typescript
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    return true;
+  }
+}
+```
+
+### 9. 配置 Swagger 文档
+
+在控制器中使用 Swagger 装饰器：
+
+```typescript
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+
+@ApiTags('example')
+@Controller('example')
+export class ExampleController {
+  @ApiOperation({ summary: '获取所有示例' })
+  @ApiResponse({ status: 200, description: '成功返回示例列表' })
+  @Get()
+  findAll() {
+    return 'This action returns all examples';
+  }
+}
+```
+
+### 10. 单元测试
+
+使用 Jest 进行单元测试：
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { ExampleService } from './example.service';
+
+describe('ExampleService', () => {
+  let service: ExampleService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [ExampleService],
+    }).compile();
+
+    service = module.get<ExampleService>(ExampleService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+```
+
 ## 部署指南
 
 ### Docker 部署
