@@ -15,7 +15,7 @@ import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { Route, typeMapValue, typeMap } from './interface/menu.type';
 
 @ApiTags('菜单权限模块')
@@ -28,7 +28,7 @@ export class MenuController {
     return await this.menuService.create({
       ...createMenuDto,
       type: typeMapValue.get(createMenuDto.type),
-      createBy: request['user']?.sub,
+      createBy: request['user']?.userId,
       deptTreePath: request['user']?.deptTreePath || '0',
     });
   }
@@ -38,7 +38,7 @@ export class MenuController {
   @Get('routes')
   async findMenu(@Req() request): Promise<Route[]> {
     try {
-      const id = request['user']?.sub || '';
+      const id = request['user']?.userId || '';
 
       const permIds = await this.menuService.findRouteIDs(id);
       const data = await this.menuService.findRoutes(permIds);
@@ -46,7 +46,7 @@ export class MenuController {
     } catch (error) {
       console.log(error);
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
   @ApiOperation({

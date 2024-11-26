@@ -17,7 +17,7 @@ import { UpdateDictDto } from './dto/update-dict.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 // import { UpdateRoleDto } from '../role/dto/update-role.dto';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { IsCreateBy, IsUpdateBy } from '../common/public/public.decorator';
 @ApiTags('字典类型')
 @Controller('dict')
@@ -44,7 +44,7 @@ export class DictController {
 
     return this.dictService.create({
       ...dictFormDto,
-      createBy: request['user']?.sub,
+      createBy: request['user']?.userId,
       deptTreePath: request['user']?.deptTreePath || '0',
     });
   }
@@ -136,7 +136,7 @@ export class DictController {
       return '操作成功';
     } catch (error) {
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
       // throw new Error('操作失败');
     }
   }

@@ -11,7 +11,7 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Menus } from './schemas/menu.schema';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { UserService } from '../user/user.service';
 import { typeMap, MenuItem, Route } from './interface/menu.type';
 @Injectable()
@@ -33,7 +33,7 @@ export class MenuService {
       return '操作成功';
     } catch (error) {
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
   async findAll() {
@@ -51,7 +51,7 @@ export class MenuService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -109,7 +109,7 @@ export class MenuService {
     } catch (error) {
       console.log(error);
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
 

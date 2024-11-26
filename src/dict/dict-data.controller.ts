@@ -44,7 +44,7 @@ export class DictDataController {
   ) {
     return await this.dictService.createDictData({
       ...createDictDataDto,
-      createBy: request['user']?.sub,
+      createBy: request['user']?.userId,
       deptTreePath: request['user']?.deptTreePath || '0',
     });
   }

@@ -11,7 +11,7 @@ import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Roles } from './schemas/role.schema';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { UpdateMenuDto } from '../menu/dto/update-menu.dto';
 import { matchDeptPath } from '../common/shared/regex-utils';
 import { MenuService } from '../menu/menu.service';
@@ -33,7 +33,7 @@ export class RolesService {
       //  同一归属只有一个角色归属
       const existRole = await this.rolesModel.find({ deptTreePath, name });
       if (existRole.length > 0) {
-        throw new ApiException('角色已存在', ApiErrorCode.ROLE_EXIST);
+        throw new ApiException('角色已存在', BusinessErrorCode.ROLE_ALREADY_EXISTS);
       }
 
       const newRoleModel = new this.rolesModel({
@@ -44,7 +44,7 @@ export class RolesService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -130,7 +130,7 @@ export class RolesService {
       console.log(error);
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -166,7 +166,7 @@ export class RolesService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }

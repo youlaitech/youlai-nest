@@ -18,7 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Users } from './schemas/user.schema';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 
 @ApiTags('用户模块')
 @Controller('users')
@@ -39,7 +39,7 @@ export class UserController {
   }
   @Get('me')
   async getMe(@Req() request): Promise<Users> {
-    const id = request['user']?.sub || '';
+    const id = request['user']?.userId || '';
     return await this.userService.findMe(id);
   }
   @ApiOperation({
@@ -117,7 +117,7 @@ export class UserController {
       return '操作成功';
     } catch (error) {
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
       // throw new Error('操作失败');
     }
   }

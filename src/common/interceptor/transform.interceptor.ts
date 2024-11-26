@@ -30,7 +30,7 @@ export class TransformInterceptor<T>
       context.getHandler(),
     );
     if (createBy) {
-      const userId = request['user']?.sub;
+      const userId = request['user']?.userId;
       const deptTreePath = request['user']?.deptTreePath || '0';
       request.body.createBy = userId;
       request.body.deptTreePath = deptTreePath;
@@ -41,7 +41,7 @@ export class TransformInterceptor<T>
       context.getHandler(),
     );
     if (updateBy) {
-      request.body.updateBy = request['user']?.sub;
+      request.body.updateBy = request['user']?.userId;
       request.body.updateTime = Math.floor(Date.now() / 1000);
     }
 

@@ -28,7 +28,7 @@ export class DeptController {
   async create(@Req() request, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
       ...createDeptDto,
-      createBy: request['user']?.sub,
+      createBy: request['user']?.userId,
       deptTreePath: request['user']?.deptTreePath || '0',
     });
   }

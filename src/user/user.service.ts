@@ -13,7 +13,7 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Users } from './schemas/user.schema';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import * as crypto from 'crypto';
 import encry from '../utils/crypto';
 import { RolesService } from '../roles/roles.service';
@@ -38,7 +38,10 @@ export class UserService {
       }
       const existUser = await this.userModel.findOne(query);
       if (existUser)
-        throw new ApiException('用户已存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException(
+          '用户已存在',
+          BusinessErrorCode.USER_ALREADY_EXISTS,
+        );
       const salt = crypto.randomBytes(4).toString('base64');
       const UserWithDept = await this.deptService.findOne(deptId.toString());
       const UserDeptTreePath = `${UserWithDept.TreePath}/${UserWithDept.id}`;
@@ -62,28 +65,54 @@ export class UserService {
   }
   //  到导出类型后面写
   async findMe(id: string): Promise<any> {
-    const user = await this.userModel
-      .findById(id, {
-        __v: 0,
-        password: 0,
-        permIds: 0,
-        salt: 0,
-        isDeleted: 0,
-        updateTime: 0,
-        createTime: 0,
-        status: 0,
-      })
-      .lean();
-    const { roleIds } = user;
-    const { perms, roles } = await this.rolesService.findIds(roleIds);
-    return {
-      username: user.username,
-      nickname: user.nickname,
-      avatar: user.avatar,
-      roles,
-      perms,
-      userId: user._id,
-    };
+    try {
+      if (!id) {
+        throw new ApiException(
+          '用户未登录或登录已过期',
+          BusinessErrorCode.USER_UNAUTHORIZED,
+        );
+      }
+
+      const user = await this.userModel
+        .findById(id, {
+          __v: 0,
+          password: 0,
+          permIds: 0,
+          salt: 0,
+          isDeleted: 0,
+          updateTime: 0,
+          createTime: 0,
+          status: 0,
+        })
+        .lean();
+
+      if (!user) {
+        throw new ApiException(
+          '用户不存在',
+          BusinessErrorCode.USER_NOT_FOUND,
+        );
+      }
+
+      const { roleIds } = user;
+      const { perms, roles } = await this.rolesService.findIds(roleIds);
+      return {
+        username: user.username,
+        nickname: user.nickname,
+        avatar: user.avatar,
+        roles,
+        perms,
+        userId: user._id,
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error?.errorResponse?.errmsg || error?.errorResponse || error,
+        BusinessErrorCode.DB_QUERY_ERROR,
+      );
+    }
   }
   findAll() {
     return `This action returns all user`;
@@ -114,7 +143,7 @@ export class UserService {
       console.log(error);
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }

@@ -5,7 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Depts } from './schemas/dept.schema';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { matchDeptPath, rolesDeptPath } from '../common/shared/regex-utils';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class DeptService {
       await createdMenu.save();
       return await createdMenu.save();
     } catch (error) {
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
 
@@ -51,7 +51,7 @@ export class DeptService {
     } catch (error) {
       // 处理错误逻辑
 
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
   async findSearch(
@@ -85,7 +85,7 @@ export class DeptService {
       return this.buildDeptTree(deptList);
     } catch (error) {
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
 
@@ -169,7 +169,7 @@ export class DeptService {
     } catch (error) {
       // 处理错误逻辑
 
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
   private async buildTreePath(parentId: string | number) {
@@ -182,7 +182,7 @@ export class DeptService {
     } catch (error) {
       // 处理错误逻辑
 
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
 }

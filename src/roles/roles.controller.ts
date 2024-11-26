@@ -17,7 +17,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 
 @ApiTags('角色模块')
 @Controller('roles')
@@ -31,7 +31,7 @@ export class RolesController {
   create(@Req() request, @Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create({
       ...createRoleDto,
-      createBy: request['user']?.sub,
+      createBy: request['user']?.userId,
       deptTreePath: request['user']?.deptTreePath || '0',
     });
   }
@@ -69,8 +69,8 @@ export class RolesController {
     //  没有归属
 
     const _id = ascription
-      ? [request['user']?.sub]
-      : ['', request['user']?.sub];
+      ? [request['user']?.userId]
+      : ['', request['user']?.userId];
     return await this.rolesService.findOptions(_id);
   }
   @ApiOperation({
@@ -104,7 +104,7 @@ export class RolesController {
       return '操作成功';
     } catch (error) {
       // 处理错误逻辑
-      throw new ApiException(error, ApiErrorCode.DATABASE_ERROR);
+      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
       // throw new Error('操作失败');
     }
   }

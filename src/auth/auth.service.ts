@@ -13,7 +13,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { Redis_cacheService } from '../cache/redis_cache.service';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 @Injectable()
 export class AuthService {
   constructor(
@@ -72,7 +72,7 @@ export class AuthService {
       console.log(error);
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }

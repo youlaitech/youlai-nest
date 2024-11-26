@@ -11,7 +11,7 @@ import { UserModule } from './user/user.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { MenuModule } from './menu/menu.module';
 import logger from './common/logger.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -27,8 +27,12 @@ import { DeptModule } from './dept/dept.module';
 import { DictModule } from './dict/dict.module';
 import { OssModule } from './oss/oss.module';
 import { BackupModule } from './backup/backup.module';
+import { ErrorHandlingService } from './common/services/error-handling.service';
 import mongoose from 'mongoose';
+import { AuthGuard } from './auth/auth.guard';
+
 const envFilePath = `.env.${process.env.NODE_ENV || `dev`}`;
+
 @Module({
   imports: [
     UserModule,
@@ -113,6 +117,11 @@ const envFilePath = `.env.${process.env.NODE_ENV || `dev`}`;
   controllers: [AppController],
   providers: [
     AppService,
+    ErrorHandlingService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
     // 应用http全局过滤器
     {
       provide: APP_FILTER,

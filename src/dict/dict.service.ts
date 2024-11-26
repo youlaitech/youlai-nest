@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DictItems, Dicts } from './schemas/dict.schemas';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { UpdateDictDto } from './dto/update-dict.dto';
 import { CreateDictDataDto } from './dto/create-dict-data.dto'; // <--- Add this line
 
@@ -28,7 +28,7 @@ export class DictService {
       } = dictFormDto;
       const existCode = await this.dictModel.find({ dict_code, isDeleted: 0 });
       if (existCode.length > 0)
-        throw new ApiException('字典已存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典已存在', BusinessErrorCode.DB_DUPLICATE_KEY);
       const newDict = await this.dictModel.create({
         dict_code,
         name,
@@ -54,7 +54,7 @@ export class DictService {
             if (existItem) {
               throw new ApiException(
                 `字典项值 "${value}" 已存在`,
-                ApiErrorCode.USER_EXIST,
+                BusinessErrorCode.DB_DUPLICATE_KEY,
               );
             }
 
@@ -78,7 +78,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -149,7 +149,7 @@ export class DictService {
       // 查询字典
       const dict = await this.dictModel.findById(id).lean().exec();
       if (!dict) {
-        throw new ApiException('字典项没有找到', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典项没有找到', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       return {
@@ -161,7 +161,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -271,7 +271,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -313,7 +313,7 @@ export class DictService {
         isDeleted: 0,
       });
       if (!dict) {
-        throw new ApiException('字典不存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典不存在', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       // 构建查询条件
@@ -359,7 +359,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -401,7 +401,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -410,13 +410,13 @@ export class DictService {
     try {
       const dictItem = await this.dictItemModel.findById(id).lean();
       if (!dictItem) {
-        throw new ApiException('字典数据不存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典数据不存在', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       // 查找对应的字典类型
       const dict = await this.dictModel.findById(dictItem.dictId).lean();
       if (!dict) {
-        throw new ApiException('字典类型不存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典类型不存在', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       return {
@@ -430,7 +430,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -439,7 +439,7 @@ export class DictService {
     try {
       const dictItem = await this.dictItemModel.findById(id);
       if (!dictItem) {
-        throw new ApiException('字典数据不存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典数据不存在', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       // 更新字典项
@@ -460,7 +460,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -469,7 +469,7 @@ export class DictService {
     try {
       const dictItem = await this.dictItemModel.findById(id);
       if (!dictItem) {
-        throw new ApiException('字典数据不存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典数据不存在', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       // 软删除字典项
@@ -487,7 +487,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
@@ -512,7 +512,7 @@ export class DictService {
         isDeleted: 0,
       });
       if (!dict) {
-        throw new ApiException('字典不存在', ApiErrorCode.USER_EXIST);
+        throw new ApiException('字典不存在', BusinessErrorCode.DB_QUERY_ERROR);
       }
 
       // 检查值是否已存在
@@ -524,7 +524,7 @@ export class DictService {
       if (existItem) {
         throw new ApiException(
           `字典项值 "${value}" 已存在`,
-          ApiErrorCode.USER_EXIST,
+          BusinessErrorCode.DB_DUPLICATE_KEY,
         );
       }
 
@@ -556,7 +556,7 @@ export class DictService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }

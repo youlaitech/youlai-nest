@@ -23,7 +23,7 @@ import { ToolsService } from '../utils/service/tools.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ApiException } from '../common/http-exception/api.exception';
-import { ApiErrorCode } from '../common/enums/api-error-code.enum';
+import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { v4 as uuidv4 } from 'uuid';
 import { Redis_cacheService } from '../cache/redis_cache.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -52,17 +52,18 @@ export class AuthController {
       const CODE_EXPIRED_ERROR = '验证码超时';
       const code = await this.RedisService.getCache(captchaKey);
       if (!code) {
-        throw new ApiException(CODE_EXPIRED_ERROR, ApiErrorCode.USER_EXIST);
+        throw new ApiException(CODE_EXPIRED_ERROR, BusinessErrorCode.VALIDATION_ERROR);
       }
       if (captchaCode?.toUpperCase() === code?.toUpperCase()) {
         return await this.authService.login(loginAuthDto);
       }
-      throw new ApiException('验证码未通过', ApiErrorCode.USER_EXIST);
+      throw new ApiException('验证码未通过', BusinessErrorCode.VALIDATION_ERROR);
     } catch (error) {
       this.logger.error(error);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
   @ApiOperation({
     summary: '退出登陆', // 接口描述信息
   })
@@ -81,16 +82,15 @@ export class AuthController {
       req['user'] = null;
       // 向客户端返回成功的响应
       return {};
-      // 向客户端返回成功的响应
-      return {};
     } catch (error) {
       console.log(error);
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        ApiErrorCode.DATABASE_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR,
       );
     }
   }
+
   @ApiOperation({
     summary: '获取验证码', // 接口描述信息
   })
