@@ -6,16 +6,19 @@ import { userSchema } from './schemas/user.schema';
 import { RolesModule } from '../roles/roles.module';
 import { MenuModule } from '../menu/menu.module';
 import { DeptModule } from '../dept/dept.module';
+import { Redis_cacheModule } from '../cache/redis_cache.module';
 
 const UserTable = MongooseModule.forFeature([
   { name: 'Users', schema: userSchema },
 ]);
+
 @Module({
   imports: [
     UserTable,
     forwardRef(() => MenuModule),
     forwardRef(() => RolesModule),
     forwardRef(() => DeptModule),
+    Redis_cacheModule,
   ],
   controllers: [UserController],
   providers: [UserService],

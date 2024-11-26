@@ -82,9 +82,24 @@ export class UserController {
   updateMenu(@Param('id') id: string, @Body() menuData: any): any {
     return this.update(id, menuData);
   }
+  @ApiOperation({
+    summary: '用户列表查询',
+  })
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  findAll(
+    @Query('pageNum') pageNum: number = 1,
+    @Query('pageSize') pageSize: number = 10,
+    @Query('username') username?: string,
+    @Query('nickname') nickname?: string,
+    @Query('status') status?: number,
+  ) {
+    return this.userService.findAll({
+      pageNum,
+      pageSize,
+      username,
+      nickname,
+      status,
+    });
   }
 
   @Get(':id')
@@ -98,28 +113,28 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: '用户批量删除', // 接口描述信息
+    summary: '批量删除用户',
   })
   @Delete(':ids')
   async deleteDictItems(@Param('ids') ids: string) {
-    try {
-      const idArray = ids.split(',');
-
-      for (const id of idArray) {
+    const idArray = ids.split(',');
+    const results = await Promise.all(
+      idArray.map(async (id) => {
         const success = await this.userService.removeItem(id);
         if (!success) {
-          throw new HttpException(
-            `Failed to delete department with ID: ${id}`,
-            HttpStatus.BAD_REQUEST,
+          throw new ApiException(
+            `删除用户失败: ${id}`,
+            BusinessErrorCode.USER_DELETE_ERROR,
           );
         }
-      }
-      return '操作成功';
-    } catch (error) {
-      // 处理错误逻辑
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-      // throw new Error('操作失败');
-    }
+        return success;
+      })
+    );
+
+    return {
+      success: true,
+      message: `成功删除 ${results.filter(Boolean).length} 个用户`,
+    };
   }
   @ApiOperation({
     summary: '用户删除', // 接口描述信息

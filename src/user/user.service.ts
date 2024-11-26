@@ -19,6 +19,8 @@ import encry from '../utils/crypto';
 import { RolesService } from '../roles/roles.service';
 import { matchDeptPath } from '../common/shared/regex-utils';
 import { DeptService } from '../dept/dept.service';
+import { Redis_cacheService } from '../cache/redis_cache.service';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -28,13 +30,20 @@ export class UserService {
     private readonly rolesService: RolesService,
     @Inject(forwardRef(() => DeptService))
     private readonly deptService: DeptService,
+    private readonly cacheService: Redis_cacheService,
   ) {}
+
+  // 用户缓存键前缀
+  private readonly USER_CACHE_PREFIX = 'user:';
+  private readonly USER_LIST_CACHE_KEY = 'user:list';
+  private readonly CACHE_TTL = 3600; // 1小时
+
   async create(createUserDto: CreateUserDto) {
     try {
       const { username, deptTreePath, deptId, password } = createUserDto;
       const query = { username, isDeleted: 0 };
       if (deptTreePath) {
-        query['deptTreePath'] = deptTreePath; // 这个得是在账号自己本身得
+        query['deptTreePath'] = deptTreePath;
       }
       const existUser = await this.userModel.findOne(query);
       if (existUser)
@@ -51,40 +60,91 @@ export class UserService {
         UserDeptTreePath,
         password: encry(password, salt),
       });
-      return await newUser.save();
+
+      // 清除用户列表缓存
+      await this.cacheService.delCache(this.USER_LIST_CACHE_KEY);
+      
+      return newUser;
     } catch (error) {
-      this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error('创建用户失败', error);
+      throw error;
     }
   }
-  async findUserWithDept(userId: string) {
-    return this.userModel
-      .findById(userId)
-      .populate('deptId') // 填充 deptId 引用的部门数据
-      .exec();
-  }
-  //  到导出类型后面写
-  async findMe(id: string): Promise<any> {
-    try {
-      if (!id) {
-        throw new ApiException(
-          '用户未登录或登录已过期',
-          BusinessErrorCode.USER_UNAUTHORIZED,
-        );
-      }
 
-      const user = await this.userModel
-        .findById(id, {
-          __v: 0,
-          password: 0,
-          permIds: 0,
-          salt: 0,
-          isDeleted: 0,
-          updateTime: 0,
-          createTime: 0,
-          status: 0,
-        })
-        .lean();
+  async findMe(id: string): Promise<Users> {
+    try {
+      // 使用缓存服务获取用户信息
+      return await this.cacheService.getCache(
+        this.USER_CACHE_PREFIX + id,
+        async () => {
+          const user = await this.userModel.findOne({ _id: id, isDeleted: 0 });
+          if (!user) {
+            throw new ApiException(
+              '用户不存在',
+              BusinessErrorCode.USER_NOT_FOUND,
+            );
+          }
+          return user;
+        },
+        { ttl: this.CACHE_TTL }
+      );
+    } catch (error) {
+      this.logger.error('获取用户信息失败', { id, error });
+      throw error;
+    }
+  }
+
+  async findAll(query: {
+    pageNum?: number;
+    pageSize?: number;
+    username?: string;
+    nickname?: string;
+    status?: number;
+  }) {
+    try {
+      // 使用缓存服务获取用户列表
+      const cacheKey = `${this.USER_LIST_CACHE_KEY}:${JSON.stringify(query)}`;
+      return await this.cacheService.getCache(
+        cacheKey,
+        async () => {
+          const { pageNum = 1, pageSize = 10, username, nickname, status } = query;
+          const skip = (pageNum - 1) * pageSize;
+          const filter: any = { isDeleted: 0 };
+
+          if (username) filter.username = new RegExp(username, 'i');
+          if (nickname) filter.nickname = new RegExp(nickname, 'i');
+          if (status !== undefined) filter.status = status;
+
+          const [total, list] = await Promise.all([
+            this.userModel.countDocuments(filter),
+            this.userModel
+              .find(filter)
+              .skip(skip)
+              .limit(pageSize)
+              .select('-password -salt')
+              .lean(),
+          ]);
+
+          return {
+            list,
+            total,
+            pageNum: Number(pageNum),
+            pageSize: Number(pageSize),
+          };
+        },
+        { ttl: this.CACHE_TTL }
+      );
+    } catch (error) {
+      this.logger.error('获取用户列表失败', error);
+      throw error;
+    }
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    try {
+      const user = await this.userModel.findByIdAndUpdate(id, updateUserDto, {
+        new: true,
+      });
 
       if (!user) {
         throw new ApiException(
@@ -93,46 +153,93 @@ export class UserService {
         );
       }
 
-      const { roleIds } = user;
-      const { perms, roles } = await this.rolesService.findIds(roleIds);
-      return {
-        username: user.username,
-        nickname: user.nickname,
-        avatar: user.avatar,
-        roles,
-        perms,
-        userId: user._id,
-      };
-    } catch (error) {
-      console.log(error);
-      if (error instanceof ApiException) {
-        throw error;
-      }
-      throw new ApiException(
-        error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR,
-      );
-    }
-  }
-  findAll() {
-    return `This action returns all user`;
-  }
+      // 更新缓存
+      await Promise.all([
+        this.cacheService.delCache(this.USER_CACHE_PREFIX + id),
+        this.cacheService.delCache(this.USER_LIST_CACHE_KEY),
+      ]);
 
-  async findOne(username: string): Promise<Users> {
-    try {
-      const user = await this.userModel
-        .findOne({ username, isDeleted: 0 })
-        .exec();
-      if (!user)
-        throw new HttpException('用户名不存在', HttpStatus.BAD_REQUEST);
       return user;
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error('更新用户失败', { id, error });
+      throw error;
     }
   }
-  async findFrom(_id: string): Promise<Users> {
-    return await this.userModel.findById(_id, { __v: 0, permIds: 0, salt: 0 });
+
+  async remove(id: string) {
+    try {
+      const user = await this.userModel.findByIdAndUpdate(
+        id,
+        { isDeleted: 1 },
+        { new: true },
+      );
+
+      if (!user) {
+        throw new ApiException(
+          '用户不存在',
+          BusinessErrorCode.USER_NOT_FOUND,
+        );
+      }
+
+      // 删除缓存
+      await Promise.all([
+        this.cacheService.delCache(this.USER_CACHE_PREFIX + id),
+        this.cacheService.delCache(this.USER_LIST_CACHE_KEY),
+      ]);
+
+      return user;
+    } catch (error) {
+      this.logger.error('删除用户失败', { id, error });
+      throw error;
+    }
   }
+
+  // 批量获取用户信息
+  async findByIds(ids: string[]): Promise<Users[]> {
+    try {
+      // 使用缓存服务批量获取用户信息
+      const cacheKeys = ids.map(id => this.USER_CACHE_PREFIX + id);
+      const cachedUsers = await this.cacheService.mget(cacheKeys);
+      
+      // 找出缓存未命中的用户ID
+      const missedIds = ids.filter((id, index) => !cachedUsers[index]);
+      
+      if (missedIds.length > 0) {
+        // 从数据库获取缓存未命中的用户
+        const users = await this.userModel
+          .find({ _id: { $in: missedIds }, isDeleted: 0 })
+          .select('-password -salt')
+          .lean();
+        
+        // 更新缓存
+        const cacheData = {};
+        users.forEach(user => {
+          cacheData[this.USER_CACHE_PREFIX + user._id] = user;
+        });
+        await this.cacheService.mset(cacheData, { ttl: this.CACHE_TTL });
+        
+        // 合并结果
+        return ids.map(id => {
+          const cachedUser = cachedUsers[ids.indexOf(id)];
+          if (cachedUser) return JSON.parse(cachedUser);
+          return users.find(u => u._id.toString() === id);
+        });
+      }
+      
+      return cachedUsers.map(user => user ? JSON.parse(user) : null);
+    } catch (error) {
+      this.logger.error('批量获取用户信息失败', { ids, error });
+      throw error;
+    }
+  }
+
+  async findUserWithDept(userId: string) {
+    return this.userModel
+      .findById(userId)
+      .populate('deptId') // 填充 deptId 引用的部门数据
+      .exec();
+  }
+
   async findUser(id: string) {
     try {
       const user = await this.userModel.findById(id, { roleIds: 1 });
@@ -147,6 +254,7 @@ export class UserService {
       );
     }
   }
+
   async findSearch(
     pageNum: number,
     pageSize: number,
@@ -200,37 +308,46 @@ export class UserService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async findOne(username: string): Promise<Users> {
     try {
-      return await this.userModel
-        .findByIdAndUpdate(id, { ...updateUserDto }, { new: true })
+      const user = await this.userModel
+        .findOne({ username, isDeleted: 0 })
         .exec();
+      if (!user)
+        throw new HttpException('用户名不存在', HttpStatus.BAD_REQUEST);
+      return user;
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async remove(id: string): Promise<void> {
-    // await this.userModel.findByIdAndDelete(id);
-    await this.userModel.updateOne(
-      {
-        _id: id,
-      },
-      {
-        isDel: true,
-      },
-    );
+  async findFrom(_id: string): Promise<Users> {
+    return await this.userModel.findById(_id, { __v: 0, permIds: 0, salt: 0 });
   }
-  async removeItem(id: string) {
-    return await this.userModel
-      .updateOne(
-        {
-          _id: id,
-        },
-        {
-          isDel: true,
-        },
-      )
-      .exec();
+
+  // 删除单个用户项
+  async removeItem(id: string): Promise<boolean> {
+    try {
+      const result = await this.userModel.findByIdAndUpdate(
+        id,
+        { isDeleted: 1 },
+        { new: true }
+      );
+
+      if (!result) {
+        return false;
+      }
+
+      // 删除缓存
+      await Promise.all([
+        this.cacheService.delCache(this.USER_CACHE_PREFIX + id),
+        this.cacheService.delCache(this.USER_LIST_CACHE_KEY),
+      ]);
+
+      return true;
+    } catch (error) {
+      this.logger.error('删除用户失败', { id, error });
+      return false;
+    }
   }
 }

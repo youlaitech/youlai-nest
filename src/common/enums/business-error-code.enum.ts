@@ -22,6 +22,7 @@ export enum BusinessErrorCode {
   USER_TOKEN_INVALID = 10007,       // 用户令牌无效
   USER_LOGIN_EXPIRED = 10008,       // 登录已过期
   USER_UNAUTHORIZED = 10009,        // 用户未授权
+  USER_DELETE_ERROR = 10010,        // 用户删除失败
 
   // 权限相关错误 (2xxxx)
   PERMISSION_DENIED = 20001,        // 权限不足
