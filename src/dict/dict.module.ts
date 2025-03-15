@@ -8,7 +8,7 @@ const DictsTable = MongooseModule.forFeature([
   { name: 'Dicts', schema: dictSchema },
 ]);
 const DictItemsTable = MongooseModule.forFeature([
-  { name: 'DictItems', schema: dictItemSchema },
+  { name: 'DictData', schema: dictItemSchema },
 ]);
 @Module({
   imports: [DictsTable, DictItemsTable],

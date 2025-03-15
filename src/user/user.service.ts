@@ -63,7 +63,7 @@ export class UserService {
 
       // 清除用户列表缓存
       await this.cacheService.delCache(this.USER_LIST_CACHE_KEY);
-      
+
       return newUser;
     } catch (error) {
       this.logger.error('创建用户失败', error);
@@ -86,7 +86,7 @@ export class UserService {
           }
           return user;
         },
-        { ttl: this.CACHE_TTL }
+        { ttl: this.CACHE_TTL },
       );
     } catch (error) {
       this.logger.error('获取用户信息失败', { id, error });
@@ -107,7 +107,13 @@ export class UserService {
       return await this.cacheService.getCache(
         cacheKey,
         async () => {
-          const { pageNum = 1, pageSize = 10, username, nickname, status } = query;
+          const {
+            pageNum = 1,
+            pageSize = 10,
+            username,
+            nickname,
+            status,
+          } = query;
           const skip = (pageNum - 1) * pageSize;
           const filter: any = { isDeleted: 0 };
 
@@ -132,7 +138,7 @@ export class UserService {
             pageSize: Number(pageSize),
           };
         },
-        { ttl: this.CACHE_TTL }
+        { ttl: this.CACHE_TTL },
       );
     } catch (error) {
       this.logger.error('获取用户列表失败', error);
@@ -147,10 +153,7 @@ export class UserService {
       });
 
       if (!user) {
-        throw new ApiException(
-          '用户不存在',
-          BusinessErrorCode.USER_NOT_FOUND,
-        );
+        throw new ApiException('用户不存在', BusinessErrorCode.USER_NOT_FOUND);
       }
 
       // 更新缓存
@@ -175,10 +178,7 @@ export class UserService {
       );
 
       if (!user) {
-        throw new ApiException(
-          '用户不存在',
-          BusinessErrorCode.USER_NOT_FOUND,
-        );
+        throw new ApiException('用户不存在', BusinessErrorCode.USER_NOT_FOUND);
       }
 
       // 删除缓存
@@ -198,35 +198,35 @@ export class UserService {
   async findByIds(ids: string[]): Promise<Users[]> {
     try {
       // 使用缓存服务批量获取用户信息
-      const cacheKeys = ids.map(id => this.USER_CACHE_PREFIX + id);
+      const cacheKeys = ids.map((id) => this.USER_CACHE_PREFIX + id);
       const cachedUsers = await this.cacheService.mget(cacheKeys);
-      
+
       // 找出缓存未命中的用户ID
       const missedIds = ids.filter((id, index) => !cachedUsers[index]);
-      
+
       if (missedIds.length > 0) {
         // 从数据库获取缓存未命中的用户
         const users = await this.userModel
           .find({ _id: { $in: missedIds }, isDeleted: 0 })
           .select('-password -salt')
           .lean();
-        
+
         // 更新缓存
         const cacheData = {};
-        users.forEach(user => {
+        users.forEach((user) => {
           cacheData[this.USER_CACHE_PREFIX + user._id] = user;
         });
         await this.cacheService.mset(cacheData, { ttl: this.CACHE_TTL });
-        
+
         // 合并结果
-        return ids.map(id => {
+        return ids.map((id) => {
           const cachedUser = cachedUsers[ids.indexOf(id)];
           if (cachedUser) return JSON.parse(cachedUser);
-          return users.find(u => u._id.toString() === id);
+          return users.find((u) => u._id.toString() === id);
         });
       }
-      
-      return cachedUsers.map(user => user ? JSON.parse(user) : null);
+
+      return cachedUsers.map((user) => (user ? JSON.parse(user) : null));
     } catch (error) {
       this.logger.error('批量获取用户信息失败', { ids, error });
       throw error;
@@ -331,7 +331,7 @@ export class UserService {
       const result = await this.userModel.findByIdAndUpdate(
         id,
         { isDeleted: 1 },
-        { new: true }
+        { new: true },
       );
 
       if (!result) {

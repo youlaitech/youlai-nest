@@ -237,11 +237,6 @@ pnpm run start:dev
 
 
 
-
-
-[![contributors](https://contrib.rocks/image?repo=haoxianrui/youlai-nest)](https://github.com/haoxianrui/youlai-nest/graphs/contributors)
-
-
 ## 💖 加交流群
 
 > 关注公众号【有来技术】，获取交流群二维码，不想关注公众号或二维码过期欢迎加我微信(`haoxianrui`)备注【有来】即可，拉你进群。

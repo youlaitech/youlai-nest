@@ -40,7 +40,7 @@ export class Dicts extends Document {
     updatedAt: 'updateTime',
   },
 })
-export class DictItems extends Document {
+export class DictData extends Document {
   @Prop({ type: String, required: true })
   name: string;
 
@@ -63,7 +63,7 @@ export class DictItems extends Document {
 }
 
 export const dictSchema = SchemaFactory.createForClass(Dicts);
-export const dictItemSchema = SchemaFactory.createForClass(DictItems);
+export const dictItemSchema = SchemaFactory.createForClass(DictData);
 //  @Prop({
 //     type: [
 //       {

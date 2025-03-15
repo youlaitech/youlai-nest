@@ -1,26 +1,5 @@
-// [
-//   {
-//     name: string;          // 字典名称
-//     dictCode: string;      // 字典编码
-//     dictDataList: {        // 字典数据列表
-//       value: string;       // 字典项值
-//       label: string;       // 字典项标签
-//       tagType: string;     // 标签类型
-//     }[];
-//   }
-// ][
-//   {
-//     name: string;          // 字典名称
-//     dictCode: string;      // 字典编码
-//     dictDataList: {        // 字典数据列表
-//       value: string;       // 字典项值
-//       label: string;       // 字典项标签
-//       tagType: string;     // 标签类型
-//     }[];
-//   }
-// ]
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Schema as MongooseSchema } from 'mongoose';
 import { BaseEntity } from '../../common/schema/baseEntity.schema';
 
 // 定义标签类型枚举
@@ -29,7 +8,7 @@ export enum TagType {
   SUCCESS = 'success',
   PRIMARY = 'primary',
   INFO = 'info',
-  DANGER = 'danger'
+  DANGER = 'danger',
 }
 
 @Schema({
@@ -54,16 +33,17 @@ export class Dicts extends BaseEntity {
   @Prop({ type: String })
   remark: string;
 }
+
 @Schema({
   // 指定集合名称
-  collection: 'sys_dict_items',
+  collection: 'sys_dict_data',
   timestamps: {
     currentTime: () => Date.now(),
     createdAt: 'createTime',
     updatedAt: 'updateTime',
   },
 })
-export class DictItems extends BaseEntity {
+export class DictData extends BaseEntity {
   @Prop({
     type: MongooseSchema.Types.ObjectId,
     ref: 'sys_dict',
@@ -92,4 +72,4 @@ export class DictItems extends BaseEntity {
 }
 
 export const dictSchema = SchemaFactory.createForClass(Dicts);
-export const dictItemSchema = SchemaFactory.createForClass(DictItems);
+export const dictItemSchema = SchemaFactory.createForClass(DictData);

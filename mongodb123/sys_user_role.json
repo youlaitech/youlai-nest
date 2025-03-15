@@ -1,0 +1,41 @@
+[
+  {
+    "_id": { "$oid": "66cc3c3960b8f1e0e2788676" },
+    "name": "ADMIN",
+    "code": "ADMIN",
+    "deptTreePath": "0",
+    "sort": 1,
+    "status": 1,
+    "dataScope": 0,
+    "menus": [
+      "66c6f6845f599dc8f4725a62",
+      "66c6f73f5f599dc8f4725a6b",
+      "66c6fe165f599dc8f4725b1f",
+      "66c6febe5f599dc8f4725b23",
+      "66c6fee65f599dc8f4725b27",
+      "66c6fb615f599dc8f4725ac0",
+      "66c6fc155f599dc8f4725ac8",
+      "66c6fcc65f599dc8f4725aea",
+      "66c6fd6a5f599dc8f4725b0f",
+      "66c6f9725f599dc8f4725a7c",
+      "66c6f9b75f599dc8f4725a85",
+      "66c6f9fc5f599dc8f4725a89",
+      "66cd696a93d8c57d450684a5",
+      "66cd697f93d8c57d450684a9",
+      "66cd69a193d8c57d450684ad",
+      "66c6fa1d5f599dc8f4725a8d",
+      "66cd690993d8c57d45068499",
+      "66cd692793d8c57d4506849d",
+      "66cd694693d8c57d450684a1",
+      "66c6fa3f5f599dc8f4725a92",
+      "66c6fa9f5f599dc8f4725aa7",
+      "66c6fae75f599dc8f4725ab2"
+    ],
+    "createBy": { "$oid": "66c6e8664678bbec39adbaf2" },
+    "createTime": { "$date": "2024-07-20T12:10:00.000Z" },
+    "updateBy": null,
+    "updateTime": { "$date": "2024-07-21T10:12:42.143Z" },
+    "isDeleted": 0,
+    "__v": 0
+  }
+]

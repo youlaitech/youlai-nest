@@ -66,6 +66,10 @@ const envFilePath = `.env.${process.env.NODE_ENV || `dev`}`;
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const uri = configService.get<string>('MONGOODB_URI');
+        console.log(
+          'MONGOODB_NAME',
+          configService.get<string>('MONGOODB_NAME'),
+        );
         return {
           uri,
           dbName: configService.get<string>('MONGOODB_NAME'),

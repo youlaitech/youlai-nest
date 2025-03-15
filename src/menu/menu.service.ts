@@ -96,11 +96,15 @@ export class MenuService {
       .find({ _id: { $in: menuIds }, type: { $ne: 3 } })
       .sort({ sort: 'asc' })
       .exec();
+    // 添加日志
+    console.log('res', res);
+
     return this.buildRoutes(res);
   }
   async findPermsList(filter) {
     return await this.menuModel.find(filter);
   }
+
   async findRouteIDs(id: string): Promise<any> {
     try {
       const permIds: string[] = await this.userService.findUser(id);

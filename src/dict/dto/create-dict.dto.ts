@@ -99,7 +99,7 @@ export class DictPageVoDto {
    * 字典项列表
    */
   @IsArray()
-  dictItems: DictItemDto[];
+  dictData: DictItemDto[];
 }
 
 /**
@@ -146,5 +146,5 @@ export class DictFormDto extends BaseEntityDto {
    */
   @IsOptional()
   @IsArray()
-  dictItems?: DictItemDto[];
+  dictData?: DictItemDto[];
 }

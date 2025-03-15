@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DictFormDto } from './dto/create-dict.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { DictItems, Dicts } from './schemas/dict.schemas';
+import { DictData, Dicts } from './schemas/dict.schemas';
 import { ApiException } from '../common/http-exception/api.exception';
 import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
 import { UpdateDictDto } from './dto/update-dict.dto';
@@ -12,7 +12,7 @@ import { CreateDictDataDto } from './dto/create-dict-data.dto'; // <--- Add this
 export class DictService {
   constructor(
     @InjectModel('Dicts') private readonly dictModel: Model<Dicts>,
-    @InjectModel('DictItems') private readonly dictItemModel: Model<DictItems>,
+    @InjectModel('DictData') private readonly dictItemModel: Model<DictData>,
   ) {}
 
   async create(dictFormDto: DictFormDto) {
@@ -21,14 +21,17 @@ export class DictService {
         dict_code,
         name,
         status,
-        dictItems,
+        dictData,
         deptTreePath,
         createBy,
         createTime,
       } = dictFormDto;
       const existCode = await this.dictModel.find({ dict_code, isDeleted: 0 });
       if (existCode.length > 0)
-        throw new ApiException('字典已存在', BusinessErrorCode.DB_DUPLICATE_KEY);
+        throw new ApiException(
+          '字典已存在',
+          BusinessErrorCode.DB_DUPLICATE_KEY,
+        );
       const newDict = await this.dictModel.create({
         dict_code,
         name,
@@ -41,9 +44,9 @@ export class DictService {
       const savedDict = await newDict.save();
 
       // 如果有字典项，则并行检查和保存
-      if (dictItems && dictItems.length > 0) {
+      if (dictData && dictData.length > 0) {
         await Promise.all(
-          dictItems.map(async (item) => {
+          dictData.map(async (item) => {
             const { name, value, sort, status } = item;
             // 检查字典项的唯一性（如名称或值是否已存在）
             const existItem = await this.dictItemModel.findOne({
@@ -149,7 +152,10 @@ export class DictService {
       // 查询字典
       const dict = await this.dictModel.findById(id).lean().exec();
       if (!dict) {
-        throw new ApiException('字典项没有找到', BusinessErrorCode.DB_QUERY_ERROR);
+        throw new ApiException(
+          '字典项没有找到',
+          BusinessErrorCode.DB_QUERY_ERROR,
+        );
       }
 
       return {
@@ -185,7 +191,7 @@ export class DictService {
         dict_code,
         name,
         status,
-        dictItems = [],
+        dictData = [],
         deptTreePath,
         createBy,
         updateBy,
@@ -219,7 +225,7 @@ export class DictService {
       const bulkOps = [];
 
       // 遍历并处理传入的字典项
-      dictItems.forEach((item) => {
+      dictData.forEach((item) => {
         if (item.id) {
           // 更新已有字典项
           bulkOps.push({
@@ -245,7 +251,7 @@ export class DictService {
       });
 
       // 查找需要删除的字典项ID并添加到批量操作中
-      const receivedDictItemIds = dictItems
+      const receivedDictItemIds = dictData
         .map((item) => item.id)
         .filter(Boolean); // 过滤出接收到的字典项ID
       const dictItemsToDelete = existingDictItemIds.filter(
@@ -284,7 +290,7 @@ export class DictService {
 
     const result = await Promise.all(
       dictTypes.map(async (dict) => {
-        const dictItems = await this.dictItemModel
+        const dictData = await this.dictItemModel
           .find({ dictId: dict._id, isDeleted: 0, status: 1 })
           .select('value name tagType -_id')
           .sort({ sort: 1 })
@@ -293,7 +299,7 @@ export class DictService {
         return {
           name: dict.name,
           dictCode: dict.dict_code,
-          dictDataList: dictItems.map((item) => ({
+          dictDataList: dictData.map((item) => ({
             value: item.value,
             label: item.name,
             tagType: item.tagType || 'info', // 默认使用info类型
@@ -305,7 +311,12 @@ export class DictService {
     return result;
   }
 
-  async findDictDataPage(pageNum: number, pageSize: number, dictCode: string, keywords?: string) {
+  async findDictDataPage(
+    pageNum: number,
+    pageSize: number,
+    dictCode: string,
+    keywords?: string,
+  ) {
     try {
       // 先查找对应的字典
       const dict = await this.dictModel.findOne({
@@ -334,7 +345,7 @@ export class DictService {
       const total = await this.dictItemModel.countDocuments(query);
 
       // 查询字典项
-      const dictItems = await this.dictItemModel
+      const dictData = await this.dictItemModel
         .find(query)
         .sort({ sort: 1 })
         .skip((pageNum - 1) * pageSize)
@@ -342,7 +353,7 @@ export class DictService {
         .lean();
 
       // 格式化返回数据
-      const result = dictItems.map((item) => ({
+      const result = dictData.map((item) => ({
         id: item._id,
         dictCode: dictCode,
         label: item.name,
@@ -410,13 +421,19 @@ export class DictService {
     try {
       const dictItem = await this.dictItemModel.findById(id).lean();
       if (!dictItem) {
-        throw new ApiException('字典数据不存在', BusinessErrorCode.DB_QUERY_ERROR);
+        throw new ApiException(
+          '字典数据不存在',
+          BusinessErrorCode.DB_QUERY_ERROR,
+        );
       }
 
       // 查找对应的字典类型
       const dict = await this.dictModel.findById(dictItem.dictId).lean();
       if (!dict) {
-        throw new ApiException('字典类型不存在', BusinessErrorCode.DB_QUERY_ERROR);
+        throw new ApiException(
+          '字典类型不存在',
+          BusinessErrorCode.DB_QUERY_ERROR,
+        );
       }
 
       return {
@@ -439,7 +456,10 @@ export class DictService {
     try {
       const dictItem = await this.dictItemModel.findById(id);
       if (!dictItem) {
-        throw new ApiException('字典数据不存在', BusinessErrorCode.DB_QUERY_ERROR);
+        throw new ApiException(
+          '字典数据不存在',
+          BusinessErrorCode.DB_QUERY_ERROR,
+        );
       }
 
       // 更新字典项
@@ -469,7 +489,10 @@ export class DictService {
     try {
       const dictItem = await this.dictItemModel.findById(id);
       if (!dictItem) {
-        throw new ApiException('字典数据不存在', BusinessErrorCode.DB_QUERY_ERROR);
+        throw new ApiException(
+          '字典数据不存在',
+          BusinessErrorCode.DB_QUERY_ERROR,
+        );
       }
 
       // 软删除字典项

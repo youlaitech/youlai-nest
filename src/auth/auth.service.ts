@@ -26,7 +26,10 @@ export class AuthService {
   async login(loginAuthDto: LoginAuthDto) {
     try {
       const { username, password } = loginAuthDto;
+      console.log('获取到的   username', username);
       const user = await this.userService.findOne(username);
+
+      console.log('获取到的用户信息', user);
       if (user?.password !== encry(password, user.salt)) {
         throw new HttpException('密码错误', HttpStatus.UNAUTHORIZED);
       }
