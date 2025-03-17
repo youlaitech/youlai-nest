@@ -1,19 +1,13 @@
-import {
-  forwardRef,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UserService } from 'src/user/user.service';
-import { LoginAuthDto } from './dto/login-auth.dto';
-import encry from '../utils/crypto';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
-import { Redis_cacheService } from '../cache/redis_cache.service';
-import { ApiException } from '../common/http-exception/api.exception';
-import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
+import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { UserService } from "src/user/user.service";
+import { LoginAuthDto } from "./dto/login-auth.dto";
+import encry from "../utils/crypto";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
+import { Logger } from "winston";
+import { Redis_cacheService } from "../cache/redis_cache.service";
+import { ApiException } from "../common/http-exception/api.exception";
+import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
 @Injectable()
 export class AuthService {
   constructor(
@@ -21,17 +15,17 @@ export class AuthService {
     private jwtService: JwtService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     @Inject(forwardRef(() => Redis_cacheService))
-    private readonly RedisService: Redis_cacheService,
+    private readonly RedisService: Redis_cacheService
   ) {}
   async login(loginAuthDto: LoginAuthDto) {
     try {
       const { username, password } = loginAuthDto;
-      console.log('获取到的   username', username);
+      console.log("获取到的   username", username);
       const user = await this.userService.findOne(username);
 
-      console.log('获取到的用户信息', user);
+      console.log("获取到的用户信息", user);
       if (user?.password !== encry(password, user.salt)) {
-        throw new HttpException('密码错误', HttpStatus.UNAUTHORIZED);
+        throw new HttpException("密码错误", HttpStatus.UNAUTHORIZED);
       }
       const payload = {
         username: user.username,
@@ -40,7 +34,7 @@ export class AuthService {
       };
       return {
         accessToken: await this.jwtService.signAsync(payload),
-        tokenType: 'Bearer',
+        tokenType: "Bearer",
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -75,7 +69,7 @@ export class AuthService {
       console.log(error);
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR
       );
     }
   }

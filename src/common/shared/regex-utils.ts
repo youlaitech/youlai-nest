@@ -3,7 +3,7 @@ export function matchDeptPath(userDeptPath: string | number) {
   return {
     $expr: {
       $regexMatch: {
-        input: '$deptTreePath',
+        input: "$deptTreePath",
         regex: new RegExp(`^${userDeptPath}`), // 匹配路径的前缀
       },
     },
@@ -15,7 +15,7 @@ export function rolesDeptPath(userDeptPath: string | number) {
   return {
     $expr: {
       $regexMatch: {
-        input: '$TreePath',
+        input: "$TreePath",
         regex: new RegExp(`^${userDeptPath}`), // 匹配路径的前缀
       },
     },

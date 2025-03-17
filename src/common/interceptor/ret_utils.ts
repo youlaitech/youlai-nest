@@ -1,4 +1,4 @@
-import { utils, XCommonRet } from 'xmcommon';
+import { utils, XCommonRet } from "xmcommon";
 
 /**
  * 通用返回数据结构
@@ -29,7 +29,7 @@ export class XRetUtils {
     paramErr: number,
     paramErrMsg?: string,
     paramData?: unknown,
-    paramURL?: string,
+    paramURL?: string
   ): IHttpRet {
     return {
       ret: paramErr,

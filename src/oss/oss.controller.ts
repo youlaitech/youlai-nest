@@ -1,56 +1,43 @@
-import {
-  Body,
-  Controller,
-  Headers,
-  Get,
-  Post,
-  Param,
-  Res,
-  Query,
-} from '@nestjs/common';
-import { OssService } from './oss.service';
-import { ApiTags } from '@nestjs/swagger';
-import { Public } from '../common/public/public.decorator';
-@ApiTags('oss模块')
-@Controller('oss')
-export class OssController {
+import { Body, Controller, Headers, Get, Post, Query } from "@nestjs/common";
+import { OssService } from "./oss.service";
+import { ApiTags } from "@nestjs/swagger";
+import { Public } from "../common/public/public.decorator";
 
+@ApiTags("oss模块")
+@Controller("oss")
+export class OssController {
   constructor(private oss: OssService) {}
 
-  @Get('signature')
+  @Get("signature")
   getOssSignature() {
     return this.oss.getSignature();
   }
-  @Get('staticsignature')
+  @Get("staticsignature")
   getstaticOssSignature() {
     return this.oss.getstaticSignature();
   }
-  @Get('download')
+  @Get("download")
   @Public()
-  async downloadPrivateFile(@Query('key') key: string) {
+  async downloadPrivateFile(@Query("key") key: string) {
     const signedUrl = await this.oss.generateSignedUrl(key);
     return { url: signedUrl }; // 重定向到签名URL
   }
 
-  @Get('getFileAsBlob')
-  async getFileAsBlob(@Query('key') key: string) {
+  @Get("getFileAsBlob")
+  async getFileAsBlob(@Query("key") key: string) {
     const data = await this.oss.getFileAsBlob(key);
     return data;
   }
 
-  @Post('result')
+  @Post("result")
   @Public()
-  getResult(
-    @Headers('x-oss-pub-key-url') xOssPubKeyUrl: string,
-    @Body() file: any,
-  ) {
+  getResult(@Headers("x-oss-pub-key-url") xOssPubKeyUrl: string, @Body() file: any) {
     return this.oss.getResult(xOssPubKeyUrl, file);
   }
-  @Post('ORC')
+  @Post("ORC")
   // @Public()
   async REDOR(@Body() Body: any) {
-    const { url,type } = Body;
-    // const data:any = await this.oss.ORC(url,type);
-    return await this.oss.ORC(url,type);
+    const { url, type } = Body;
+    return await this.oss.ORC(url, type);
   }
 }

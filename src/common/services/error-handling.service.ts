@@ -1,9 +1,9 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
-import { MongoError } from 'mongodb';
-import { BusinessErrorCode } from '../enums/business-error-code.enum';
-import { ApiException } from '../http-exception/api.exception';
+import { Injectable, Inject } from "@nestjs/common";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
+import { Logger } from "winston";
+import { MongoError } from "mongodb";
+import { BusinessErrorCode } from "../enums/business-error-code.enum";
+import { ApiException } from "../http-exception/api.exception";
 
 interface ErrorContext {
   module: string;
@@ -13,9 +13,7 @@ interface ErrorContext {
 
 @Injectable()
 export class ErrorHandlingService {
-  constructor(
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-  ) {}
+  constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}
 
   /**
    * 处理错误并返回统一的异常响应
@@ -57,7 +55,7 @@ export class ErrorHandlingService {
       },
     };
 
-    this.logger.error('Error occurred', errorLog);
+    this.logger.error("Error occurred", errorLog);
   }
 
   /**
@@ -67,15 +65,9 @@ export class ErrorHandlingService {
   private handleMongoError(error: MongoError): ApiException {
     switch (error.code) {
       case 11000:
-        return new ApiException(
-          '数据已存在，请检查唯一字段',
-          BusinessErrorCode.DB_DUPLICATE_KEY,
-        );
+        return new ApiException("数据已存在，请检查唯一字段", BusinessErrorCode.DB_DUPLICATE_KEY);
       default:
-        return new ApiException(
-          '数据库操作失败',
-          BusinessErrorCode.DB_QUERY_ERROR,
-        );
+        return new ApiException("数据库操作失败", BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
 
@@ -84,10 +76,7 @@ export class ErrorHandlingService {
    * @param error 错误对象
    */
   private handleUnknownError(error: any): ApiException {
-    return new ApiException(
-      error.message || '服务器内部错误',
-      BusinessErrorCode.BUSINESS_ERROR,
-    );
+    return new ApiException(error.message || "服务器内部错误", BusinessErrorCode.BUSINESS_ERROR);
   }
 
   /**
@@ -96,11 +85,7 @@ export class ErrorHandlingService {
    * @param method 方法名称
    * @param params 参数
    */
-  createErrorContext(
-    module: string,
-    method: string,
-    params?: any,
-  ): ErrorContext {
+  createErrorContext(module: string, method: string, params?: any): ErrorContext {
     return {
       module,
       method,

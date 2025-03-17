@@ -1,26 +1,21 @@
-import {
-  forwardRef,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
-import { CreateMenuDto } from './dto/create-menu.dto';
-import { UpdateMenuDto } from './dto/update-menu.dto';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
-import { Menus } from './schemas/menu.schema';
-import { ApiException } from '../common/http-exception/api.exception';
-import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
-import { UserService } from '../user/user.service';
-import { typeMap, MenuItem, Route } from './interface/menu.type';
+import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { CreateMenuDto } from "./dto/create-menu.dto";
+import { UpdateMenuDto } from "./dto/update-menu.dto";
+import { Model } from "mongoose";
+import { InjectModel } from "@nestjs/mongoose";
+import { Menus } from "./menu.schema";
+import { ApiException } from "../common/http-exception/api.exception";
+import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
+import { UserService } from "../user/user.service";
+import { typeMap, MenuItem, Route } from "./interface/menu.type";
+
 @Injectable()
 export class MenuService {
   constructor(
     @InjectModel(Menus.name) // 使用 @InjectModel 注入 Mongoose 模型
     private menuModel: Model<Menus>,
     @Inject(forwardRef(() => UserService))
-    private readonly userService: UserService,
+    private readonly userService: UserService
   ) {}
   async create(createMenuDto: CreateMenuDto) {
     try {
@@ -30,7 +25,7 @@ export class MenuService {
         // updateTime: Math.floor(Date.now() / 1000)
       });
       await createdMenu.save();
-      return '操作成功';
+      return "操作成功";
     } catch (error) {
       // 处理错误逻辑
       throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
@@ -38,11 +33,7 @@ export class MenuService {
   }
   async findAll() {
     try {
-      const data = await this.menuModel
-        .find()
-        .sort({ sort: 'asc' })
-        .lean()
-        .exec();
+      const data = await this.menuModel.find().sort({ sort: "asc" }).lean().exec();
       const permIds: string[] = [];
       data.map((item: any) => {
         permIds.push(item._id.toString());
@@ -51,26 +42,26 @@ export class MenuService {
     } catch (error) {
       throw new ApiException(
         error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR,
+        BusinessErrorCode.DB_QUERY_ERROR
       );
     }
   }
   async findRouteAll() {
     return await this.menuModel
       .find({ type: { $ne: 3 }, isDeleted: 0 })
-      .sort({ sort: 'asc' })
+      .sort({ sort: "asc" })
       .exec();
   }
   async find(menuIds: any) {
     return await this.menuModel
       .find({ _id: { $in: menuIds } })
-      .sort({ sort: 'asc' })
+      .sort({ sort: "asc" })
       .exec();
   }
   async findALLButtons() {
     const permslist: any = await this.menuModel
       .find({ type: 3 })
-      .sort({ sort: 'asc' })
+      .sort({ sort: "asc" })
       .lean()
       .exec();
     const perms: string[] = [];
@@ -82,7 +73,7 @@ export class MenuService {
   async findButtons(menuIds: string[]) {
     const permslist: any = await this.menuModel
       .find({ _id: { $in: menuIds }, type: 3 })
-      .sort({ sort: 'asc' })
+      .sort({ sort: "asc" })
       .lean()
       .exec();
     const perms: string[] = [];
@@ -94,10 +85,10 @@ export class MenuService {
   async findRoutes(menuIds: string[]) {
     const res: any = await this.menuModel
       .find({ _id: { $in: menuIds }, type: { $ne: 3 } })
-      .sort({ sort: 'asc' })
+      .sort({ sort: "asc" })
       .exec();
     // 添加日志
-    console.log('res', res);
+    console.log("res", res);
 
     return this.buildRoutes(res);
   }
@@ -119,16 +110,12 @@ export class MenuService {
 
   async findSearch(keyword: string) {
     try {
-      const regex = new RegExp(keyword, 'i'); // 'i' 表示不区分大小写
+      const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
       let filter = {};
       if (keyword) {
         filter = { name: { $regex: regex } };
       }
-      const menus = await this.menuModel
-        .find(filter)
-        .sort({ sort: 'asc' })
-        .lean()
-        .exec();
+      const menus = await this.menuModel.find(filter).sort({ sort: "asc" }).lean().exec();
       return this.buildMenuTree(menus);
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -138,7 +125,7 @@ export class MenuService {
     try {
       const Options = await this.menuModel
         .find({}, { name: 1, parentId: 1, _id: 1 })
-        .sort({ sort: 'asc' })
+        .sort({ sort: "asc" })
         .lean()
         .exec();
       return this.buildOptionsTree(Options);
@@ -148,20 +135,14 @@ export class MenuService {
   }
   async findOne(id: string) {
     try {
-      return await this.menuModel
-        .findById(id)
-        .sort({ sort: 'asc' })
-        .lean()
-        .exec();
+      return await this.menuModel.findById(id).sort({ sort: "asc" }).lean().exec();
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
   // 构建嵌套的树结构
   async update(id: string, updateMenuDto: UpdateMenuDto) {
-    return await this.menuModel
-      .findByIdAndUpdate(id, updateMenuDto, { new: true })
-      .exec();
+    return await this.menuModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
   }
 
   async remove(_id: string) {
@@ -216,9 +197,7 @@ export class MenuService {
     // 遍历菜单项，根据 parentId 构建树形结构
     menus.forEach((menu) => {
       if (menu.parentId && map.has(menu.parentId.toString())) {
-        map
-          .get(menu.parentId.toString())
-          .children.push(map.get(menu._id.toString()));
+        map.get(menu.parentId.toString()).children.push(map.get(menu._id.toString()));
       } else {
         roots.push(map.get(menu._id.toString()));
       }
@@ -227,28 +206,23 @@ export class MenuService {
     return roots;
   }
 
-  private buildRoutes(
-    data: MenuItem[],
-    parentId: string | number = 0,
-  ): Route[] {
+  private buildRoutes(data: MenuItem[], parentId: string | number = 0): Route[] {
     return data
       .filter((item) => item.parentId === parentId)
       .map((item) => {
         const route: Route = {
           path: item.routePath,
-          component: item.component || 'Layout',
+          component: item.component || "Layout",
           name: item.routeName || item.name,
           meta: {
             title: item.name,
-            icon: item.icon || 'el-icon-ElementPlus',
+            icon: item.icon || "el-icon-ElementPlus",
             hidden: item.visible === 0,
             alwaysShow: item.alwaysShow === 1,
             keepAlive: item.keepAlive === 1,
             params:
-              item.params.length > 0
-                ? Object.fromEntries(
-                    item.params.map((param) => [param.key, param.value]),
-                  )
+              item.params && item.params.length > 0
+                ? Object.fromEntries(item.params.map((param) => [param.key, param.value]))
                 : null,
           },
           children: this.buildRoutes(data, item.id),

@@ -1,5 +1,5 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { BusinessErrorCode } from '../enums/business-error-code.enum';
+import { HttpException, HttpStatus } from "@nestjs/common";
+import { BusinessErrorCode } from "../enums/business-error-code.enum";
 
 export class ApiException extends HttpException {
   private errorMessage: string;
@@ -8,7 +8,7 @@ export class ApiException extends HttpException {
   constructor(
     errorMessage: string,
     errorCode: BusinessErrorCode,
-    statusCode: HttpStatus = HttpStatus.OK,
+    statusCode: HttpStatus = HttpStatus.OK
   ) {
     super(errorMessage, statusCode);
     this.errorMessage = errorMessage;

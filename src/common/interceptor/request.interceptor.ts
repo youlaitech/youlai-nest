@@ -5,19 +5,19 @@ import {
   CallHandler,
   HttpStatus,
   Inject,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap, map } from 'rxjs/operators';
-import { XCommonRet } from 'xmcommon';
+} from "@nestjs/common";
+import { Observable } from "rxjs";
+import { tap, map } from "rxjs/operators";
+import { XCommonRet } from "xmcommon";
 
-import { Response, Request } from 'express';
+import { Response, Request } from "express";
 // import { XCommUtils } from './commutils';
-import { Reflector } from '@nestjs/core';
-import { METADATA_NOT_CHECK } from '../decorator/not_check';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
-import { getReqMainInfo } from '../../utils/utils';
-import { XRetUtils } from './ret_utils';
+import { Reflector } from "@nestjs/core";
+import { METADATA_NOT_CHECK } from "../decorator/not_check";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
+import { Logger } from "winston";
+import { getReqMainInfo } from "../../utils/utils";
+import { XRetUtils } from "./ret_utils";
 
 /** 每次请求的记数器 */
 let requestSeq = 0;
@@ -39,10 +39,7 @@ export class XRequestInterceptor implements NestInterceptor {
    * @param paramNext 后续调用函数
    * @returns
    */
-  intercept(
-    paramContext: ExecutionContext,
-    paramNext: CallHandler,
-  ): Observable<any> {
+  intercept(paramContext: ExecutionContext, paramNext: CallHandler): Observable<any> {
     /** 请求开始时间 */
     const start = Date.now();
     /** 当前环境 */
@@ -60,12 +57,9 @@ export class XRequestInterceptor implements NestInterceptor {
 
     // log.info(`[${seq}]==> ${urlInfo}`);
 
-    req['seq'] = seq;
+    req["seq"] = seq;
 
-    const isNotCheck = this.reflector.get<boolean>(
-      METADATA_NOT_CHECK,
-      paramContext.getHandler(),
-    );
+    const isNotCheck = this.reflector.get<boolean>(METADATA_NOT_CHECK, paramContext.getHandler());
     const isCheckAPI = isNotCheck !== true; // XCommUtils.hasStartsWith(url, urlPrefix.API);
 
     if (isCheckAPI) {
@@ -74,21 +68,18 @@ export class XRequestInterceptor implements NestInterceptor {
         .pipe(
           map((paramData) => {
             /* 这里拦截POST返回的statusCode，它默认返回是201, 这里改为200 */
-            this.logger.info('response', {
+            this.logger.info("response", {
               responseData: paramData,
               req: getReqMainInfo(req),
             });
-            if (
-              res.statusCode === HttpStatus.CREATED &&
-              req.method === 'POST'
-            ) {
+            if (res.statusCode === HttpStatus.CREATED && req.method === "POST") {
               res.statusCode = HttpStatus.OK;
             }
             // 这里要求所有的请求返回，都是XCommonRet
             if (paramData instanceof XCommonRet) {
               return XRetUtils.byCommonRet(paramData);
             } else if (paramData === undefined) {
-              this.logger.error('--------- data is undefine!');
+              this.logger.error("--------- data is undefine!");
               return paramData;
             } else {
               // const r: IHttpRet = {
@@ -104,24 +95,22 @@ export class XRequestInterceptor implements NestInterceptor {
               // log.error('返回错误:' + JSON.stringify(r));
               return paramData;
             }
-          }),
+          })
         )
         .pipe(
           // 这里打印请求处理完成的信息
           tap(() => {
             this.logger.info(`[${seq}]<== ${urlInfo} ${Date.now() - start} ms`);
-          }),
+          })
         );
     } else {
-      this.logger.info('response', {
+      this.logger.info("response", {
         responseData: paramNext,
         req: getReqMainInfo(req),
       });
       return paramNext.handle().pipe(
         // 这里打印请求处理完成的信息
-        tap(() =>
-          this.logger.info(`[${seq}]<== ${urlInfo} ${Date.now() - start} ms`),
-        ),
+        tap(() => this.logger.info(`[${seq}]<== ${urlInfo} ${Date.now() - start} ms`))
       );
     }
   }

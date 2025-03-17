@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 export class LoginResponse {
   @ApiProperty({ example: 200 })
   code: number;
-  @ApiProperty({ example: 'eyJhbGciOiJ...' })
+  @ApiProperty({ example: "eyJhbGciOiJ..." })
   data: string;
-  @ApiProperty({ example: '请求成功' })
+  @ApiProperty({ example: "请求成功" })
   msg: string;
 }

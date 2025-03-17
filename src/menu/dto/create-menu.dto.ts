@@ -1,12 +1,5 @@
-import {
-  IsString,
-  IsNumber,
-  IsOptional,
-  IsBoolean,
-  MaxLength,
-  IsMongoId,
-} from 'class-validator';
-import { BaseEntityDto } from '../../common/dto/BaseEntity.dto';
+import { IsString, IsNumber, IsOptional, IsBoolean, MaxLength, IsMongoId } from "class-validator";
+import { BaseEntityDto } from "../../common/dto/BaseEntity.dto";
 
 export class CreateMenuDto extends BaseEntityDto {
   // 菜单名称

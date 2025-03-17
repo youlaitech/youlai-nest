@@ -1,5 +1,6 @@
 export class BaseEntityDto {
   readonly isDeleted?: number;
+
   readonly deptTreePath?: string;
 
   readonly createBy?: string;

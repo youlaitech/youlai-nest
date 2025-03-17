@@ -1,6 +1,6 @@
-import { Module, OnModuleInit } from '@nestjs/common';
-import { GenService } from './gen.service';
-import { GenController } from './gen.controller';
+import { Module, OnModuleInit } from "@nestjs/common";
+import { GenService } from "./gen.service";
+import { GenController } from "./gen.controller";
 
 @Module({
   controllers: [GenController],

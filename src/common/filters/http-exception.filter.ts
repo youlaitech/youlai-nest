@@ -5,12 +5,12 @@ import {
   HttpException,
   HttpStatus,
   Inject,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
-import { ApiException } from '../http-exception/api.exception';
-import { BusinessErrorCode } from '../enums/business-error-code.enum';
+} from "@nestjs/common";
+import { Request, Response } from "express";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
+import { Logger } from "winston";
+import { ApiException } from "../http-exception/api.exception";
+import { BusinessErrorCode } from "../enums/business-error-code.enum";
 
 interface ErrorResponse {
   code: number;
@@ -23,9 +23,7 @@ interface ErrorResponse {
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-  ) {}
+  constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -42,10 +40,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(HttpStatus.OK).json(errorResponse);
   }
 
-  private prepareErrorResponse(
-    exception: unknown,
-    request: Request,
-  ): ErrorResponse {
+  private prepareErrorResponse(exception: unknown, request: Request): ErrorResponse {
     let code: number;
     let message: string;
 
@@ -57,7 +52,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     } else {
       code = BusinessErrorCode.BUSINESS_ERROR;
-      message = '服务器内部错误';
+      message = "服务器内部错误";
     }
 
     return {
@@ -80,9 +75,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     };
 
     if (errorResponse.code >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error('Server Error', logContext);
+      this.logger.error("Server Error", logContext);
     } else {
-      this.logger.warn('Client Error', logContext);
+      this.logger.warn("Client Error", logContext);
     }
   }
 }

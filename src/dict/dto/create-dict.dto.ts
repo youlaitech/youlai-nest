@@ -1,6 +1,6 @@
-import { BaseEntityDto } from '../../common/dto/BaseEntity.dto';
+import { BaseEntityDto } from "../../common/dto/BaseEntity.dto";
 
-import { IsOptional, IsString, IsNumber, IsArray, IsIn } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsArray, IsIn } from "class-validator";
 
 export class CreateDictDto {
   dict_code: string;
@@ -30,7 +30,7 @@ export class DictPageQueryDto {
 /**
  * 字典项 DTO
  */
-export class DictItemDto extends BaseEntityDto {
+export class DictDataDto extends BaseEntityDto {
   /**
    * 字典项ID
    */
@@ -99,7 +99,7 @@ export class DictPageVoDto {
    * 字典项列表
    */
   @IsArray()
-  dictData: DictItemDto[];
+  dictData: DictDataDto[];
 }
 
 /**
@@ -146,5 +146,5 @@ export class DictFormDto extends BaseEntityDto {
    */
   @IsOptional()
   @IsArray()
-  dictData?: DictItemDto[];
+  dictData?: DictDataDto[];
 }

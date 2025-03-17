@@ -1,14 +1,14 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import mongoose from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
+import mongoose from "mongoose";
 
 @Schema({
   // 指定集合名称
-  collection: 'sys_dict',
+  collection: "sys_dict",
   timestamps: {
     currentTime: () => Date.now(),
-    createdAt: 'createTime',
-    updatedAt: 'updateTime',
+    createdAt: "createTime",
+    updatedAt: "updateTime",
   },
 })
 export class Dicts extends Document {
@@ -33,11 +33,11 @@ export class Dicts extends Document {
 }
 @Schema({
   // 指定集合名称
-  collection: 'sys_dict_items',
+  collection: "sys_dict_items",
   timestamps: {
     currentTime: () => Date.now(),
-    createdAt: 'createTime',
-    updatedAt: 'updateTime',
+    createdAt: "createTime",
+    updatedAt: "updateTime",
   },
 })
 export class DictData extends Document {

@@ -1,11 +1,4 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsNumber,
-  IsMongoId,
-  IsIn,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsMongoId, IsIn } from "class-validator";
 
 export class CreateDeptDto {
   @IsNotEmpty()
@@ -31,14 +24,14 @@ export class CreateDeptDto {
 
   @IsOptional()
   @IsNumber()
-  @IsIn([0, 1], { message: '状态只能是0或1' })
+  @IsIn([0, 1], { message: "状态只能是0或1" })
   status?: number; // 状态 (1-正常 0-禁用)
 
   @IsOptional()
-  @IsMongoId({ message: '创建人ID必须是有效的ObjectId' })
+  @IsMongoId({ message: "创建人ID必须是有效的ObjectId" })
   createBy?: string; // 创建人ID
 
   @IsOptional()
-  @IsMongoId({ message: '修改人ID必须是有效的ObjectId' })
+  @IsMongoId({ message: "修改人ID必须是有效的ObjectId" })
   updateBy?: string; // 修改人ID
 }

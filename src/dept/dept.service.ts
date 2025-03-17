@@ -1,18 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { CreateDeptDto } from './dto/create-dept.dto';
-import { UpdateDeptDto } from './dto/update-dept.dto';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Depts } from './schemas/dept.schema';
-import { ApiException } from '../common/http-exception/api.exception';
-import { BusinessErrorCode } from '../common/enums/business-error-code.enum';
-import { matchDeptPath, rolesDeptPath } from '../common/shared/regex-utils';
+import { Injectable } from "@nestjs/common";
+import { CreateDeptDto } from "./dto/create-dept.dto";
+import { UpdateDeptDto } from "./dto/update-dept.dto";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Depts } from "./dept.schema";
+import { ApiException } from "../common/http-exception/api.exception";
+import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
+import { matchDeptPath, rolesDeptPath } from "../common/shared/regex-utils";
 
 @Injectable()
 export class DeptService {
-  constructor(
-    @InjectModel(Depts.name) private readonly deptModel: Model<Depts>,
-  ) {}
+  constructor(@InjectModel(Depts.name) private readonly deptModel: Model<Depts>) {}
   async create(createDeptDto: CreateDeptDto) {
     try {
       //  TreePath 的处理
@@ -31,7 +29,7 @@ export class DeptService {
     const query = {};
     return await this.deptModel
       .find({ ...query, ...matchDeptPath(deptTreePath), isDeleted: 0 })
-      .sort({ sort: 'asc' })
+      .sort({ sort: "asc" })
       .exec();
   }
   async findAllOptions(deptTreePath) {
@@ -43,7 +41,7 @@ export class DeptService {
             $match: { ...query, ...matchDeptPath(deptTreePath), isDeleted: 0 },
           },
           { $sort: { sort: 1 } },
-          { $addFields: { id: '$_id' } }, // 将 _id 复制到 id
+          { $addFields: { id: "$_id" } }, // 将 _id 复制到 id
           { $project: { _id: 0, __v: 0 } }, // 排除 _id 字段
         ])
         .exec();
@@ -54,19 +52,15 @@ export class DeptService {
       throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
     }
   }
-  async findSearch(
-    keyword: string,
-    status: string | number,
-    deptTreePath: string | number,
-  ) {
+  async findSearch(keyword: string, status: string | number, deptTreePath: string | number) {
     try {
       const query = {};
       if (keyword) {
-        const regex = new RegExp(keyword, 'i'); // 'i' 表示不区分大小写
-        query['name'] = { $regex: regex };
+        const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
+        query["name"] = { $regex: regex };
       }
       if (!isNaN(Number(status))) {
-        query['status'] = Number(status);
+        query["status"] = Number(status);
       }
       const deptList = await this.deptModel
         .aggregate([
@@ -78,7 +72,7 @@ export class DeptService {
             },
           },
           { $sort: { sort: 1 } },
-          { $addFields: { id: '$_id' } },
+          { $addFields: { id: "$_id" } },
           { $project: { _id: 0, __v: 0 } },
         ])
         .exec();
@@ -90,14 +84,12 @@ export class DeptService {
   }
 
   async findOne(id: number | string) {
-    return await this.deptModel.findById(id).sort({ sort: 'asc' }).exec();
+    return await this.deptModel.findById(id).sort({ sort: "asc" }).exec();
   }
 
   async update(id: string, updateDeptDto: UpdateDeptDto) {
     try {
-      return await this.deptModel
-        .findByIdAndUpdate(id, updateDeptDto, { new: true })
-        .exec();
+      return await this.deptModel.findByIdAndUpdate(id, updateDeptDto, { new: true }).exec();
     } catch (e) {}
   }
 
@@ -105,9 +97,7 @@ export class DeptService {
     return await this.deptModel.findByIdAndDelete(id).exec();
   }
   async deleted(id: string) {
-    return await this.deptModel
-      .findByIdAndUpdate(id, { isDeleted: true })
-      .exec();
+    return await this.deptModel.findByIdAndUpdate(id, { isDeleted: true }).exec();
   }
   // 菜单树形数据处理
   private buildDeptTree(deptList: any[]): any[] {
@@ -157,9 +147,7 @@ export class DeptService {
       // 遍历菜单项，根据 parentId 构建树形结构
       menus.forEach((menu) => {
         if (menu.parentId && map.has(menu.parentId.toString())) {
-          map
-            .get(menu.parentId.toString())
-            .children.push(map.get(menu.id.toString()));
+          map.get(menu.parentId.toString()).children.push(map.get(menu.id.toString()));
         } else {
           roots.push(map.get(menu.id.toString()));
         }
@@ -175,7 +163,7 @@ export class DeptService {
   private async buildTreePath(parentId: string | number) {
     try {
       if (Number(parentId) === 0) {
-        return '0';
+        return "0";
       }
       const parentDept = await this.deptModel.findById(parentId);
       return `${parentDept.TreePath}/${parentDept.id}`;

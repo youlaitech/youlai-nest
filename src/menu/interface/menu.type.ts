@@ -2,16 +2,16 @@
 
 // 常量类型映射
 export const typeMap: Map<any, any> = new Map([
-  [1, 'CATALOG'],
-  [2, 'MENU'],
-  [3, 'BUTTON'],
-  [4, 'EXTLINK'],
+  [1, "CATALOG"],
+  [2, "MENU"],
+  [3, "BUTTON"],
+  [4, "EXTLINK"],
 ]);
 export const typeMapValue: Map<any, any> = new Map([
-  ['CATALOG', 1],
-  ['MENU', 2],
-  ['BUTTON', 3],
-  ['EXTLINK', 4],
+  ["CATALOG", 1],
+  ["MENU", 2],
+  ["BUTTON", 3],
+  ["EXTLINK", 4],
 ]);
 
 // MenuItem 接口
