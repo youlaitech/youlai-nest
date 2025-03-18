@@ -1,24 +1,24 @@
 import { Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
-import { UserModule } from "../user/user.module";
+import { UserModule } from "../system/user/user.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigService, ConfigModule } from "@nestjs/config";
 import { JwtStrategy } from "./jwt.strategy";
-import { Redis_cacheModule } from "../cache/redis_cache.module";
-import { Redis_cacheService } from "../cache/redis_cache.service";
+import { RedisCacheModule } from "../cache/redis_cache.module";
+import { RedisCacheService } from "../cache/redis_cache.service";
 import { ToolsService } from "../utils/service/tools.service";
 
 @Module({
   imports: [
     UserModule,
-    Redis_cacheModule,
+    RedisCacheModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get("JWT_SECRET"),
+        secret: configService.get("JWT_SECRET_KEY"),
         signOptions: {
           expiresIn: configService.get("JWT_EXPIRES_IN", "24h"),
         },
@@ -27,7 +27,7 @@ import { ToolsService } from "../utils/service/tools.service";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, Redis_cacheService, ToolsService],
+  providers: [AuthService, JwtStrategy, RedisCacheService, ToolsService],
   exports: [AuthService],
 })
 export class AuthModule {}

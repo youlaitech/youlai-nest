@@ -7,36 +7,32 @@ import {
 } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { UserModule } from "./user/user.module";
 import { WinstonModule } from "nest-winston";
 import * as winston from "winston";
 import "winston-daily-rotate-file";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
-import { MenuModule } from "./menu/menu.module";
 import logger from "./common/logger.middleware";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import * as dotenv from "dotenv";
 import { MongooseModule } from "@nestjs/mongoose";
 import { HttpExceptionFilter } from "./common/http-exception/http-exception.filter";
 import { XRequestInterceptor } from "./common/interceptor/request.interceptor";
 import { AuthModule } from "./auth/auth.module";
 import { RedisModule } from "@liaoliaots/nestjs-redis";
-import { Redis_cacheModule } from "./cache/redis_cache.module";
-import { RolesModule } from "./role/role.module";
-import { DeptModule } from "./dept/dept.module";
-import { DictModule } from "./dict/dict.module";
+import { RedisCacheModule } from "./cache/redis_cache.module";
 import { OssModule } from "./oss/oss.module";
-import { BackupModule } from "./backup/backup.module";
 import { ErrorHandlingService } from "./common/services/error-handling.service";
 import mongoose from "mongoose";
 import { AuthGuard } from "./auth/auth.guard";
+import { SystemModule } from "./system/system.module";
+
+import mongodbConfig from "./config/mongodb.config";
+import redisConfig from "./config/redis.config";
+import ossConfig from "./config/oss.config";
 
 const envFilePath = `.env.${process.env.NODE_ENV || `dev`}`;
 
 @Module({
   imports: [
-    UserModule,
-
     WinstonModule.forRoot({
       level: "debug",
       transports: [
@@ -60,59 +56,37 @@ const envFilePath = `.env.${process.env.NODE_ENV || `dev`}`;
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath,
-      load: [() => dotenv.config({ path: ".env" })],
+      load: [mongodbConfig, redisConfig, ossConfig],
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const uri = configService.get<string>("MONGOODB_URI");
-        return {
-          uri,
-          dbName: configService.get<string>("MONGOODB_NAME"),
-        };
-      },
+      useFactory: (config: ConfigService) => ({
+        uri: config.get("mongodb.uri"),
+        dbName: config.get("mongodb.dbName"),
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }),
       inject: [ConfigService],
     }),
     RedisModule.forRootAsync({
-      useFactory: async (configService: ConfigService) => {
-        return {
-          config: [
-            //  存储
-            {
-              host: configService.get("REDIS_HOST"),
-              port: configService.get("REDIS_PORT"),
-              db: configService.get("REDIS_DB"),
-              password: configService.get("REDIS_PASSPORT"),
-            },
-            //  发布
-            {
-              namespace: "publish",
-              host: configService.get("REDIS_HOST"),
-              port: configService.get("REDIS_PORT"),
-              db: configService.get("REDIS_DB"),
-              password: configService.get("REDIS_PASSPORT"),
-            },
-            // 订阅
-            {
-              namespace: "subscriber",
-              host: configService.get("REDIS_HOST"),
-              port: configService.get("REDIS_PORT"),
-              db: configService.get("REDIS_DB"),
-              password: configService.get("REDIS_PASSPORT"),
-            },
-          ],
-        };
-      },
+      useFactory: (config: ConfigService) => ({
+        config: [
+          // 存储实例
+          {
+            host: config.get("redis.host"),
+            port: config.get("redis.port"),
+            db: config.get("redis.db"),
+            password: config.get("redis.password"),
+            keyPrefix: config.get("redis.keyPrefix"),
+          },
+        ],
+      }),
       inject: [ConfigService],
     }),
-    MenuModule,
     AuthModule,
-    Redis_cacheModule,
-    RolesModule,
-    DeptModule,
-    DictModule,
+    RedisCacheModule,
     OssModule,
-    BackupModule,
+    SystemModule,
   ],
   controllers: [AppController],
   providers: [

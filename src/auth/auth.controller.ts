@@ -8,12 +8,11 @@ import {
   HttpStatus,
   Inject,
   forwardRef,
-  Res,
   UseInterceptors,
   Delete,
 } from "@nestjs/common";
 
-import { Request, Response } from "express";
+import { Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginAuthDto } from "./dto/login-auth.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
@@ -25,23 +24,21 @@ import { Logger } from "winston";
 import { ApiException } from "../common/http-exception/api.exception";
 import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
 import { v4 as uuidv4 } from "uuid";
-import { Redis_cacheService } from "../cache/redis_cache.service";
+import { RedisCacheService } from "../cache/redis_cache.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 
-@ApiTags("登录验证模块")
+@ApiTags("01.认证接口")
 @Controller("auth")
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly toolsService: ToolsService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-    @Inject(forwardRef(() => Redis_cacheService))
-    private readonly RedisService: Redis_cacheService
+    @Inject(forwardRef(() => RedisCacheService))
+    private readonly RedisService: RedisCacheService
   ) {}
 
-  @ApiOperation({
-    summary: "登录接口",
-  })
+  @ApiOperation({ summary: "登录接口" })
   @ApiOkResponse({ description: "登录成功返回", type: LoginResponse })
   @UseInterceptors(FileInterceptor(""))
   @Public()
@@ -50,7 +47,7 @@ export class AuthController {
     try {
       const { captchaCode, captchaKey } = loginAuthDto;
       const CODE_EXPIRED_ERROR = "验证码超时";
-      const code = await this.RedisService.getCache(captchaKey);
+      const code = await this.RedisService.get(captchaKey);
       if (!code) {
         throw new ApiException(CODE_EXPIRED_ERROR, BusinessErrorCode.VALIDATION_ERROR);
       }
@@ -64,9 +61,7 @@ export class AuthController {
     }
   }
 
-  @ApiOperation({
-    summary: "退出登陆",
-  })
+  @ApiOperation({ summary: "注销登录" })
   @Public()
   @Delete("logout")
   async logout(@Req() req: Request) {
@@ -75,7 +70,7 @@ export class AuthController {
       const token = req.headers.authorization?.split(" ")[1];
       // 如果 Token 存在，清除 JWT Token
       if (!token) {
-        //   后面用等redis 存储token
+        // 后面用等redis 存储token
       }
 
       // 清除用户信息
@@ -91,16 +86,15 @@ export class AuthController {
     }
   }
 
-  @ApiOperation({
-    summary: "获取验证码",
-  })
+  @ApiOperation({ summary: "获取验证码" })
   @Public()
   @Get("captcha")
   async getCode() {
-    const svgCaptcha = await this.toolsService.captche(); //创建验证码
+    // 创建验证码
+    const svgCaptcha = await this.toolsService.captche();
     // 使用redis 存储
     const captchaKey = uuidv4();
-    await this.RedisService.setCache(captchaKey, svgCaptcha.captcha.text, 75);
+    await this.RedisService.set(captchaKey, svgCaptcha.captcha.text, 75);
     return {
       captchaBase64: svgCaptcha.base64,
       captchaKey,

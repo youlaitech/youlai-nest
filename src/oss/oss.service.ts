@@ -1,7 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
+
 import * as Client from "ali-oss";
 import * as dayjs from "dayjs";
-import { ConfigService } from "@nestjs/config";
+import { ConfigType } from "@nestjs/config";
+import ossConfig from "../config/oss.config";
 import OSS from "ali-oss";
 import * as $OpenApi from "@alicloud/openapi-client";
 import ocr_api20210707, * as $ocr_api20210707 from "@alicloud/ocr-api20210707";
@@ -17,14 +19,19 @@ export class OssService {
   private ORCClient: ocr_api20210707;
   private OCRConfig: Record<string, any>;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    @Inject(ossConfig.KEY)
+    private readonly ossConf: ConfigType<typeof ossConfig>
+  ) {
+    console.log("OSS区域", ossConf.region);
+
     this.config = {
-      region: "oss-cn-qingdao",
-      accessKeyId: this.configService.get("ALIBABA_CLOUD_ACCESS_OSS_KEY_ID"),
-      accessKeySecret: this.configService.get("ALIBABA_CLOUD_ACCESS_OSS_KEY_SECRET"),
+      region: ossConf.region,
+      accessKeyId: ossConf.accessKeyId,
+      accessKeySecret: ossConf.accessKeySecret,
       secure: true,
       // 存储桶名字
-      bucket: "kaowustorage",
+      bucket: ossConf.bucket,
       // 文件存储路径
       // dir: 'cad/',
       // 设置上传回调URL，即回调服务器地址，用于处理应用服务器与OSS之间的通信。
@@ -35,8 +42,8 @@ export class OssService {
     this.client = new Client(<OSS.Options>this.config);
     this.staticConfig = {
       region: "oss-cn-qingdao",
-      accessKeyId: this.configService.get("ALIBABA_CLOUD_ACCESS_OSS_KEY_ID"),
-      accessKeySecret: this.configService.get("ALIBABA_CLOUD_ACCESS_OSS_KEY_SECRET"),
+      accessKeyId: ossConf.accessKeyId,
+      accessKeySecret: ossConf.accessKeySecret,
       // 存储桶名字
       bucket: "staticolgstorage",
       // 文件存储路径
@@ -48,10 +55,10 @@ export class OssService {
     };
     this.staticClient = new Client(<OSS.Options>this.staticConfig);
     this.OCRConfig = new $OpenApi.Config({
-      accessKeyId: this.configService.get("ALIBABA_CLOUD_ACCESS_OCR_KEY_ID"),
-      accessKeySecret: this.configService.get("ALIBABA_CLOUD_ACCESS_OCR_KEY_SECRET"),
+      accessKeyId: ossConf.accessKeyId,
+      accessKeySecret: ossConf.accessKeySecret,
     });
-    this.OCRConfig.endpoint = `ocr-api.cn-hangzhou.aliyuncs.com`;
+    this.OCRConfig.endpoint = ossConf.endpoint;
     this.ORCClient = new ocr_api20210707(<any>this.OCRConfig);
   }
 

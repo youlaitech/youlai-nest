@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
 import { IS_PUBLIC_KEY } from "../common/public/public.decorator";
@@ -31,7 +31,7 @@ export class AuthGuard extends PassportAuthGuard("jwt") {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any) {
+  handleRequest(err: any, user: any) {
     if (err || !user) {
       throw new ApiException("登录已过期，请重新登录", BusinessErrorCode.USER_LOGIN_EXPIRED);
     }
