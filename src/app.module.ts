@@ -22,7 +22,7 @@ import { XRequestInterceptor } from "./common/interceptor/request.interceptor";
 import { AuthModule } from "./auth/auth.module";
 import { RedisModule } from "@liaoliaots/nestjs-redis";
 import { Redis_cacheModule } from "./cache/redis_cache.module";
-import { RolesModule } from "./roles/roles.module";
+import { RolesModule } from "./role/role.module";
 import { DeptModule } from "./dept/dept.module";
 import { DictModule } from "./dict/dict.module";
 import { OssModule } from "./oss/oss.module";

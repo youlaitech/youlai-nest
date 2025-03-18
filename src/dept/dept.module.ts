@@ -2,10 +2,10 @@ import { Module } from "@nestjs/common";
 import { DeptService } from "./dept.service";
 import { DeptController } from "./dept.controller";
 import { MongooseModule } from "@nestjs/mongoose";
-import { deptsSchema } from "./dept.schema";
-const DepstrTable = MongooseModule.forFeature([{ name: "Depts", schema: deptsSchema }]);
+import { deptSchema } from "./dept.schema";
+const DeptTable = MongooseModule.forFeature([{ name: "Dept", schema: deptSchema }]);
 @Module({
-  imports: [DepstrTable],
+  imports: [DeptTable],
   controllers: [DeptController],
   providers: [DeptService],
   exports: [DeptService],

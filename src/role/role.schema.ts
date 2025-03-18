@@ -10,7 +10,7 @@ import { BaseEntity } from "../common/schema/baseEntity.schema";
     updatedAt: "updateTime",
   },
 })
-export class Roles extends BaseEntity {
+export class Role extends BaseEntity {
   // 角色名称
   @Prop({
     type: String,
@@ -59,4 +59,4 @@ export class Roles extends BaseEntity {
   menus: string[];
 }
 
-export const RoleSchema = SchemaFactory.createForClass(Roles);
+export const RoleSchema = SchemaFactory.createForClass(Role);

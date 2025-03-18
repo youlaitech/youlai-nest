@@ -4,11 +4,11 @@ import { MenuController } from "./menu.controller";
 import { MongooseModule } from "@nestjs/mongoose";
 import { MenuSchema } from "./menu.schema";
 import { UserModule } from "../user/user.module";
-import { RolesModule } from "../roles/roles.module";
+import { RoleModule } from "../role/role.module";
 
 const MenuTable = MongooseModule.forFeature([{ name: "Menus", schema: MenuSchema }]);
 @Module({
-  imports: [MenuTable, forwardRef(() => UserModule), forwardRef(() => RolesModule)],
+  imports: [MenuTable, forwardRef(() => UserModule), forwardRef(() => RoleModule)],
   controllers: [MenuController],
   providers: [MenuService],
   exports: [MenuService],

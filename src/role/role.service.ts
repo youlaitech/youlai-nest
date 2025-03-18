@@ -2,7 +2,7 @@ import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nest
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { Roles } from "./role.schema";
+import { Role } from "./role.schema";
 import { ApiException } from "../common/http-exception/api.exception";
 import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
 import { UpdateMenuDto } from "../menu/dto/update-menu.dto";
@@ -11,10 +11,10 @@ import { MenuService } from "../menu/menu.service";
 import { ROOT_ROLE_CODE } from "../common/constants";
 
 @Injectable()
-export class RolesService {
+export class RoleService {
   constructor(
-    @InjectModel(Roles.name)
-    private rolesModel: Model<Roles>,
+    @InjectModel(Role.name)
+    private rolesModel: Model<Role>,
     @Inject(forwardRef(() => MenuService))
     private readonly menuService: MenuService
   ) {}

@@ -11,16 +11,16 @@ import {
   HttpException,
   HttpStatus,
 } from "@nestjs/common";
-import { RolesService } from "./roles.service";
+import { RoleService } from "./role.service";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 
 @ApiTags("角色模块")
 @Controller("roles")
-export class RolesController {
+export class RoleController {
   // 注入 RolesService
-  constructor(private readonly rolesService: RolesService) {}
+  constructor(private readonly rolesService: RoleService) {}
 
   @ApiOperation({ summary: "角色分页查询" })
   @Get("page")

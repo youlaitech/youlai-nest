@@ -1,14 +1,12 @@
 import { Module } from "@nestjs/common";
 import { DictService } from "./dict.service";
 import { DictController } from "./dict.controller";
-import { DictDataController } from "../dict-data/dict-data.controller";
 import { MongooseModule } from "@nestjs/mongoose";
-import { dictItemSchema, dictSchema } from "./dict.schema";
-const DictsTable = MongooseModule.forFeature([{ name: "Dicts", schema: dictSchema }]);
-const DictItemsTable = MongooseModule.forFeature([{ name: "DictData", schema: dictItemSchema }]);
+import { dictSchema } from "./dict.schema";
+const DictTable = MongooseModule.forFeature([{ name: "Dicts", schema: dictSchema }]);
 @Module({
-  imports: [DictsTable, DictItemsTable],
-  controllers: [DictController, DictDataController],
+  imports: [DictTable],
+  controllers: [DictController],
   providers: [DictService],
 })
 export class DictModule {}

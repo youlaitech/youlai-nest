@@ -11,7 +11,7 @@ import { BaseEntity } from "../common/schema/baseEntity.schema";
     updatedAt: "updateTime",
   },
 })
-export class Depts extends BaseEntity {
+export class Dept extends BaseEntity {
   @Prop({ type: mongoose.Schema.Types.ObjectId, auto: true })
   _id: mongoose.Schema.Types.ObjectId;
   @Prop({
@@ -66,4 +66,4 @@ export class Depts extends BaseEntity {
   updateBy: mongoose.Schema.Types.ObjectId;
 }
 
-export const deptsSchema = SchemaFactory.createForClass(Depts);
+export const deptSchema = SchemaFactory.createForClass(Dept);
