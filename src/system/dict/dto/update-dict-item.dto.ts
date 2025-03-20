@@ -1,4 +1,4 @@
-export class CreateDictDataDto {
+export class CreateDictItemDto {
   typeCode: string;
   name: string;
   value: string;

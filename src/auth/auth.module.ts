@@ -4,7 +4,8 @@ import { AuthController } from "./auth.controller";
 import { UserModule } from "../system/user/user.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
-import { ConfigService, ConfigModule } from "@nestjs/config";
+import jwtConfig, { JwtConfig } from "../config/jwt.config";
+import { ConfigModule } from "@nestjs/config";
 import { JwtStrategy } from "./jwt.strategy";
 import { RedisCacheModule } from "../cache/redis_cache.module";
 import { RedisCacheService } from "../cache/redis_cache.service";
@@ -17,13 +18,14 @@ import { ToolsService } from "../utils/service/tools.service";
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get("JWT_SECRET_KEY"),
+      useFactory: (config: JwtConfig) => ({
+        secret: config.secretKey,
         signOptions: {
-          expiresIn: configService.get("JWT_EXPIRES_IN", "24h"),
+          expiresIn: config.expiresIn,
+          issuer: config.issuer,
         },
       }),
-      inject: [ConfigService],
+      inject: [jwtConfig.KEY],
     }),
   ],
   controllers: [AuthController],

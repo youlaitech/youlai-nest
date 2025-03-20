@@ -33,7 +33,8 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly toolsService: ToolsService,
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    @Inject(WINSTON_MODULE_PROVIDER)
+    private readonly logger: Logger,
     @Inject(forwardRef(() => RedisCacheService))
     private readonly RedisService: RedisCacheService
   ) {}

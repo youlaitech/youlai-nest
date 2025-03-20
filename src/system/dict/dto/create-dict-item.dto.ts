@@ -1,8 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsNumber, IsEnum } from "class-validator";
-import { TagType } from "../dict-data.schema";
+import { TagType } from "../dict.schema";
 
-export class CreateDictDataDto {
+export class CreateDictItemDto {
   @ApiProperty({ description: "字典编码" })
   @IsString()
   dictCode: string;

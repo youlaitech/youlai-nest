@@ -75,7 +75,7 @@ dependencies:
     specifier: ^6.11.0
     version: 6.14.2
   mongoose:
-    specifier: ^8.5.4
+    specifier: ^8.12.1
     version: 8.12.1
   nest-winston:
     specifier: ^1.9.4

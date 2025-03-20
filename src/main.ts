@@ -46,8 +46,8 @@ async function bootstrap() {
     const reflector = app.get(Reflector);
     app.useGlobalInterceptors(<NestInterceptor>new TransformInterceptor(reflector));
     app.useGlobalPipes(new ValidationPipe());
-    await app.listen(configService.get("PORT"));
-    console.log("http://localhost:" + configService.get("PORT"));
+    await app.listen(configService.get("SERVER_PORT"));
+    console.log("http://localhost:" + configService.get("SERVER_PORT"));
   } catch (e) {}
 }
 bootstrap();

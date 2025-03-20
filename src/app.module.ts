@@ -28,41 +28,41 @@ import { SystemModule } from "./system/system.module";
 import mongodbConfig from "./config/mongodb.config";
 import redisConfig from "./config/redis.config";
 import ossConfig from "./config/oss.config";
+import jwtConfig from "./config/jwt.config";
 
-import { validateEnv } from "./config/envs/env.schema";
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      validate: validateEnv, // 环境变量强校验
-      envFilePath: [".env", envPath], // 基础配置 + 环境覆盖
-      load: [mongodbConfig, redisConfig, ossConfig],
+      envFilePath: [".env", envPath],
+      load: [mongodbConfig, redisConfig, ossConfig, jwtConfig],
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get("mongodb.uri"),
-        dbName: config.get("mongodb.dbName"),
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      }),
+      useFactory: async (config: ConfigService) => {
+        const uri = config.get<string>("MONGOODB_URI");
+        return {
+          uri,
+          dbName: config.get<string>("MONGOODB_NAME"),
+        };
+      },
       inject: [ConfigService],
     }),
     RedisModule.forRootAsync({
-      useFactory: (config: ConfigService) => ({
-        config: [
-          // 存储实例
-          {
-            host: config.get("redis.host"),
-            port: config.get("redis.port"),
-            db: config.get("redis.db"),
-            password: config.get("redis.password"),
-            keyPrefix: config.get("redis.keyPrefix"),
-          },
-        ],
-      }),
+      useFactory: async (config: ConfigService) => {
+        return {
+          config: [
+            {
+              host: config.getOrThrow<string>("redis.host"),
+              port: config.getOrThrow<number>("redis.port"),
+              db: config.get<number>("redis.db") || 0,
+              password: config.get<string>("redis.password"),
+            },
+          ],
+        };
+      },
       inject: [ConfigService],
     }),
 

@@ -1,23 +1,20 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import encry from "../utils/crypto";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../system/user/user.service";
 import type { LoginAuthDto } from "./dto/login-auth.dto";
-import encry from "../utils/crypto";
-import { WINSTON_MODULE_PROVIDER } from "nest-winston";
-import { Logger } from "winston";
-import { RedisCacheService } from "../cache/redis_cache.service";
 import { ApiException } from "../common/http-exception/api.exception";
 import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
+import jwtConfig from "src/config/jwt.config";
+import { ConfigType } from "@nestjs/config";
 @Injectable()
 export class AuthService {
   // 构造注入
   constructor(
-    private userService: UserService,
-    private jwtService: JwtService,
-    @Inject(WINSTON_MODULE_PROVIDER)
-    private readonly logger: Logger,
-    @Inject()
-    private readonly RedisService: RedisCacheService
+    @Inject(jwtConfig.KEY)
+    private readonly config: ConfigType<typeof jwtConfig>,
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService
   ) {}
 
   // 登录
@@ -29,13 +26,15 @@ export class AuthService {
         throw new HttpException("密码错误", HttpStatus.UNAUTHORIZED);
       }
       const payload = {
-        username: user.username,
         sub: user._id,
+        username: user.username,
         deptTreePath: user.UserDeptTreePath,
       };
 
       return {
-        accessToken: await this.jwtService.signAsync(payload),
+        accessToken: await this.jwtService.signAsync(payload, {
+          expiresIn: this.config.expiresIn,
+        }),
         tokenType: "Bearer",
       };
     } catch (error) {

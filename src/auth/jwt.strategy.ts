@@ -1,26 +1,37 @@
-import { ExtractJwt, Strategy } from "passport-jwt";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { ConfigType } from "@nestjs/config";
+import jwtConfig from "../config/jwt.config";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private configService: ConfigService) {
+  constructor(
+    @Inject(jwtConfig.KEY)
+    private readonly config: ConfigType<typeof jwtConfig>
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get("JWT_SECRET_KEY"),
+      secretOrKey: config.secretKey,
+      issuer: config.issuer,
     });
   }
 
-  async validate(payload: any) {
-    if (!payload || !payload.sub) {
-      throw new UnauthorizedException("Invalid token payload");
+  async validate(payload: {
+    sub: string;
+    username: string;
+    deptTreePath: string;
+    roles: string[];
+  }) {
+    if (!payload?.sub) {
+      throw new UnauthorizedException("无效的令牌载荷");
     }
 
     return {
       userId: payload.sub,
       username: payload.username,
+      deptTreePath: payload.deptTreePath,
       roles: payload.roles,
     };
   }
