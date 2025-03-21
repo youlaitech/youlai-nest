@@ -4,10 +4,11 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Dept } from "./dept.schema";
-import { ApiException } from "../../common/http-exception/api.exception";
-import { BusinessErrorCode } from "../../common/enums/business-error-code.enum";
 import { matchDeptPath, rolesDeptPath } from "../../common/shared/regex-utils";
 
+/**
+ * 部门服务
+ */
 @Injectable()
 export class DeptService {
   constructor(
@@ -15,95 +16,110 @@ export class DeptService {
     private readonly deptModel: Model<Dept>
   ) {}
 
-  async create(createDeptDto: CreateDeptDto) {
-    try {
-      //  TreePath 的处理
-      const TreePath = await this.buildTreePath(createDeptDto.parentId);
-
-      const createdMenu = new this.deptModel({ ...createDeptDto, TreePath });
-      await createdMenu.save();
-      return await createdMenu.save();
-    } catch (error) {
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-    }
-  }
-
-  async findAll(deptTreePath: string) {
-    //  return await this.menuModel.find().exec();
+  /**
+   * 查询部门列表
+   *
+   * @param keyword
+   * @param status
+   * @param deptTreePath
+   * @returns
+   */
+  async findAll(keyword: string, status: string | number, deptTreePath: string | number) {
     const query = {};
-    return await this.deptModel
-      .find({ ...query, ...matchDeptPath(deptTreePath), isDeleted: 0 })
-      .sort({ sort: "asc" })
+    if (keyword) {
+      const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
+      query["name"] = { $regex: regex };
+    }
+    if (!isNaN(Number(status))) {
+      query["status"] = Number(status);
+    }
+    const deptList = await this.deptModel
+      .aggregate([
+        {
+          $match: {
+            ...query,
+            ...rolesDeptPath(deptTreePath),
+            isDeleted: 0,
+          },
+        },
+        { $sort: { sort: 1 } },
+        { $addFields: { id: "$_id" } },
+        { $project: { _id: 0, __v: 0 } },
+      ])
       .exec();
+    return this.buildDeptTree(deptList);
   }
+
+  /**
+   * 查询部门下拉树形列表
+   *
+   * @param deptTreePath
+   * @returns
+   */
   async findAllOptions(deptTreePath) {
-    try {
-      const query = {};
-      const Options = await this.deptModel
-        .aggregate([
-          {
-            $match: { ...query, ...matchDeptPath(deptTreePath), isDeleted: 0 },
-          },
-          { $sort: { sort: 1 } },
-          { $addFields: { id: "$_id" } }, // 将 _id 复制到 id
-          { $project: { _id: 0, __v: 0 } }, // 排除 _id 字段
-        ])
-        .exec();
-      return this.buildOptionsTree(Options);
-    } catch (error) {
-      // 处理错误逻辑
-
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-    }
-  }
-  async findSearch(keyword: string, status: string | number, deptTreePath: string | number) {
-    try {
-      const query = {};
-      if (keyword) {
-        const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
-        query["name"] = { $regex: regex };
-      }
-      if (!isNaN(Number(status))) {
-        query["status"] = Number(status);
-      }
-      const deptList = await this.deptModel
-        .aggregate([
-          {
-            $match: {
-              ...query,
-              ...rolesDeptPath(deptTreePath),
-              isDeleted: 0,
-            },
-          },
-          { $sort: { sort: 1 } },
-          { $addFields: { id: "$_id" } },
-          { $project: { _id: 0, __v: 0 } },
-        ])
-        .exec();
-      return this.buildDeptTree(deptList);
-    } catch (error) {
-      // 处理错误逻辑
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-    }
+    const query = {};
+    const Options = await this.deptModel
+      .aggregate([
+        {
+          $match: { ...query, ...matchDeptPath(deptTreePath), isDeleted: 0 },
+        },
+        { $sort: { sort: 1 } },
+        { $addFields: { id: "$_id" } }, // 将 _id 复制到 id
+        { $project: { _id: 0, __v: 0 } }, // 排除 _id 字段
+      ])
+      .exec();
+    return this.buildOptionsTree(Options);
   }
 
-  async findOne(id: number | string) {
+  /**
+   * 创建部门
+   *
+   * @param createDeptDto
+   * @returns
+   */
+  async create(createDeptDto: CreateDeptDto) {
+    const TreePath = await this.buildTreePath(createDeptDto.parentId);
+    const createdMenu = new this.deptModel({ ...createDeptDto, TreePath });
+    await createdMenu.save();
+    return await createdMenu.save();
+  }
+
+  /**
+   * 查询部门详情
+   *
+   * @param id
+   * @returns
+   */
+  async findOne(id: string) {
     return await this.deptModel.findById(id).sort({ sort: "asc" }).exec();
   }
 
+  /**
+   * 编辑部门
+   *
+   * @param id
+   * @param updateDeptDto
+   * @returns
+   */
   async update(id: string, updateDeptDto: UpdateDeptDto) {
-    try {
-      return await this.deptModel.findByIdAndUpdate(id, updateDeptDto, { new: true }).exec();
-    } catch (e) {}
+    return await this.deptModel.findByIdAndUpdate(id, updateDeptDto, { new: true }).exec();
   }
 
-  async remove(id: string) {
-    return await this.deptModel.findByIdAndDelete(id).exec();
-  }
-  async deleted(id: string) {
+  /**
+   * 删除部门
+   *
+   * @param id 部门ID
+   * @returns
+   */
+  async deleteDept(id: string) {
     return await this.deptModel.findByIdAndUpdate(id, { isDeleted: true }).exec();
   }
-  // 菜单树形数据处理
+  /**
+   * 构建部门树结构
+   *
+   * @param deptList  部门列表
+   * @returns
+   */
   private buildDeptTree(deptList: any[]): any[] {
     const map: { [key: string]: any } = {};
     const roots: any[] = [];
@@ -135,46 +151,41 @@ export class DeptService {
   }
   // 树结构数据
   private buildOptionsTree(menus: any[]): any[] {
-    try {
-      const map = new Map<string, any>();
-      const roots: any[] = [];
+    const map = new Map<string, any>();
+    const roots: any[] = [];
 
-      // 为每个菜单项创建一个 Map，并初始化 children
-      menus.forEach((menu) => {
-        map.set(menu.id.toString(), {
-          label: menu.name,
-          value: menu.id,
-          children: [],
-        });
+    // 为每个菜单项创建一个 Map，并初始化 children
+    menus.forEach((menu) => {
+      map.set(menu.id.toString(), {
+        label: menu.name,
+        value: menu.id,
+        children: [],
       });
+    });
 
-      // 遍历菜单项，根据 parentId 构建树形结构
-      menus.forEach((menu) => {
-        if (menu.parentId && map.has(menu.parentId.toString())) {
-          map.get(menu.parentId.toString()).children.push(map.get(menu.id.toString()));
-        } else {
-          roots.push(map.get(menu.id.toString()));
-        }
-      });
-
-      return roots;
-    } catch (error) {
-      // 处理错误逻辑
-
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-    }
-  }
-  private async buildTreePath(parentId: string | number) {
-    try {
-      if (Number(parentId) === 0) {
-        return "0";
+    // 遍历菜单项，根据 parentId 构建树形结构
+    menus.forEach((menu) => {
+      if (menu.parentId && map.has(menu.parentId.toString())) {
+        map.get(menu.parentId.toString()).children.push(map.get(menu.id.toString()));
+      } else {
+        roots.push(map.get(menu.id.toString()));
       }
-      const parentDept = await this.deptModel.findById(parentId);
-      return `${parentDept.TreePath}/${parentDept.id}`;
-    } catch (error) {
-      // 处理错误逻辑
+    });
 
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
+    return roots;
+  }
+
+  /**
+   * 构建部门 TreePath
+   *
+   * @param parentId 父节点ID
+   * @returns
+   */
+  private async buildTreePath(parentId: string | number) {
+    if (Number(parentId) === 0) {
+      return "0";
     }
+    const parentDept = await this.deptModel.findById(parentId);
+    return `${parentDept.TreePath}/${parentDept.id}`;
   }
 }

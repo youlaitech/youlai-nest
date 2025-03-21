@@ -3,8 +3,7 @@ import { CreateRoleDto } from "./dto/create-role.dto";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { Role } from "./role.schema";
-import { ApiException } from "../../common/http-exception/api.exception";
-import { BusinessErrorCode } from "../../common/enums/business-error-code.enum";
+import { BusinessException } from "../../common/exceptions/business.exception";
 import { UpdateMenuDto } from "../menu/dto/update-menu.dto";
 import { matchDeptPath } from "../../common/shared/regex-utils";
 import { MenuService } from "../menu/menu.service";
@@ -57,7 +56,7 @@ export class RoleService {
     // 超级管理员角色，返回全部菜单权限
     if (roles.includes(ROOT_ROLE_CODE)) {
       return {
-        permIds: (await this.menuService.findRouteAll()).map((item) => item.id),
+        permIds: (await this.menuService.findAll()).map((item) => item.id),
       };
     }
     // 根据角色查询菜单权限
@@ -101,27 +100,20 @@ export class RoleService {
 
   // 创建角色
   async create(createRoleDto: CreateRoleDto) {
-    try {
-      const name = createRoleDto.name;
-      // 角色归属
-      const deptTreePath = createRoleDto.deptTreePath || "0";
-      //  同一归属只有一个角色归属
-      const existRole = await this.rolesModel.find({ deptTreePath, name });
-      if (existRole.length > 0) {
-        throw new ApiException("角色已存在", BusinessErrorCode.ROLE_ALREADY_EXISTS);
-      }
-
-      const newRoleModel = new this.rolesModel({
-        ...createRoleDto,
-      });
-      const newRole = await newRoleModel.save();
-      return newRole;
-    } catch (error) {
-      throw new ApiException(
-        error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR
-      );
+    const name = createRoleDto.name;
+    // 角色归属
+    const deptTreePath = createRoleDto.deptTreePath || "0";
+    //  同一归属只有一个角色归属
+    const existRole = await this.rolesModel.find({ deptTreePath, name });
+    if (existRole.length > 0) {
+      throw new BusinessException("角色已存在");
     }
+
+    const newRoleModel = new this.rolesModel({
+      ...createRoleDto,
+    });
+    const newRole = await newRoleModel.save();
+    return newRole;
   }
 
   /**
@@ -131,35 +123,21 @@ export class RoleService {
    * @returns
    */
   async findOne(id: string) {
-    return await this.rolesModel.findById(id).sort({ sort: "asc" }).exec();
+    return await this.rolesModel.findById(id).exec();
   }
 
   /**
    * 更新角色
    */
   async update(id: string, updateMenuDto: UpdateMenuDto) {
-    try {
-      return await this.rolesModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    return await this.rolesModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
   }
 
   /**
    * 更新角色菜单
    */
   async updateMenus(id: string, menus: []) {
-    try {
-      // // 确保菜单项是 ObjectId 类型
-      // const convertedMenus = menus.map((menu) => new Types.ObjectId(menu));
-
-      return await this.rolesModel.findByIdAndUpdate(id, { menus: menus }, { new: true }).exec();
-    } catch (error) {
-      throw new ApiException(
-        error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR
-      );
-    }
+    return await this.rolesModel.findByIdAndUpdate(id, { menus: menus }, { new: true }).exec();
   }
 
   async remove(id: string) {

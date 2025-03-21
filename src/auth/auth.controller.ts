@@ -4,8 +4,6 @@ import {
   Get,
   Body,
   Req,
-  HttpException,
-  HttpStatus,
   Inject,
   forwardRef,
   UseInterceptors,
@@ -21,11 +19,11 @@ import { Public } from "../common/public/public.decorator";
 import { ToolsService } from "../utils/service/tools.service";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
-import { ApiException } from "../common/http-exception/api.exception";
-import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
+import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
 import { RedisCacheService } from "../cache/redis_cache.service";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { ResponseCode } from "src/common/enums/response-code.enum";
 
 @ApiTags("01.认证接口")
 @Controller("auth")
@@ -45,55 +43,40 @@ export class AuthController {
   @Public()
   @Post("login")
   async login(@Body() loginAuthDto: LoginAuthDto) {
-    try {
-      const { captchaCode, captchaKey } = loginAuthDto;
-      const CODE_EXPIRED_ERROR = "验证码超时";
-      const code = await this.RedisService.get(captchaKey);
-      if (!code) {
-        throw new ApiException(CODE_EXPIRED_ERROR, BusinessErrorCode.VALIDATION_ERROR);
-      }
-      if (captchaCode?.toUpperCase() === code?.toUpperCase()) {
-        return await this.authService.login(loginAuthDto);
-      }
-      throw new ApiException("验证码未通过", BusinessErrorCode.VALIDATION_ERROR);
-    } catch (error) {
-      this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    const { captchaCode, captchaKey } = loginAuthDto;
+    const code = await this.RedisService.get(captchaKey);
+    if (!code) {
+      throw new BusinessException(ResponseCode.VERIFICATION_CODE_EXPIRED);
     }
+    if (captchaCode?.toUpperCase() !== code?.toUpperCase()) {
+      throw new BusinessException(ResponseCode.VERIFICATION_CODE_ERROR);
+    }
+
+    return await this.authService.login(loginAuthDto);
   }
 
   @ApiOperation({ summary: "注销登录" })
   @Public()
   @Delete("logout")
   async logout(@Req() req: Request) {
-    try {
-      // // 提取 JWT Token
-      const token = req.headers.authorization?.split(" ")[1];
-      // 如果 Token 存在，清除 JWT Token
-      if (!token) {
-        // 后面用等redis 存储token
-      }
-
-      // 清除用户信息
-      req["user"] = null;
-      // 向客户端返回成功的响应
-      return {};
-    } catch (error) {
-      console.log(error);
-      throw new ApiException(
-        error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR
-      );
+    // // 提取 JWT Token
+    const token = req.headers.authorization?.split(" ")[1];
+    // 如果 Token 存在，清除 JWT Token
+    if (!token) {
+      // 后面用等redis 存储token
     }
+
+    // 清除用户信息
+    req["user"] = null;
+    // 向客户端返回成功的响应
+    return {};
   }
 
   @ApiOperation({ summary: "获取验证码" })
   @Public()
   @Get("captcha")
   async getCode() {
-    // 创建验证码
     const svgCaptcha = await this.toolsService.captche();
-    // 使用redis 存储
     const captchaKey = uuidv4();
     await this.RedisService.set(captchaKey, svgCaptcha.captcha.text, 75);
     return {

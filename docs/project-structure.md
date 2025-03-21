@@ -28,6 +28,7 @@ export class AuthModule {}
 ```
 
 主要功能：
+
 - JWT 认证实现
 - 登录接口
 - 权限验证守卫
@@ -55,6 +56,7 @@ export class User extends BaseEntity {
 ```
 
 主要功能：
+
 - 用户 CRUD 操作
 - 用户信息管理
 - 密码加密处理
@@ -81,6 +83,7 @@ export class RolesService {
 ```
 
 主要功能：
+
 - 角色管理
 - 权限分配
 - 角色-菜单关联
@@ -93,9 +96,7 @@ export class RolesService {
 // redis_cache.service.ts 的核心实现
 @Injectable()
 export class RedisCacheService {
-  constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
-  ) {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
   async set(key: string, value: any, ttl?: number) {
     await this.cacheManager.set(key, value, ttl);
@@ -108,6 +109,7 @@ export class RedisCacheService {
 ```
 
 主要功能：
+
 - 数据缓存
 - 缓存过期管理
 - 缓存清理
@@ -133,7 +135,7 @@ export class UnifyExceptionFilter implements ExceptionFilter {
 ```typescript
 // transform.interceptor.ts
 @Injectable()
-export class TransformInterceptor implements NestInterceptor {
+export class ResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     // 响应数据转换逻辑
   }
@@ -196,9 +198,9 @@ export class BaseEntity {
 ```typescript
 // main.ts 中的 Swagger 配置
 const config = new DocumentBuilder()
-  .setTitle('youlai-nest API')
-  .setDescription('API documentation')
-  .setVersion('1.0')
+  .setTitle("youlai-nest API")
+  .setDescription("API documentation")
+  .setVersion("1.0")
   .addBearerAuth()
   .build();
 ```
@@ -223,11 +225,13 @@ src/
 ### 2. 开发规范
 
 1. **命名规范**
+
    - 文件名使用小写字母，单词间用横线连接
    - 类名使用 PascalCase
    - 方法和变量使用 camelCase
 
 2. **代码组织**
+
    - 每个模块都应该有自己的目录
    - 相关的功能应该放在同一个模块中
    - 公共功能放在 common 目录下
@@ -240,11 +244,13 @@ src/
 ### 3. 性能优化
 
 1. **缓存策略**
+
    - 合理使用 Redis 缓存
    - 设置适当的缓存过期时间
    - 及时清理无用缓存
 
 2. **数据库优化**
+
    - 建立合适的索引
    - 使用投影查询
    - 避免大量数据查询
@@ -257,6 +263,7 @@ src/
 ## 常见问题与解决方案
 
 1. **跨域处理**
+
 ```typescript
 // main.ts
 app.enableCors({
@@ -266,6 +273,7 @@ app.enableCors({
 ```
 
 2. **文件上传**
+
 ```typescript
 // 使用 multer 处理文件上传
 @UseInterceptors(FileInterceptor('file'))
@@ -276,6 +284,7 @@ uploadFile(@UploadedFile() file) {
 ```
 
 3. **请求验证**
+
 ```typescript
 // 使用 class-validator 进行请求验证
 export class CreateUserDto {
@@ -292,11 +301,13 @@ export class CreateUserDto {
 ## 部署与维护
 
 1. **环境配置**
+
    - 使用 .env 文件管理环境变量
    - 区分开发和生产环境配置
    - 敏感信息加密存储
 
 2. **日志管理**
+
    - 使用统一的日志格式
    - 分级别记录日志
    - 定期清理日志文件

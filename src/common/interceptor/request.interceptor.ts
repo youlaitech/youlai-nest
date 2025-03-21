@@ -8,17 +8,14 @@ import {
 } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { tap, map } from "rxjs/operators";
-import { XCommonRet } from "xmcommon";
+import { utils, XCommonRet } from "xmcommon";
 
 import { Response, Request } from "express";
-// import { XCommUtils } from './commutils';
 import { Reflector } from "@nestjs/core";
 import { METADATA_NOT_CHECK } from "../decorator/not_check";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 import { getReqMainInfo } from "../../utils/utils";
-import { XRetUtils } from "./ret_utils";
-
 /** 每次请求的记数器 */
 let requestSeq = 0;
 
@@ -77,22 +74,16 @@ export class XRequestInterceptor implements NestInterceptor {
             }
             // 这里要求所有的请求返回，都是XCommonRet
             if (paramData instanceof XCommonRet) {
-              return XRetUtils.byCommonRet(paramData);
+              const data = utils.isNull(paramData.data) ? undefined : paramData.data;
+              return {
+                ret: paramData.err,
+                msg: paramData.msg,
+                data,
+              };
             } else if (paramData === undefined) {
               this.logger.error("--------- data is undefine!");
               return paramData;
             } else {
-              // const r: IHttpRet = {
-              //   ret: -1,
-              //   meg: "这个不是XCommonRet对象!",
-              // }
-              //  先注释了
-              // const r: IHttpRet = {
-              //   ret: -1,
-              //   msg: '这个请求返回的不是XCommonRet对象!',
-              //   url: req.originalUrl,
-              // };
-              // log.error('返回错误:' + JSON.stringify(r));
               return paramData;
             }
           })

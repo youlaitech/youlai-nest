@@ -2,8 +2,8 @@ import { ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
 import { IS_PUBLIC_KEY } from "../common/public/public.decorator";
-import { ApiException } from "../common/http-exception/api.exception";
-import { BusinessErrorCode } from "../common/enums/business-error-code.enum";
+import { BusinessException } from "../common/exceptions/business.exception";
+import { ResponseCode } from "src/common/enums/response-code.enum";
 
 @Injectable()
 export class AuthGuard extends PassportAuthGuard("jwt") {
@@ -25,7 +25,7 @@ export class AuthGuard extends PassportAuthGuard("jwt") {
     const token = request.headers.authorization;
 
     if (!token) {
-      throw new ApiException("未登录或登录已过期", BusinessErrorCode.USER_UNAUTHORIZED);
+      throw new BusinessException(ResponseCode.ACCESS_TOKEN_INVALID);
     }
 
     return super.canActivate(context);
@@ -33,7 +33,7 @@ export class AuthGuard extends PassportAuthGuard("jwt") {
 
   handleRequest(err: any, user: any) {
     if (err || !user) {
-      throw new ApiException("登录已过期，请重新登录", BusinessErrorCode.USER_LOGIN_EXPIRED);
+      throw new BusinessException(ResponseCode.ACCESS_TOKEN_INVALID);
     }
     return user;
   }

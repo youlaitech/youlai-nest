@@ -14,13 +14,12 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import logger from "./common/logger.middleware";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
-import { HttpExceptionFilter } from "./common/http-exception/http-exception.filter";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { XRequestInterceptor } from "./common/interceptor/request.interceptor";
 import { AuthModule } from "./auth/auth.module";
 import { RedisModule } from "@liaoliaots/nestjs-redis";
 import { RedisCacheModule } from "./cache/redis_cache.module";
 import { OssModule } from "./oss/oss.module";
-import { ErrorHandlingService } from "./common/services/error-handling.service";
 import mongoose from "mongoose";
 import { AuthGuard } from "./auth/auth.guard";
 import { SystemModule } from "./system/system.module";
@@ -94,7 +93,6 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
   controllers: [AppController],
   providers: [
     AppService,
-    ErrorHandlingService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
@@ -115,7 +113,7 @@ export class AppModule implements OnModuleInit, NestModule {
   onModuleInit() {
     mongoose.set("toJSON", {
       virtuals: true,
-      transform: (doc, ret) => {
+      transform: (_doc, ret) => {
         ret.id = ret._id.toString(); // 转换 _id 为 id
         delete ret._id; // 删除 _id 字段
         delete ret.__v; // 删除版本字段（如果存在）

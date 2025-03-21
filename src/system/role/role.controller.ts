@@ -52,7 +52,7 @@ export class RoleController {
 
   @ApiOperation({ summary: "获取角色表单数据" })
   @Get(":id/form")
-  async findForm(@Param("id") id: string) {
+  async getRoleForm(@Param("id") id: string) {
     return await this.rolesService.findOne(id);
   }
 

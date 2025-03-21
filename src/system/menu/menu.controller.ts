@@ -12,13 +12,13 @@ export class MenuController {
 
   @ApiOperation({ summary: "获取菜单树形表格列表" })
   @Get()
-  async findAll(@Query("keywords") keywords: string) {
-    return await this.menuService.findSearch(keywords);
+  async getMenus(@Query("keywords") keywords: string) {
+    return await this.menuService.getMenus(keywords);
   }
 
   @ApiOperation({ summary: "获取菜单路由列表" })
   @Get("routes")
-  async findMenu(@Req() request): Promise<Route[]> {
+  async getRoutes(@Req() request): Promise<Route[]> {
     const id = request["user"]?.userId || "";
     const permIds = await this.menuService.findRouteIDs(id);
     const data = await this.menuService.findRoutes(permIds);
@@ -44,8 +44,8 @@ export class MenuController {
 
   @ApiOperation({ summary: "获取菜单表单数据" })
   @Get(":id/form")
-  async findOne(@Param("id") id: string): Promise<any> {
-    const form = await this.menuService.findOne(id);
+  async getMenuForm(@Param("id") id: string): Promise<any> {
+    const form = await this.menuService.getMenuForm(id);
     const data = { ...form, id: form._id, type: typeMap.get(form.type) };
     delete data._id;
     return data;
@@ -67,7 +67,7 @@ export class MenuController {
 
   @ApiOperation({ summary: "删除菜单" })
   @Delete(":id")
-  remove(@Param("id") _id: string) {
-    return this.menuService.remove(_id);
+  deleteMenu(@Param("id") id: string) {
+    return this.menuService.deleteMenu(id);
   }
 }

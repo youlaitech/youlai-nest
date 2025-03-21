@@ -4,8 +4,7 @@ import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { Menus } from "./menu.schema";
-import { ApiException } from "../../common/http-exception/api.exception";
-import { BusinessErrorCode } from "../../common/enums/business-error-code.enum";
+import { BusinessException } from "../../common/exceptions/business.exception";
 import { UserService } from "../user/user.service";
 import { typeMap, MenuItem, Route } from "./interface/menu.type";
 
@@ -17,36 +16,8 @@ export class MenuService {
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService
   ) {}
-  async create(createMenuDto: CreateMenuDto) {
-    try {
-      const createdMenu = new this.menuModel({
-        ...createMenuDto,
-        createTime: Math.floor(Date.now() / 1000),
-        // updateTime: Math.floor(Date.now() / 1000)
-      });
-      await createdMenu.save();
-      return "操作成功";
-    } catch (error) {
-      // 处理错误逻辑
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-    }
-  }
+
   async findAll() {
-    try {
-      const data = await this.menuModel.find().sort({ sort: "asc" }).lean().exec();
-      const permIds: string[] = [];
-      data.map((item: any) => {
-        permIds.push(item._id.toString());
-      });
-      return permIds;
-    } catch (error) {
-      throw new ApiException(
-        error?.errorResponse?.errmsg || error?.errorResponse || error,
-        BusinessErrorCode.DB_QUERY_ERROR
-      );
-    }
-  }
-  async findRouteAll() {
     return await this.menuModel
       .find({ type: { $ne: 3 }, isDeleted: 0 })
       .sort({ sort: "asc" })
@@ -97,30 +68,28 @@ export class MenuService {
   }
 
   async findRouteIDs(id: string): Promise<any> {
-    try {
-      const permIds: string[] = await this.userService.findUser(id);
-
-      return permIds;
-    } catch (error) {
-      console.log(error);
-      // 处理错误逻辑
-      throw new ApiException(error, BusinessErrorCode.DB_QUERY_ERROR);
-    }
+    const permIds: string[] = await this.userService.getUserPerms(id);
+    return permIds;
   }
 
-  async findSearch(keyword: string) {
-    try {
-      const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
-      let filter = {};
-      if (keyword) {
-        filter = { name: { $regex: regex } };
-      }
-      const menus = await this.menuModel.find(filter).sort({ sort: "asc" }).lean().exec();
-      return this.buildMenuTree(menus);
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+  /**
+   * 获取菜单树形表格列表
+   *
+   * @param keyword
+   * @returns
+   */
+  async getMenus(keyword: string) {
+    const regex = new RegExp(keyword, "i");
+    let query = {};
+    if (keyword) {
+      query = { name: { $regex: regex } };
     }
+    const menus = await this.menuModel.find(query).sort({ sort: "asc" }).lean().exec();
+
+    console.log("menus", menus);
+    return this.buildMenuTree(menus);
   }
+
   async findOptions() {
     try {
       const Options = await this.menuModel
@@ -133,22 +102,53 @@ export class MenuService {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-  async findOne(id: string) {
-    try {
-      return await this.menuModel.findById(id).sort({ sort: "asc" }).lean().exec();
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+
+  async create(createMenuDto: CreateMenuDto) {
+    const createdMenu = new this.menuModel({
+      ...createMenuDto,
+      createTime: Math.floor(Date.now() / 1000),
+    });
+    await createdMenu.save();
+    return true;
   }
-  // 构建嵌套的树结构
+
+  /**
+   * 获取菜单表单
+   *
+   * @param id  菜单ID
+   * @returns
+   */
+  async getMenuForm(id: string) {
+    return await this.menuModel.findById(id).lean().exec();
+  }
+
+  /**
+   * 更新菜单
+   *
+   * @param id
+   * @param updateMenuDto
+   * @returns
+   */
   async update(id: string, updateMenuDto: UpdateMenuDto) {
     return await this.menuModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
   }
 
-  async remove(_id: string) {
-    return await this.menuModel.findByIdAndDelete(_id).exec();
+  /**
+   * 删除菜单
+   *
+   * @param id
+   * @returns
+   */
+  async deleteMenu(id: string) {
+    return await this.menuModel.findByIdAndDelete(id).exec();
   }
-  // 菜单树形数据处理
+
+  /**
+   * 菜单树形数据处理
+   *
+   * @param menuList
+   * @returns
+   */
   private buildMenuTree(menuList: any[]): any[] {
     const map: { [key: string]: any } = {};
     const roots: any[] = [];
@@ -179,8 +179,13 @@ export class MenuService {
 
     return roots;
   }
-  // options
-  // 构建树形结构
+
+  /**
+   * 构建菜单树形下拉选项
+   *
+   * @param menus
+   * @returns
+   */
   private buildOptionsTree(menus: any[]): any[] {
     const map = new Map<string, any>();
     const roots: any[] = [];
@@ -206,6 +211,13 @@ export class MenuService {
     return roots;
   }
 
+  /**
+   * 构建菜单路由
+   *
+   * @param data 菜单数据
+   * @param parentId 父菜单ID
+   * @returns
+   */
   private buildRoutes(data: MenuItem[], parentId: string | number = 0): Route[] {
     return data
       .filter((item) => item.parentId === parentId)

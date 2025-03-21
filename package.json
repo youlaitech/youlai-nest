@@ -6,9 +6,9 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "start:dev": " nest start",
-    "start:prod": " node dist/main",
-    "start:debug": " nest start --debug",
+    "start:dev": "nest start",
+    "start:prod": "node dist/main",
+    "start:debug": "nest start --debug",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

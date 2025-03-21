@@ -29,7 +29,7 @@ export class DeptController {
     @Query("status") status: string
   ) {
     const deptTreePath = request["user"]?.deptTreePath || "0";
-    return await this.deptService.findSearch(keywords, status, deptTreePath);
+    return await this.deptService.findAll(keywords, status, deptTreePath);
   }
 
   @ApiOperation({ summary: "获取部门下拉树形列表" })
@@ -67,7 +67,7 @@ export class DeptController {
     const idArray = ids.split(",");
 
     for (const id of idArray) {
-      const success = await this.deptService.deleted(id);
+      const success = await this.deptService.deleteDept(id);
       if (!success) {
         throw new HttpException(
           `Failed to delete department with ID: ${id}`,

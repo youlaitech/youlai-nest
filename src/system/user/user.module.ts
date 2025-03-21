@@ -8,11 +8,9 @@ import { MenuModule } from "../menu/menu.module";
 import { DeptModule } from "../dept/dept.module";
 import { RedisCacheModule } from "../../cache/redis_cache.module";
 
-const UserTable = MongooseModule.forFeature([{ name: "Users", schema: userSchema }]);
-
 @Module({
   imports: [
-    UserTable,
+    MongooseModule.forFeature([{ name: "User", schema: userSchema }]),
     forwardRef(() => MenuModule),
     forwardRef(() => RoleModule),
     forwardRef(() => DeptModule),

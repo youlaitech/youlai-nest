@@ -19,7 +19,7 @@ import { IsCreateBy, IsUpdateBy } from "../../common/public/public.decorator";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
 
 @ApiTags("06.字典接口")
-@Controller("dict")
+@Controller("dicts")
 export class DictController {
   constructor(private readonly dictService: DictService) {}
 
@@ -81,21 +81,27 @@ export class DictController {
   // 字典项相关接口
   //---------------------------------------------------
   @ApiOperation({ summary: "字典项分页列表" })
-  @Get("page")
+  @Get(":dictCode/items/page")
   async getDictDataPage(
     @Query("pageNum") pageNum: number,
     @Query("pageSize") pageSize: number,
-    @Query("dictCode") dictCode: string,
+    @Param("dictCode") dictCode: string,
     @Query("keywords") keywords?: string
   ) {
     return await this.dictService.getDictItemPage(pageNum, pageSize, dictCode, keywords);
   }
 
+  @ApiOperation({ summary: "字典项列表" })
+  @Get(":dictCode/items")
+  async getDictItems(@Param("dictCode") dictCode: string) {
+    return await this.dictService.getDictItems(dictCode);
+  }
+
   @ApiOperation({ summary: "新增字典项" })
   @IsCreateBy()
-  @Post()
-  async createDictData(@Req() request, @Body() createDictItemDto: CreateDictItemDto) {
-    return await this.dictService.createDictData({
+  @Post(":dictCode/items")
+  async createDictItem(@Req() request, @Body() createDictItemDto: CreateDictItemDto) {
+    return await this.dictService.createDictItem({
       ...createDictItemDto,
       createBy: request["user"]?.userId,
       deptTreePath: request["user"]?.deptTreePath || "0",
@@ -103,22 +109,22 @@ export class DictController {
   }
 
   @ApiOperation({ summary: "字典项表单数据" })
-  @Get(":id/form")
-  async getDictItemForm(@Param("id") id: string) {
-    return await this.dictService.getDictItemForm(id);
+  @Get(":dictCode/items/:itemId/form")
+  async getDictItemForm(@Param("itemId") itemId: string) {
+    return await this.dictService.getDictItemForm(itemId);
   }
 
   @ApiOperation({ summary: "更新字典项" })
   @IsUpdateBy()
-  @Put(":id")
-  async updateDictData(@Param("id") id: string, @Body() updateData: any) {
-    return await this.dictService.updateDictItem(id, updateData);
+  @Put(":dictCode/items/:itemId")
+  async updateDictData(@Param("itemId") itemId: string, @Body() updateData: any) {
+    return await this.dictService.updateDictItem(itemId, updateData);
   }
 
   @ApiOperation({ summary: "删除字典项" })
   @IsUpdateBy()
-  @Delete(":id")
-  async deleteDictData(@Param("id") id: string) {
-    return await this.dictService.deleteDictItems(id);
+  @Delete(":dictCode/items/:itemIds")
+  async deleteDictData(@Param("itemIds") itemIds: string) {
+    return await this.dictService.deleteDictItems(itemIds);
   }
 }

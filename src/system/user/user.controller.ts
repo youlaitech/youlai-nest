@@ -3,15 +3,13 @@ import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { Users } from "./user.schema";
-import { ApiException } from "../../common/http-exception/api.exception";
-import { BusinessErrorCode } from "../../common/enums/business-error-code.enum";
+import { User } from "./user.schema";
+import { BusinessException } from "../../common/exceptions/business.exception";
 import { DEFAULT_PASSWORD } from "src/common/constants";
 
 @ApiTags("02.用户接口")
 @Controller("users")
 export class UserController {
-  // 注入 UserService
   constructor(private readonly userService: UserService) {}
 
   @ApiOperation({ summary: "用户分页列表" })
@@ -41,7 +39,7 @@ export class UserController {
 
   @ApiOperation({ summary: "获取当前用户信息" })
   @Get("me")
-  async getMe(@Req() request): Promise<Users> {
+  async getMe(@Req() request): Promise<User> {
     const id = request["user"]?.userId || "";
     return await this.userService.findMe(id);
   }
@@ -59,8 +57,8 @@ export class UserController {
 
   @ApiOperation({ summary: "获取用户表单数据" })
   @Get(":id/form")
-  findform(@Param("id") id: string) {
-    return this.userService.findFrom(id);
+  getUserForm(@Param("id") id: string) {
+    return this.userService.getUserForm(id);
   }
 
   @ApiOperation({ summary: "修改用户" })
@@ -75,9 +73,9 @@ export class UserController {
     const idArray = ids.split(",");
     const results = await Promise.all(
       idArray.map(async (id) => {
-        const success = await this.userService.removeItem(id);
+        const success = await this.userService.deleteUser(id);
         if (!success) {
-          throw new ApiException(`删除用户失败: ${id}`, BusinessErrorCode.USER_DELETE_ERROR);
+          throw new BusinessException(`删除用户失败: ${id}`);
         }
         return success;
       })

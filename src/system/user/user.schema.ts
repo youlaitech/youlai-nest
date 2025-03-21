@@ -11,10 +11,7 @@ import { Schema as MongooseSchema } from "mongoose";
     updatedAt: "updateTime",
   },
 })
-export class Users extends BaseEntity {
-  // @Prop({ type: mongoose.Schema.Types.ObjectId })
-  // _id: string;
-
+export class User extends BaseEntity {
   @Prop({ type: String, maxlength: 30 })
   username: string;
 
@@ -64,4 +61,4 @@ export class Users extends BaseEntity {
   @Prop()
   roles: string[]; // 角色
 }
-export const userSchema = SchemaFactory.createForClass(Users);
+export const userSchema = SchemaFactory.createForClass(User);

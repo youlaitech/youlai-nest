@@ -1,83 +1,65 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-  Inject,
-} from "@nestjs/common";
+import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, HttpException } from "@nestjs/common";
 import { Request, Response } from "express";
-import { WINSTON_MODULE_PROVIDER } from "nest-winston";
-import { Logger } from "winston";
-import { ApiException } from "../http-exception/api.exception";
-import { BusinessErrorCode } from "../enums/business-error-code.enum";
-
-interface ErrorResponse {
-  code: number;
-  message: string;
-  timestamp: string;
-  path: string;
-  method: string;
-  params?: any;
-}
+import { BusinessException } from "../exceptions/business.exception";
+import { ResponseCode } from "../enums/response-code.enum";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}
-
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    // 准备错误响应数据
-    const errorResponse = this.prepareErrorResponse(exception, request);
+    // 生产环境安全响应
+    const isProduction = process.env.NODE_ENV === "prod";
+    const safeMessage = isProduction ? "服务器开小差了～" : undefined;
 
-    // 记录错误日志
-    this.logError(errorResponse, exception);
-
-    // 发送响应
-    response.status(HttpStatus.OK).json(errorResponse);
-  }
-
-  private prepareErrorResponse(exception: unknown, request: Request): ErrorResponse {
-    let code: number;
-    let message: string;
-
-    if (exception instanceof ApiException) {
-      code = exception.getErrorCode();
-      message = exception.getErrorMessage();
-    } else if (exception instanceof HttpException) {
-      code = exception.getStatus();
-      message = exception.message;
-    } else {
-      code = BusinessErrorCode.BUSINESS_ERROR;
-      message = "服务器内部错误";
-    }
-
-    return {
-      code,
-      message,
-      timestamp: new Date().toISOString(),
+    // 构造基础响应体
+    const responseBody: Record<string, any> = {
+      data: null,
       path: request.url,
-      method: request.method,
-      params: {
-        query: request.query,
-        body: request.body,
-      },
-    };
-  }
-
-  private logError(errorResponse: ErrorResponse, exception: unknown): void {
-    const logContext = {
-      ...errorResponse,
-      stack: exception instanceof Error ? exception.stack : undefined,
+      timestamp: new Date().toISOString(),
     };
 
-    if (errorResponse.code >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error("Server Error", logContext);
-    } else {
-      this.logger.warn("Client Error", logContext);
+    // 处理业务异常
+    if (exception instanceof BusinessException) {
+      const status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+
+      Object.assign(responseBody, {
+        code: exceptionResponse["code"] || ResponseCode.SYSTEM_ERROR.code,
+        msg: exceptionResponse["msg"] || safeMessage,
+      });
+
+      return response.status(status).json(responseBody);
     }
+
+    // 处理NestJS内置HTTP异常
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+
+      Object.assign(responseBody, {
+        code: ResponseCode.SYSTEM_ERROR.code,
+        msg:
+          typeof exceptionResponse === "object"
+            ? (exceptionResponse as any).message || safeMessage
+            : exceptionResponse,
+      });
+
+      return response.status(status).json(responseBody);
+    }
+
+    // 处理其他未捕获异常
+    const status = HttpStatus.INTERNAL_SERVER_ERROR;
+    const error = exception as Error;
+
+    Object.assign(responseBody, {
+      code: ResponseCode.SYSTEM_ERROR.code,
+      msg: isProduction ? safeMessage : error.message,
+      stack: isProduction ? undefined : error.stack, // 非生产环境返回堆栈
+    });
+
+    return response.status(status).json(responseBody);
   }
 }
