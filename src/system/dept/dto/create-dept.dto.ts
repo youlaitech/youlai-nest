@@ -34,4 +34,6 @@ export class CreateDeptDto {
   @IsOptional()
   @IsMongoId({ message: "修改人ID必须是有效的ObjectId" })
   updateBy?: string; // 修改人ID
+
+  createTime?: number; // 创建时间
 }

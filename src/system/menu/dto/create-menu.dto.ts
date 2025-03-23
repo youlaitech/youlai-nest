@@ -1,7 +1,7 @@
 import { IsString, IsNumber, IsOptional, IsBoolean, MaxLength, IsMongoId } from "class-validator";
-import { BaseEntityDto } from "../../../common/dto/BaseEntity.dto";
+import { BaseDto } from "../../../common/dto/base.dto";
 
-export class CreateMenuDto extends BaseEntityDto {
+export class CreateMenuDto extends BaseDto {
   // 菜单名称
   @IsString()
   @MaxLength(20)
@@ -18,9 +18,7 @@ export class CreateMenuDto extends BaseEntityDto {
   parentId?: string | number;
 
   // 菜单类型（M目录 C菜单 F按钮）
-  @IsString()
-  @MaxLength(10)
-  type: string;
+  type: number;
 
   // 图标
   @IsOptional()

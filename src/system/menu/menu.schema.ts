@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
 import mongoose from "mongoose";
-import { BaseEntity } from "../../common/schema/baseEntity.schema";
+import { BaseSchema } from "../../common/schemas/base.schema";
 
 @Schema({
   collection: "sys_menu",
@@ -11,19 +11,15 @@ import { BaseEntity } from "../../common/schema/baseEntity.schema";
     updatedAt: "updateTime",
   },
 })
-export class Menus extends BaseEntity {
+export class Menu extends BaseSchema {
   // 父级id
   @Prop({
     type: mongoose.Schema.Types.Mixed,
-    ref: "Menus",
+    ref: "Menu",
     default: null,
     comment: "父菜单ID",
   })
   parentId: mongoose.Types.ObjectId | string | null;
-
-  // 创建者部门树路径
-  @Prop({ type: String, default: null, comment: "创建者部门树路径" })
-  deptTreePath: string | null;
 
   // 菜单名称
   @Prop({ type: String, required: true, maxlength: 64, comment: "菜单名称" })
@@ -109,5 +105,5 @@ export class Menus extends BaseEntity {
   params: JSON | null;
 }
 
-export type MenuDocument = Menus & Document;
-export const MenuSchema = SchemaFactory.createForClass(Menus);
+export type MenuDocument = Menu & Document;
+export const MenuSchema = SchemaFactory.createForClass(Menu);

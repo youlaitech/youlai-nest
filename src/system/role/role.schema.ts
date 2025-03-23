@@ -1,16 +1,16 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
-import { BaseEntity } from "../../common/schema/baseEntity.schema";
+import { BaseSchema } from "../../common/schemas/base.schema";
 
 @Schema({
-  collection: "sys_user_role", // 指定集合名称
+  collection: "sys_user_role",
   timestamps: {
     currentTime: () => Date.now(),
     createdAt: "createTime",
     updatedAt: "updateTime",
   },
 })
-export class Role extends BaseEntity {
+export class Role extends BaseSchema {
   // 角色名称
   @Prop({
     type: String,

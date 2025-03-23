@@ -3,7 +3,7 @@ import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { NestInterceptor, ValidationPipe } from "@nestjs/common";
 
-import { ResponseInterceptor } from "./common/interceptor/response.interceptor";
+import { TransformInterceptor } from "./core/interceptors/transform.interceptor";
 import { ConfigService } from "@nestjs/config";
 import * as session from "express-session";
 
@@ -44,8 +44,9 @@ async function bootstrap() {
     //配置swgger地址
     SwaggerModule.setup("apiDoc", app, document);
     const reflector = app.get(Reflector);
-    app.useGlobalInterceptors(<NestInterceptor>new ResponseInterceptor(reflector));
+    app.useGlobalInterceptors(<NestInterceptor>new TransformInterceptor(reflector));
     app.useGlobalPipes(new ValidationPipe());
+
     await app.listen(configService.get("SERVER_PORT"));
     console.log("http://localhost:" + configService.get("SERVER_PORT"));
   } catch (e) {}

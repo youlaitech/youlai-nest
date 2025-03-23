@@ -2,18 +2,11 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nes
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { ResponseCode } from "../enums/response-code.enum";
-import { Response } from "../types/response.type";
+import { ResultCode } from "../../common/enums/result-code.enum";
+import { Response } from "../../common/types/response.type";
 
-/**
- * 响应标准化拦截器
- *
- * 注意：此拦截器仅处理成功响应（HTTP状态码 2xx），
- * 控制器或服务中抛出的 HttpException 等异常会由全局异常过滤器处理，
- * 不会进入本拦截器的 map 处理流程
- */
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
   private readonly EXCLUDED_PATHS = ["/wechat-push/token"];
 
   constructor(private reflector: Reflector) {}
@@ -52,8 +45,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
     return next.handle().pipe(
       map((data) => {
         return {
-          code: ResponseCode.SUCCESS.code,
-          msg: ResponseCode.SUCCESS.msg,
+          code: ResultCode.SUCCESS.code,
+          msg: ResultCode.SUCCESS.msg,
           data,
           timestamp: Math.floor(Date.now() / 1000),
         };
@@ -75,7 +68,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
         ...request.body,
         createBy: user.userId,
         deptTreePath: user.deptTreePath || "0",
-        createTime: Math.floor(Date.now() / 1000),
+        createTime: Date.now(),
       };
       Object.defineProperty(request, "body", { value: updatedBody, writable: false });
     }
@@ -83,7 +76,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
     const updatedBody = {
       ...request.body,
       updateBy: user.userId,
-      updateTime: Math.floor(Date.now() / 1000),
+      updateTime: Date.now(),
     };
     Object.defineProperty(request, "body", { value: updatedBody, writable: false });
   }

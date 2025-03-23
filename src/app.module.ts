@@ -1,33 +1,41 @@
+// NestJS Core
 import {
   MiddlewareConsumer,
   Module,
   NestModule,
-  RequestMethod,
   OnModuleInit,
+  RequestMethod,
 } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { WinstonModule } from "nest-winston";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
+import { MongooseModule } from "@nestjs/mongoose";
+
+// Third-party Modules
 import * as winston from "winston";
 import "winston-daily-rotate-file";
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
-import logger from "./common/logger.middleware";
-import { ConfigModule, ConfigService } from "@nestjs/config";
-import { MongooseModule } from "@nestjs/mongoose";
-import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
-import { XRequestInterceptor } from "./common/interceptor/request.interceptor";
-import { AuthModule } from "./auth/auth.module";
+import { WinstonModule } from "nest-winston";
 import { RedisModule } from "@liaoliaots/nestjs-redis";
-import { RedisCacheModule } from "./cache/redis_cache.module";
-import { OssModule } from "./oss/oss.module";
 import mongoose from "mongoose";
-import { AuthGuard } from "./auth/auth.guard";
-import { SystemModule } from "./system/system.module";
 
-import mongodbConfig from "./config/mongodb.config";
-import redisConfig from "./config/redis.config";
-import ossConfig from "./config/oss.config";
+// Application Modules
+import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
+import { RedisCacheModule } from "./cache/redis_cache.module";
+import { OssModule } from "./oss/oss.module"; // 对象存储模块
+import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
+
+// Core Components
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
+import { LoggerMiddleware } from "./logger/logger.middleware";
+import { HttpExceptionFilter } from "./core/filters/http-exception.filter";
+import { XRequestInterceptor } from "./core/interceptors/request.interceptor";
+import { AuthGuard } from "./auth/auth.guard";
+
+// Configuration Files
 import jwtConfig from "./config/jwt.config";
+import mongodbConfig from "./config/mongodb.config";
+import ossConfig from "./config/oss.config";
+import redisConfig from "./config/redis.config";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 
@@ -88,7 +96,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     AuthModule,
     RedisCacheModule,
     OssModule,
-    SystemModule,
+    DictModule,
   ],
   controllers: [AppController],
   providers: [
@@ -130,6 +138,6 @@ export class AppModule implements OnModuleInit, NestModule {
     });
   }
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(logger).forRoutes({ path: "*", method: RequestMethod.ALL });
+    consumer.apply(LoggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
   }
 }

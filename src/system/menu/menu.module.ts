@@ -6,9 +6,12 @@ import { MenuSchema } from "./menu.schema";
 import { UserModule } from "../user/user.module";
 import { RoleModule } from "../role/role.module";
 
-const MenuTable = MongooseModule.forFeature([{ name: "Menus", schema: MenuSchema }]);
 @Module({
-  imports: [MenuTable, forwardRef(() => UserModule), forwardRef(() => RoleModule)],
+  imports: [
+    MongooseModule.forFeature([{ name: "Menu", schema: MenuSchema }]),
+    forwardRef(() => UserModule),
+    forwardRef(() => RoleModule),
+  ],
   controllers: [MenuController],
   providers: [MenuService],
   exports: [MenuService],

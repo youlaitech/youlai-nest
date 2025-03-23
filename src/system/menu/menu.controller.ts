@@ -3,7 +3,7 @@ import { MenuService } from "./menu.service";
 import { CreateMenuDto } from "./dto/create-menu.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { Route, typeMapValue, typeMap } from "./interface/menu.type";
+import { Route } from "./interface/menu.type";
 
 @ApiTags("04.菜单接口")
 @Controller("menus")
@@ -19,10 +19,9 @@ export class MenuController {
   @ApiOperation({ summary: "获取菜单路由列表" })
   @Get("routes")
   async getRoutes(@Req() request): Promise<Route[]> {
-    const id = request["user"]?.userId || "";
-    const permIds = await this.menuService.findRouteIDs(id);
-    const data = await this.menuService.findRoutes(permIds);
-    return data;
+    const userId = request["user"]?.userId || "";
+    const routes = await this.menuService.getRoutes(userId);
+    return routes;
   }
 
   @ApiOperation({ summary: "获取菜单下拉树形列表" })
@@ -36,7 +35,6 @@ export class MenuController {
   async create(@Req() request, @Body() createMenuDto: CreateMenuDto) {
     return await this.menuService.create({
       ...createMenuDto,
-      type: typeMapValue.get(createMenuDto.type),
       createBy: request["user"]?.userId,
       deptTreePath: request["user"]?.deptTreePath || "0",
     });
@@ -46,7 +44,7 @@ export class MenuController {
   @Get(":id/form")
   async getMenuForm(@Param("id") id: string): Promise<any> {
     const form = await this.menuService.getMenuForm(id);
-    const data = { ...form, id: form._id, type: typeMap.get(form.type) };
+    const data = { ...form, id: form._id };
     delete data._id;
     return data;
   }

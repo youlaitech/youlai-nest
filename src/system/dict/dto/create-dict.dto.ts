@@ -1,4 +1,4 @@
-import { BaseEntityDto } from "../../../common/dto/BaseEntity.dto";
+import { BaseDto } from "../../../common/dto/base.dto";
 
 import { IsOptional, IsString, IsNumber, IsIn } from "class-validator";
 
@@ -59,7 +59,7 @@ export class DictPageVoDto {
 /**
  * 字典表单 DTO
  */
-export class DictFormDto extends BaseEntityDto {
+export class DictFormDto extends BaseDto {
   /**
    * 字典ID
    */
@@ -79,7 +79,7 @@ export class DictFormDto extends BaseEntityDto {
    */
   @IsOptional()
   @IsString()
-  dict_code?: string;
+  dictCode?: string;
 
   /**
    * 字典状态（1-启用，0-禁用）

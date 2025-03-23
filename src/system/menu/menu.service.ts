@@ -3,16 +3,15 @@ import { CreateMenuDto } from "./dto/create-menu.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { Menus } from "./menu.schema";
-import { BusinessException } from "../../common/exceptions/business.exception";
+import { Menu } from "./menu.schema";
 import { UserService } from "../user/user.service";
-import { typeMap, MenuItem, Route } from "./interface/menu.type";
+import { MenuItem, Route } from "./interface/menu.type";
 
 @Injectable()
 export class MenuService {
   constructor(
-    @InjectModel(Menus.name) // 使用 @InjectModel 注入 Mongoose 模型
-    private menuModel: Model<Menus>,
+    @InjectModel(Menu.name) // 使用 @InjectModel 注入 Mongoose 模型
+    private menuModel: Model<Menu>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService
   ) {}
@@ -53,23 +52,26 @@ export class MenuService {
     });
     return perms;
   }
-  async findRoutes(menuIds: string[]) {
-    const res: any = await this.menuModel
-      .find({ _id: { $in: menuIds }, type: { $ne: 3 } })
-      .sort({ sort: "asc" })
-      .exec();
-    // 添加日志
-    console.log("res", res);
 
-    return this.buildRoutes(res);
-  }
   async findPermsList(filter) {
     return await this.menuModel.find(filter);
   }
 
-  async findRouteIDs(id: string): Promise<any> {
-    const permIds: string[] = await this.userService.getUserPerms(id);
-    return permIds;
+  /**
+   *  获取用户菜单
+   *
+   * @param userId 用户ID
+   */
+  async getRoutes(userId: string) {
+    const menuIds: string[] = await this.userService.getUserMenuIds(userId);
+    const menus: any = await this.menuModel
+      .find({ _id: { $in: menuIds }, type: { $ne: 3 } })
+      .sort({ sort: "asc" })
+      .exec();
+
+    console.log("获取菜单", menus);
+
+    return this.buildRoutes(menus);
   }
 
   /**
@@ -86,7 +88,6 @@ export class MenuService {
     }
     const menus = await this.menuModel.find(query).sort({ sort: "asc" }).lean().exec();
 
-    console.log("menus", menus);
     return this.buildMenuTree(menus);
   }
 
@@ -159,7 +160,6 @@ export class MenuService {
       map[menu._id] = {
         ...menu,
         children: [],
-        type: typeMap.get(menu.type),
         id: menu._id,
       };
     });
@@ -218,7 +218,7 @@ export class MenuService {
    * @param parentId 父菜单ID
    * @returns
    */
-  private buildRoutes(data: MenuItem[], parentId: string | number = 0): Route[] {
+  private buildRoutes(data: MenuItem[], parentId: string = "0"): Route[] {
     return data
       .filter((item) => item.parentId === parentId)
       .map((item) => {

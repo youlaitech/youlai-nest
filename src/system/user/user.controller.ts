@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Param, Delete, Req, Query, Put } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Req,
+  Query,
+  Put,
+  Inject,
+} from "@nestjs/common";
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -6,11 +17,17 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { User } from "./user.schema";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { DEFAULT_PASSWORD } from "src/common/constants";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
+import { Logger } from "winston";
 
 @ApiTags("02.用户接口")
 @Controller("users")
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    @Inject(WINSTON_MODULE_PROVIDER)
+    private logger: Logger
+  ) {}
 
   @ApiOperation({ summary: "用户分页列表" })
   @Get("page")
@@ -25,6 +42,8 @@ export class UserController {
     @Query("endTime") endTime: string
   ) {
     const deptTreePath = request["user"]?.deptTreePath || "0";
+
+    this.logger.info("用户分页列表");
     return await this.userService.getUserPage(
       page,
       size,

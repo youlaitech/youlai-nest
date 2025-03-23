@@ -1,11 +1,9 @@
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { WINSTON_MODULE_PROVIDER } from "nest-winston";
-import { Logger } from "winston";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { User } from "./user.schema";
+import { User, UserSchema } from "./user.schema";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import * as crypto from "crypto";
 import encry from "../../utils/crypto";
@@ -13,15 +11,15 @@ import { RoleService } from "../role/role.service";
 import { matchDeptPath } from "../../common/shared/regex-utils";
 import { DeptService } from "../dept/dept.service";
 import { RedisCacheService } from "../../cache/redis_cache.service";
-import { ResponseCode } from "src/common/enums/response-code.enum";
+import { ResultCode } from "src/common/enums/result-code.enum";
+import { BaseSchema } from "src/common/schemas/base.schema";
 
 @Injectable()
 export class UserService {
   constructor(
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     @InjectModel("User") private readonly userModel: Model<User>,
     @Inject(forwardRef(() => RoleService))
-    private readonly rolesService: RoleService,
+    private readonly roleService: RoleService,
     @Inject(forwardRef(() => DeptService))
     private readonly deptService: DeptService,
     private readonly cacheService: RedisCacheService
@@ -30,10 +28,9 @@ export class UserService {
   // 用户缓存键前缀
   private readonly USER_CACHE_PREFIX = "user:";
   private readonly USER_LIST_CACHE_KEY = "user:list";
-  private readonly CACHE_TTL = 3600; // 1小时
 
   /**
-   * 分页查询用户列表
+   * 用户分页列表
    *
    * @param pageNum
    * @param pageSize
@@ -91,6 +88,7 @@ export class UserService {
     const total = await this.userModel
       .countDocuments({ ...matchDeptPath(deptTreePath), ...query })
       .exec();
+
     return { list: results, total };
   }
 
@@ -109,9 +107,9 @@ export class UserService {
   }
 
   /**
-   *  创建用户
+   * 新增用户
    *
-   * @param createUserDto 创建用户数据
+   * @param createUserDto 用户数据
    * @returns
    */
   async create(createUserDto: CreateUserDto) {
@@ -124,16 +122,39 @@ export class UserService {
     const salt = crypto.randomBytes(4).toString("base64");
     const UserWithDept = await this.deptService.findOne(deptId.toString());
     const UserDeptTreePath = `${UserWithDept.TreePath}/${UserWithDept.id}`;
+
+    const roleIds = createUserDto.roleIds;
+
+    if (!roleIds || roleIds.length === 0) {
+      throw new BusinessException("角色不能为空");
+    }
+
     const newUser = await this.userModel.create({
       ...createUserDto,
-      salt,
-      UserDeptTreePath,
+      roles: createUserDto.roleIds,
+      salt: salt,
+      UserDeptTreePath: UserDeptTreePath,
       password: encry(password, salt),
     });
 
     // 清除用户列表缓存
     await this.cacheService.del(this.USER_LIST_CACHE_KEY);
     return newUser;
+  }
+
+  /**
+   * 获取用户表单数据
+   *
+   * @param _id 用户ID
+   * @returns
+   */
+  async getUserForm(userId: string): Promise<User> {
+    const user = await this.userModel.findById(userId, { __v: 0, permIds: 0, salt: 0 });
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+    console.log("getUserForm", user);
+    return user;
   }
 
   /**
@@ -162,18 +183,21 @@ export class UserService {
   }
 
   /**
-   * 获取用户权限
+   * 获取用户菜单ID列表
    *
    * @param userId 用户ID
    * @returns
    */
-  async getUserPerms(userId: string) {
+  async getUserMenuIds(userId: string) {
     const user = await this.userModel.findById(userId);
-    if (!user || !user.roles || user.roles.length === 0) {
+    if (!user || !user.roleIds || user.roleIds.length === 0) {
       return [];
     }
-    const { permIds } = await this.rolesService.findMenus(user.roles);
-    return permIds;
+
+    const roleIds = user.roleIds;
+    const menuIds = await this.roleService.getMenuIdsByRoleIds(roleIds);
+    console.log("menuIds", menuIds);
+    return menuIds;
   }
 
   /**
@@ -185,19 +209,20 @@ export class UserService {
   async findByUsername(username: string): Promise<User> {
     const user = await this.userModel.findOne({ username, isDeleted: 0 }).exec();
     if (!user) {
-      throw new BusinessException(ResponseCode.USER_NOT_FOUND);
+      throw new BusinessException(ResultCode.USER_NOT_FOUND);
     }
-    return user;
-  }
 
-  /**
-   * 获取用户表单数据
-   *
-   * @param _id 用户ID
-   * @returns
-   */
-  async getUserForm(_id: string): Promise<User> {
-    return await this.userModel.findById(_id, { __v: 0, permIds: 0, salt: 0 });
+    // 将 roleIds 转换为 roles
+    /*  const roleIds = user.roleIds;
+    if (roleIds?.length > 0) {
+      const roles = await this.roleService.findCodesByIds(roleIds);
+      console.log(" 查询到的 roles", roles);
+      user.roles = roles;
+    } else {
+      user.roles = [];
+    } */
+
+    return user;
   }
 
   /**

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from "@nestjs/commo
 import { GenService } from "./gen.service";
 import { CreateGenDto } from "./dto/create-gen.dto";
 import { UpdateGenDto } from "./dto/update-gen.dto";
-import { Public } from "../common/public/public.decorator";
+import { Public } from "../common/decorators/public.decorator";
 
 @Controller("gen")
 export class GenController {
@@ -12,7 +12,6 @@ export class GenController {
   @Post("create")
   @Public()
   async createCollection(@Body() body: { collectionName: string; schema: any; data: any }) {
-    console.log(body, "body");
     return this.genService.createCollectionAndInsertData(
       body.collectionName,
       body.schema,

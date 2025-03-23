@@ -10,7 +10,7 @@
 
 import { HttpStatus } from "@nestjs/common";
 
-export const ResponseCode = {
+export const ResultCode = {
   /* 成功状态 */
   SUCCESS: { code: "00000", msg: "一切ok", httpStatus: HttpStatus.OK },
 

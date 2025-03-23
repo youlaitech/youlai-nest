@@ -19,25 +19,22 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 @ApiTags("角色模块")
 @Controller("roles")
 export class RoleController {
-  // 注入 RolesService
   constructor(private readonly rolesService: RoleService) {}
 
-  @ApiOperation({ summary: "角色分页查询" })
+  @ApiOperation({ summary: "角色分页列表" })
   @Get("page")
   async getRolePage(
-    @Req() request,
     @Query("pageNum") pageNum: number,
     @Query("pageSize") pageSize: number,
     @Query("keywords") keywords: string
   ) {
-    const deptTreePath = request["user"]?.deptTreePath || "0";
-    return await this.rolesService.findSearch(pageNum, pageSize, keywords, deptTreePath);
+    return await this.rolesService.getRolePage(pageNum, pageSize, keywords);
   }
 
-  @ApiOperation({ summary: "获取角色下拉列表" })
+  @ApiOperation({ summary: "角色下拉列表" })
   @Get("options")
-  async GetOptions() {
-    return await this.rolesService.findOptions();
+  async getRoleOptions() {
+    return await this.rolesService.getRoleOptions();
   }
 
   @ApiOperation({ summary: "新增角色" })
@@ -46,11 +43,10 @@ export class RoleController {
     return this.rolesService.create({
       ...createRoleDto,
       createBy: request["user"]?.userId,
-      deptTreePath: request["user"]?.deptTreePath || "0",
     });
   }
 
-  @ApiOperation({ summary: "获取角色表单数据" })
+  @ApiOperation({ summary: "角色表单数据" })
   @Get(":id/form")
   async getRoleForm(@Param("id") id: string) {
     return await this.rolesService.findOne(id);

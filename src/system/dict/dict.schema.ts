@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { BaseEntity } from "../../common/schema/baseEntity.schema";
+import { BaseSchema } from "../../common/schemas/base.schema";
 
 //---------------------------------------------------
 // 字典实体
@@ -14,7 +14,7 @@ import { BaseEntity } from "../../common/schema/baseEntity.schema";
     updatedAt: "updateTime",
   },
 })
-export class Dict extends BaseEntity {
+export class Dict extends BaseSchema {
   @Prop({ type: String, required: true })
   name: string;
 
@@ -52,7 +52,7 @@ export enum TagType {
     updatedAt: "updateTime",
   },
 })
-export class DictItem extends BaseEntity {
+export class DictItem extends BaseSchema {
   @Prop({ type: String, required: true })
   dictCode: string;
 

@@ -1,6 +1,6 @@
 // MenuItem 接口
 export interface MenuItem {
-  parentId: string | number;
+  parentId: string;
   name: string;
   type: number;
   routeName: string | null;

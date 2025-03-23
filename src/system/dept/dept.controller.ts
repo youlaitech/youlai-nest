@@ -21,7 +21,7 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 export class DeptController {
   constructor(private readonly deptService: DeptService) {}
 
-  @ApiOperation({ summary: "获取部门属性表格列表" })
+  @ApiOperation({ summary: "获取部门表格树形列表" })
   @Get()
   async findAll(
     @Req() request,

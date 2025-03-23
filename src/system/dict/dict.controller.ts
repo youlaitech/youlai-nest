@@ -15,7 +15,7 @@ import { DictService } from "./dict.service";
 import { DictFormDto } from "./dto/create-dict.dto";
 import { UpdateDictDto } from "./dto/update-dict.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { IsCreateBy, IsUpdateBy } from "../../common/public/public.decorator";
+import { IsCreateBy, IsUpdateBy } from "../../common/decorators/public.decorator";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
 
 @ApiTags("06.字典接口")
@@ -36,7 +36,7 @@ export class DictController {
     return await this.dictService.getDictPage(pageNum, pageSize, keywords);
   }
 
-  @ApiOperation({ summary: "新增字典" })
+  @ApiOperation({ summary: "创建字典" })
   @IsCreateBy()
   @Post()
   createDict(@Req() request, @Body() dictForm: DictFormDto) {
@@ -82,7 +82,7 @@ export class DictController {
   //---------------------------------------------------
   @ApiOperation({ summary: "字典项分页列表" })
   @Get(":dictCode/items/page")
-  async getDictDataPage(
+  async getDictItemPage(
     @Query("pageNum") pageNum: number,
     @Query("pageSize") pageSize: number,
     @Param("dictCode") dictCode: string,

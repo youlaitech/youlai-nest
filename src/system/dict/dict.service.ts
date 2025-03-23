@@ -61,22 +61,21 @@ export class DictService {
    * @returns
    */
   async createDict(dictFormDto: DictFormDto) {
-    const { dict_code, name, status, deptTreePath, createBy, createTime } = dictFormDto;
-    const existCode = await this.dictModel.find({ dict_code, isDeleted: 0 });
+    const { dictCode, name, status, deptTreePath, createBy, createTime } = dictFormDto;
+    const existCode = await this.dictModel.find({ dictCode, isDeleted: 0 });
     if (existCode.length > 0) {
       throw new BusinessException("字典已存在");
     }
     const newDict = await this.dictModel.create({
-      dict_code,
+      dictCode,
       name,
       status,
       deptTreePath,
       createBy,
       createTime,
     });
-    const savedDict = await newDict.save();
 
-    return savedDict;
+    return await newDict.save();
   }
 
   /**
@@ -144,18 +143,9 @@ export class DictService {
    * @returns
    */
   async getDictItemPage(pageNum: number, pageSize: number, dictCode: string, keywords?: string) {
-    // 先查找对应的字典
-    const dict = await this.dictModel.findOne({
-      dict_code: dictCode,
-      isDeleted: 0,
-    });
-    if (!dict) {
-      throw new BusinessException("字典不存在");
-    }
-
     // 构建查询条件
     const query: any = {
-      dictId: dict._id,
+      dictCode: dictCode,
       isDeleted: 0,
     };
 
@@ -209,6 +199,7 @@ export class DictService {
       })
       .sort({ sort: 1 })
       .lean();
+    console.log("获取字典项列表", dictCode, dictItems);
 
     const result = dictItems.map((item) => ({
       label: item.label,

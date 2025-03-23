@@ -19,14 +19,17 @@ youlai-nest 是一个基于 NestJS 框架开发的后台管理系统，采用了
 在开始之前，请确保你的开发环境满足以下要求：
 
 1. **Node.js 环境**
+
    ```bash
    # 检查 Node.js 版本（需要 >= 18.x）
    node --version
    ```
 
 2. **MongoDB 数据库**
+
    - 安装 MongoDB（>= 7.x）
    - 启动 MongoDB 服务
+
    ```bash
    # macOS 使用 brew 安装
    brew install mongodb-community
@@ -34,8 +37,10 @@ youlai-nest 是一个基于 NestJS 框架开发的后台管理系统，采用了
    ```
 
 3. **Redis 服务**
+
    - 安装 Redis（>= 7.x）
    - 启动 Redis 服务
+
    ```bash
    # macOS 使用 brew 安装
    brew install redis
@@ -51,12 +56,14 @@ youlai-nest 是一个基于 NestJS 框架开发的后台管理系统，采用了
 ## 快速开始
 
 ### 1. 克隆项目
+
 ```bash
 git clone https://gitee.com/youlaiorg/youlai-nest.git
 cd youlai-nest
 ```
 
 ### 2. 安装依赖
+
 ```bash
 pnpm install
 ```
@@ -64,11 +71,13 @@ pnpm install
 ### 3. 配置环境变量
 
 1. 复制环境变量模板文件
+
 ```bash
 cp .env.example .env
 ```
 
 2. 修改 `.env` 文件中的配置：
+
 ```env
 # MongoDB配置
 MONGODB_URI=mongodb://localhost:27017/youlai
@@ -91,6 +100,7 @@ OSS_BUCKET=your-bucket
 ### 4. 初始化数据库
 
 1. 导入初始数据（在 mongodb 目录下）
+
 ```bash
 mongorestore -d youlai ./mongodb/
 ```
@@ -98,11 +108,13 @@ mongorestore -d youlai ./mongodb/
 ### 5. 启动项目
 
 1. 开发模式
+
 ```bash
 pnpm run start:dev
 ```
 
 2. 生产模式
+
 ```bash
 # 构建项目
 pnpm run build
@@ -136,6 +148,7 @@ src/
 ### 开发规范
 
 1. **代码风格**
+
    - 使用 ESLint 和 Prettier 进行代码格式化
    - 运行 `pnpm run lint` 检查代码风格
    - 运行 `pnpm run format` 格式化代码
@@ -152,11 +165,13 @@ src/
 ### 常见问题
 
 1. **MongoDB 连接失败**
+
    - 检查 MongoDB 服务是否启动
    - 验证连接字符串是否正确
    - 确认数据库用户名密码是否正确
 
 2. **Redis 连接失败**
+
    - 检查 Redis 服务是否启动
    - 验证 Redis 配置是否正确
 
@@ -176,6 +191,7 @@ nest generate module example
 ```
 
 这将创建以下文件结构：
+
 ```
 src/example/
 └── example.module.ts
@@ -191,24 +207,25 @@ nest generate controller example
 ```
 
 控制器示例：
-```typescript
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 
-@Controller('example')
+```typescript
+import { Controller, Get, Post, Body, Param } from "@nestjs/common";
+
+@Controller("example")
 export class ExampleController {
   @Get()
   findAll() {
-    return 'This action returns all examples';
+    return "This action returns all examples";
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
+  @Get(":id")
+  findOne(@Param("id") id: string) {
     return `This action returns example #${id}`;
   }
 
   @Post()
   create(@Body() createExampleDto: any) {
-    return 'This action adds a new example';
+    return "This action adds a new example";
   }
 }
 ```
@@ -223,8 +240,9 @@ nest generate service example
 ```
 
 服务示例：
+
 ```typescript
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class ExampleService {
@@ -240,7 +258,7 @@ export class ExampleService {
   }
 
   findOne(id: string) {
-    return this.examples.find(item => item.id === id);
+    return this.examples.find((item) => item.id === id);
   }
 }
 ```
@@ -262,13 +280,12 @@ export class CreateExampleDto {
 中间件示例：
 
 ```typescript
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import { Injectable, NestMiddleware } from "@nestjs/common";
+import { Request, Response, NextFunction } from "express";
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    console.log('Request...');
     next();
   }
 }
@@ -277,15 +294,13 @@ export class LoggerMiddleware implements NestMiddleware {
 在模块中应用中间件：
 
 ```typescript
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { LoggerMiddleware } from './logger.middleware';
+import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
+import { LoggerMiddleware } from "./logger.middleware";
 
 @Module({})
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggerMiddleware)
-      .forRoutes('example');
+    consumer.apply(LoggerMiddleware).forRoutes("example");
   }
 }
 ```
@@ -295,7 +310,7 @@ export class AppModule implements NestModule {
 管道用于数据转换和验证：
 
 ```typescript
-import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata } from "@nestjs/common";
 
 @Injectable()
 export class ValidationPipe implements PipeTransform {
@@ -310,10 +325,10 @@ export class ValidationPipe implements PipeTransform {
 使用内置的异常过滤器：
 
 ```typescript
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus } from "@nestjs/common";
 
 // 在控制器或服务中抛出异常
-throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+throw new HttpException("Forbidden", HttpStatus.FORBIDDEN);
 ```
 
 ### 8. 使用守卫
@@ -321,14 +336,12 @@ throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
 守卫用于身份验证和授权：
 
 ```typescript
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
+import { Observable } from "rxjs";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     return true;
   }
 }
@@ -339,16 +352,16 @@ export class AuthGuard implements CanActivate {
 在控制器中使用 Swagger 装饰器：
 
 ```typescript
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
-@ApiTags('example')
-@Controller('example')
+@ApiTags("example")
+@Controller("example")
 export class ExampleController {
-  @ApiOperation({ summary: '获取所有示例' })
-  @ApiResponse({ status: 200, description: '成功返回示例列表' })
+  @ApiOperation({ summary: "获取所有示例" })
+  @ApiResponse({ status: 200, description: "成功返回示例列表" })
   @Get()
   findAll() {
-    return 'This action returns all examples';
+    return "This action returns all examples";
   }
 }
 ```
@@ -358,10 +371,10 @@ export class ExampleController {
 使用 Jest 进行单元测试：
 
 ```typescript
-import { Test, TestingModule } from '@nestjs/testing';
-import { ExampleService } from './example.service';
+import { Test, TestingModule } from "@nestjs/testing";
+import { ExampleService } from "./example.service";
 
-describe('ExampleService', () => {
+describe("ExampleService", () => {
   let service: ExampleService;
 
   beforeEach(async () => {
@@ -372,7 +385,7 @@ describe('ExampleService', () => {
     service = module.get<ExampleService>(ExampleService);
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 });
@@ -383,11 +396,13 @@ describe('ExampleService', () => {
 ### Docker 部署
 
 1. 构建镜像
+
 ```bash
 docker build -t youlai-nest .
 ```
 
 2. 运行容器
+
 ```bash
 docker run -d -p 8989:8989 --name youlai-nest youlai-nest
 ```
@@ -395,11 +410,13 @@ docker run -d -p 8989:8989 --name youlai-nest youlai-nest
 ### PM2 部署
 
 1. 安装 PM2
+
 ```bash
 npm install -g pm2
 ```
 
 2. 启动服务
+
 ```bash
 pm2 start dist/main.js --name youlai-nest
 ```

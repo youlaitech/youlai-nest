@@ -1,7 +1,7 @@
 import { Body, Controller, Headers, Get, Post, Query } from "@nestjs/common";
 import { OssService } from "./oss.service";
 import { ApiTags } from "@nestjs/swagger";
-import { Public } from "../common/public/public.decorator";
+import { Public } from "../common/decorators/public.decorator";
 
 @ApiTags("oss模块")
 @Controller("oss")

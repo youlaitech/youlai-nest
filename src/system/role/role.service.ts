@@ -1,11 +1,10 @@
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { CreateRoleDto } from "./dto/create-role.dto";
-import { Model } from "mongoose";
+import { Model, Schema } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { Role } from "./role.schema";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { UpdateMenuDto } from "../menu/dto/update-menu.dto";
-import { matchDeptPath } from "../../common/shared/regex-utils";
 import { MenuService } from "../menu/menu.service";
 import { ROOT_ROLE_CODE } from "../../common/constants";
 
@@ -13,33 +12,32 @@ import { ROOT_ROLE_CODE } from "../../common/constants";
 export class RoleService {
   constructor(
     @InjectModel(Role.name)
-    private rolesModel: Model<Role>,
+    private roleModel: Model<Role>,
     @Inject(forwardRef(() => MenuService))
     private readonly menuService: MenuService
   ) {}
 
   /**
-   * 分页查询角色
+   * 角色分页列表
    *
    * @param pageNum 页码
    * @param pageSize 每页数量
    * @param keywords 关键字
-   * @param deptTreePath 部门树路径
    * @returns
    */
-  async findSearch(pageNum, pageSize, keywords, deptTreePath) {
+  async getRolePage(pageNum, pageSize, keywords) {
     const filter = {};
     if (keywords) {
       const regex = new RegExp(keywords, "i");
       filter["name"] = { $regex: regex };
     }
-    const data = await this.rolesModel
-      .find({ ...filter, ...matchDeptPath(deptTreePath) })
+    const data = await this.roleModel
+      .find({ ...filter })
       .sort({ sort: "asc" })
       .skip((pageNum - 1) * pageSize) // 跳过前 (pageNum - 1) * pageSize 条数据
       .limit(pageSize) // 限制每页的数据数量
       .exec();
-    const total = await this.rolesModel.countDocuments({ filter }).exec();
+    const total = await this.roleModel.countDocuments({ filter }).exec();
 
     return { list: data, total };
   }
@@ -47,43 +45,39 @@ export class RoleService {
   /**
    * 根据角色查询菜单
    *
-   * @param roles 角色编码集合
+   * @param roleIds 角色ID集合
    * @returns
    */
-  async findMenus(roles: string[]) {
-    if (!roles?.length) return { permIds: [] };
+  async getMenuIdsByRoleIds(roleIds: Schema.Types.ObjectId[]): Promise<string[]> {
+    if (!roleIds?.length) return [];
 
     // 超级管理员角色，返回全部菜单权限
-    if (roles.includes(ROOT_ROLE_CODE)) {
+    /* if (roles.includes(ROOT_ROLE_CODE)) {
       return {
         permIds: (await this.menuService.findAll()).map((item) => item.id),
       };
-    }
+    } */
     // 根据角色查询菜单权限
-    const permIds = (
-      await this.rolesModel
+    const menuIds = (
+      await this.roleModel
         .find({
-          code: {
-            $in: roles.filter((role) => !!role?.trim()),
-          },
+          _id: { $in: roleIds },
           isDeleted: 0,
         })
         .lean()
     ).flatMap((role) => role.menus || []);
 
     // 去重菜单权限
-    return {
-      permIds: [...new Set(permIds)],
-    };
+    return [...new Set(menuIds)];
   }
 
   /**
-   * 获取角色下拉列表
+   * 角色下拉列表
    *
    * @returns 角色下拉列表 { label: string, value: string }[]
    */
-  async findOptions() {
-    return this.rolesModel
+  async getRoleOptions() {
+    return this.roleModel
       .find({}, "name _id")
       .sort({ sort: "asc" })
       .lean()
@@ -101,15 +95,12 @@ export class RoleService {
   // 创建角色
   async create(createRoleDto: CreateRoleDto) {
     const name = createRoleDto.name;
-    // 角色归属
-    const deptTreePath = createRoleDto.deptTreePath || "0";
-    //  同一归属只有一个角色归属
-    const existRole = await this.rolesModel.find({ deptTreePath, name });
+    const existRole = await this.roleModel.find({ name });
     if (existRole.length > 0) {
       throw new BusinessException("角色已存在");
     }
 
-    const newRoleModel = new this.rolesModel({
+    const newRoleModel = new this.roleModel({
       ...createRoleDto,
     });
     const newRole = await newRoleModel.save();
@@ -123,24 +114,40 @@ export class RoleService {
    * @returns
    */
   async findOne(id: string) {
-    return await this.rolesModel.findById(id).exec();
+    const role = await this.roleModel.findById(id).lean().exec();
+    return role;
   }
 
   /**
    * 更新角色
    */
   async update(id: string, updateMenuDto: UpdateMenuDto) {
-    return await this.rolesModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
+    return await this.roleModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
   }
 
   /**
    * 更新角色菜单
    */
   async updateMenus(id: string, menus: []) {
-    return await this.rolesModel.findByIdAndUpdate(id, { menus: menus }, { new: true }).exec();
+    return await this.roleModel.findByIdAndUpdate(id, { menus: menus }, { new: true }).exec();
   }
 
   async remove(id: string) {
-    return await this.rolesModel.findByIdAndDelete(id).exec();
+    return await this.roleModel.findByIdAndDelete(id).exec();
+  }
+
+  /**
+   * 查询角色编码集合
+   *
+   * @param roleIds 角色ID集合
+   * @returns
+   */
+  async findCodesByIds(roleIds: Schema.Types.ObjectId[]): Promise<string[]> {
+    const roles = await this.roleModel
+      .find({ _id: { $in: roleIds } })
+      .select("code -_id")
+      .exec();
+
+    return roles.map((r) => r.code);
   }
 }

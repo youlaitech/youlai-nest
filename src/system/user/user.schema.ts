@@ -1,25 +1,37 @@
 import * as mongoose from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { BaseEntity } from "../../common/schema/baseEntity.schema";
+import { BaseSchema } from "../../common/schemas/base.schema";
 import { Schema as MongooseSchema } from "mongoose";
+import { DateFormatService } from "src/utils/service/date-format.service";
 
 @Schema({
-  collection: "sys_user", // 指定集合名称
-  timestamps: {
-    currentTime: () => Date.now(),
-    createdAt: "createTime",
-    updatedAt: "updateTime",
+  collection: "sys_user",
+  timestamps: false,
+  toJSON: {
+    transform: (_doc, ret) => {
+      ret.createTime = DateFormatService.format(ret.createTime, {
+        pattern: "YYYY-MM-DD HH:mm",
+      });
+      ret.updateTime = DateFormatService.format(ret.updateTime, {
+        pattern: "YYYY-MM-DD HH:mm:ss",
+      });
+      delete ret.salt;
+      delete ret.password;
+      return ret;
+    },
   },
 })
-export class User extends BaseEntity {
+export class User extends BaseSchema {
   @Prop({ type: String, maxlength: 30 })
   username: string;
 
   @Prop({ type: String, required: false })
   nickname: string;
-  //  性别
+
+  // 性别((1-男 2-女 0-保密)
   @Prop({ type: Number, required: false })
-  gender: number; // 性别((1-男 2-女 0-保密)
+  gender: number;
+
   @Prop({ type: String, required: true })
   password: string;
   // 部门
@@ -30,6 +42,7 @@ export class User extends BaseEntity {
     comment: "部门ID",
   })
   deptId: mongoose.Schema.Types.ObjectId | null;
+
   @Prop({ type: String, required: false })
   avatar: string;
   @Prop({ type: String, required: false })
@@ -59,6 +72,8 @@ export class User extends BaseEntity {
   @Prop({ type: [String], default: [], comment: "权限" })
   perms: string[]; // 权限
   @Prop()
-  roles: string[]; // 角色
+  roleIds?: mongoose.Schema.Types.ObjectId[];
+
+  roles?: string[];
 }
-export const userSchema = SchemaFactory.createForClass(User);
+export const UserSchema = SchemaFactory.createForClass(User);

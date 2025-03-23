@@ -23,8 +23,6 @@ export class OssService {
     @Inject(ossConfig.KEY)
     private readonly ossConf: ConfigType<typeof ossConfig>
   ) {
-    console.log("OSS区域", ossConf.region);
-
     this.config = {
       region: ossConf.region,
       accessKeyId: ossConf.accessKeyId,
@@ -170,9 +168,7 @@ export class OssService {
 
   async getFileAsBlob(key: string): Promise<Buffer> {
     try {
-      // console.log(key);
       const result = await this.client.get(key);
-      // console.log(result);
       const buffer = await Buffer.from(result.content, "base64");
       return buffer;
     } catch (error) {

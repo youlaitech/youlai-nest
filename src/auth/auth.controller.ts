@@ -15,7 +15,7 @@ import { AuthService } from "./auth.service";
 import { LoginAuthDto } from "./dto/login-auth.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginResponse } from "./vo/auth.vo";
-import { Public } from "../common/public/public.decorator";
+import { Public } from "../common/decorators/public.decorator";
 import { ToolsService } from "../utils/service/tools.service";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
@@ -23,7 +23,7 @@ import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
 import { RedisCacheService } from "../cache/redis_cache.service";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ResponseCode } from "src/common/enums/response-code.enum";
+import { ResultCode } from "src/common/enums/result-code.enum";
 
 @ApiTags("01.认证接口")
 @Controller("auth")
@@ -46,10 +46,10 @@ export class AuthController {
     const { captchaCode, captchaKey } = loginAuthDto;
     const code = await this.RedisService.get(captchaKey);
     if (!code) {
-      throw new BusinessException(ResponseCode.VERIFICATION_CODE_EXPIRED);
+      throw new BusinessException(ResultCode.VERIFICATION_CODE_EXPIRED);
     }
     if (captchaCode?.toUpperCase() !== code?.toUpperCase()) {
-      throw new BusinessException(ResponseCode.VERIFICATION_CODE_ERROR);
+      throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
     }
 
     return await this.authService.login(loginAuthDto);

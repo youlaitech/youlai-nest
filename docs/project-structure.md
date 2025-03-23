@@ -41,7 +41,7 @@ export class AuthModule {}
 ```typescript
 // user.schema.ts 的核心实现
 @Schema()
-export class User extends BaseEntity {
+export class User extends BaseSchema {
   @Prop({ required: true, unique: true })
   username: string;
 
@@ -135,7 +135,7 @@ export class UnifyExceptionFilter implements ExceptionFilter {
 ```typescript
 // transform.interceptor.ts
 @Injectable()
-export class ResponseInterceptor implements NestInterceptor {
+export class TransformInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     // 响应数据转换逻辑
   }
@@ -179,7 +179,7 @@ export class AuthGuard implements CanActivate {
 ```typescript
 // baseEntity.schema.ts
 @Schema()
-export class BaseEntity {
+export class BaseSchema {
   @Prop({ type: String })
   _id: string;
 

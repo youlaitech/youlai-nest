@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Types } from "mongoose";
 import mongoose from "mongoose";
-import { BaseEntity } from "../../common/schema/baseEntity.schema";
+import { BaseSchema } from "../../common/schemas/base.schema";
 
 @Schema({
   collection: "sys_dept",
@@ -11,7 +11,7 @@ import { BaseEntity } from "../../common/schema/baseEntity.schema";
     updatedAt: "updateTime",
   },
 })
-export class Dept extends BaseEntity {
+export class Dept extends BaseSchema {
   @Prop({ type: mongoose.Schema.Types.ObjectId, auto: true })
   _id: mongoose.Schema.Types.ObjectId;
   @Prop({
