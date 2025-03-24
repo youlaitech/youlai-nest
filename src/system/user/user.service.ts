@@ -13,6 +13,7 @@ import { DeptService } from "../dept/dept.service";
 import { RedisCacheService } from "../../cache/redis_cache.service";
 import { ResultCode } from "src/common/enums/result-code.enum";
 import { BaseSchema } from "src/common/schemas/base.schema";
+import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 
 @Injectable()
 export class UserService {
@@ -206,23 +207,26 @@ export class UserService {
    * @param username  用户名
    * @returns
    */
-  async findByUsername(username: string): Promise<User> {
+  async findAuthUserByUsername(username: string): Promise<UserAuthInfo> {
     const user = await this.userModel.findOne({ username, isDeleted: 0 }).exec();
     if (!user) {
       throw new BusinessException(ResultCode.USER_NOT_FOUND);
     }
 
-    // 将 roleIds 转换为 roles
-    /*  const roleIds = user.roleIds;
-    if (roleIds?.length > 0) {
-      const roles = await this.roleService.findCodesByIds(roleIds);
-      console.log(" 查询到的 roles", roles);
-      user.roles = roles;
-    } else {
-      user.roles = [];
-    } */
+    // 如果 roleIds 存在则转换为角色代码，否则设置为空数组
+    const roles =
+      user.roleIds && user.roleIds.length > 0
+        ? await this.roleService.findCodesByIds(user.roleIds)
+        : [];
 
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      password: user.password,
+      salt: user.salt,
+      status: user.status,
+      roles,
+    };
   }
 
   /**

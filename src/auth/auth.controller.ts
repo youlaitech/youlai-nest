@@ -51,7 +51,6 @@ export class AuthController {
     if (captchaCode?.toUpperCase() !== code?.toUpperCase()) {
       throw new BusinessException(ResultCode.VERIFICATION_CODE_ERROR);
     }
-
     return await this.authService.login(loginAuthDto);
   }
 

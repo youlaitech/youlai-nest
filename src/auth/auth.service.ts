@@ -17,27 +17,26 @@ export class AuthService {
 
   // 登录
   async login(loginAuthDto: LoginAuthDto) {
-    try {
-      const { username, password } = loginAuthDto;
-      const user = await this.userService.findByUsername(username);
-      if (user?.password !== encry(password, user.salt)) {
-        throw new HttpException("密码错误", HttpStatus.UNAUTHORIZED);
-      }
-      const payload = {
-        sub: user._id,
-        username: user.username,
-        deptTreePath: user.UserDeptTreePath,
-      };
+    const { username, password } = loginAuthDto;
+    // 根据用户名查找用户的认证信息（只返回认证所需字段）
+    const user = await this.userService.findAuthUserByUsername(username);
 
-      return {
-        accessToken: await this.jwtService.signAsync(payload, {
-          expiresIn: this.config.expiresIn,
-        }),
-        tokenType: "Bearer",
-      };
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    // 校验密码，假设 encry 是加密方法
+    if (!user || user.password !== encry(password, user.salt)) {
+      throw new HttpException("密码错误", HttpStatus.UNAUTHORIZED);
     }
+
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      deptTreePath: user.deptTreePath,
+      roles: user.roles,
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.config.expiresIn,
+    });
+    return { accessToken, tokenType: "Bearer" };
   }
 
   // 注销登录
