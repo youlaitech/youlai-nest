@@ -225,6 +225,7 @@ export class UserService {
       password: user.password,
       salt: user.salt,
       status: user.status,
+      deptTreePath: user.UserDeptTreePath,
       roles,
     };
   }

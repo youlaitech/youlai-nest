@@ -18,7 +18,6 @@ export class AuthService {
   // 登录
   async login(loginAuthDto: LoginAuthDto) {
     const { username, password } = loginAuthDto;
-    // 根据用户名查找用户的认证信息（只返回认证所需字段）
     const user = await this.userService.findAuthUserByUsername(username);
 
     // 校验密码，假设 encry 是加密方法
