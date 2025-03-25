@@ -1,9 +1,9 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
-import { ResultCode } from "../enums/result-code.enum";
+import { ErrorCode } from "../enums/error-code.enum";
 
 // 增强类型定义
 type BusinessError =
-  | ((typeof ResultCode)[keyof typeof ResultCode] & { httpStatus?: HttpStatus })
+  | ((typeof ErrorCode)[keyof typeof ErrorCode] & { httpStatus?: HttpStatus })
   | { code: string; msg: string; httpStatus?: HttpStatus };
 
 export class BusinessException extends HttpException {
@@ -14,7 +14,7 @@ export class BusinessException extends HttpException {
       // 处理字符串参数的重载
       super(
         {
-          code: ResultCode.SYSTEM_ERROR.code,
+          code: ErrorCode.SYSTEM_ERROR.code,
           msg: arg,
         },
         httpStatus || HttpStatus.BAD_REQUEST
@@ -24,8 +24,8 @@ export class BusinessException extends HttpException {
       const statusCode = arg.httpStatus || HttpStatus.BAD_REQUEST;
       super(
         {
-          code: arg.code || ResultCode.SYSTEM_ERROR.code,
-          msg: arg.msg || ResultCode.SYSTEM_ERROR.msg,
+          code: arg.code || ErrorCode.SYSTEM_ERROR.code,
+          msg: arg.msg || ErrorCode.SYSTEM_ERROR.msg,
         },
         statusCode
       );

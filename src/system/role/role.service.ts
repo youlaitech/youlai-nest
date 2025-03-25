@@ -65,10 +65,21 @@ export class RoleService {
           isDeleted: 0,
         })
         .lean()
-    ).flatMap((role) => role.menus || []);
+    ).flatMap((role) => role.menuIds || []);
 
     // 去重菜单权限
     return [...new Set(menuIds)];
+  }
+
+  /**
+   * 根据角色编码查询权限标识集合
+   *
+   * @param roles  角色编码集合
+   * @returns 权限标识集合
+   */
+  async findPermsByRoleCodes(roles: string[]): Promise<string[]> {
+    const menuIds = await this.roleModel.distinct("menuIds", { code: { $in: roles } }).exec();
+    return await this.menuService.findPermsByMenuIds(menuIds);
   }
 
   /**

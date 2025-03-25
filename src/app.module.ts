@@ -1,4 +1,3 @@
-// NestJS Core
 import {
   MiddlewareConsumer,
   Module,
@@ -10,28 +9,24 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { MongooseModule } from "@nestjs/mongoose";
 
-// Third-party Modules
 import * as winston from "winston";
 import "winston-daily-rotate-file";
 import { WinstonModule } from "nest-winston";
 import { RedisModule } from "@liaoliaots/nestjs-redis";
 import mongoose from "mongoose";
 
-// Application Modules
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
 import { RedisCacheModule } from "./cache/redis_cache.module";
 import { OssModule } from "./oss/oss.module"; // 对象存储模块
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 
-// Core Components
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { LoggerMiddleware } from "./logger/logger.middleware";
 import { HttpExceptionFilter } from "./core/filters/http-exception.filter";
 import { XRequestInterceptor } from "./core/interceptors/request.interceptor";
-import { AuthGuard } from "./auth/auth.guard";
+import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 
-// Configuration Files
 import jwtConfig from "./config/jwt.config";
 import mongodbConfig from "./config/mongodb.config";
 import ossConfig from "./config/oss.config";
@@ -103,7 +98,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     AppService,
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
+      useClass: JwtAuthGuard,
     },
     // 应用http全局过滤器
     {

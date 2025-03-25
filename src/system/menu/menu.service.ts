@@ -10,7 +10,7 @@ import { MenuItem, Route } from "./interface/menu.type";
 @Injectable()
 export class MenuService {
   constructor(
-    @InjectModel(Menu.name) // 使用 @InjectModel 注入 Mongoose 模型
+    @InjectModel(Menu.name)
     private menuModel: Model<Menu>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService
@@ -53,8 +53,24 @@ export class MenuService {
     return perms;
   }
 
-  async findPermsList(filter) {
-    return await this.menuModel.find(filter);
+  /**
+   * 根据菜单ID查询权限集合
+   *
+   * @param menuIds 菜单ID集合
+   * @returns
+   */
+  async findPermsByMenuIds(menuIds: string[]): Promise<string[]> {
+    if (!menuIds?.length) return [];
+
+    const menuDocs: any = await this.menuModel
+      .find({ _id: { $in: menuIds }, type: 3 }) // type: 3 表示按钮权限
+      .select("perm -_id") // 只查询 perm 字段 并排除 _id 字段
+      .lean()
+      .exec();
+
+    return Array.from(
+      new Set(menuDocs.map((doc) => doc.perm?.trim()).filter((perm): perm is string => !!perm))
+    );
   }
 
   /**

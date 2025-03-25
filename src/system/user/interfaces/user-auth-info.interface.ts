@@ -29,7 +29,7 @@ export interface UserAuthInfo {
   status: number;
 
   /**
-   * 角色列表，包含用户所属的所有角色标识，用于权限判断
+   * 角色列表，包含用户所属的所有角色编码
    */
   roles: string[];
 

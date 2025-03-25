@@ -2,8 +2,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nes
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { ResultCode } from "../../common/enums/result-code.enum";
-import { Response } from "../../common/types/response.type";
+import { ErrorCode } from "../../common/enums/error-code.enum";
+import { Response } from "../../common/interfaces/response.interface";
 
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
@@ -45,8 +45,8 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
     return next.handle().pipe(
       map((data) => {
         return {
-          code: ResultCode.SUCCESS.code,
-          msg: ResultCode.SUCCESS.msg,
+          code: ErrorCode.SUCCESS.code,
+          msg: ErrorCode.SUCCESS.msg,
           data,
           timestamp: Math.floor(Date.now() / 1000),
         };

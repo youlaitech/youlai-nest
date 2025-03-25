@@ -6,7 +6,7 @@ import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import jwtConfig, { JwtConfig } from "../config/jwt.config";
 import { ConfigModule } from "@nestjs/config";
-import { JwtStrategy } from "./jwt.strategy";
+import { JwtStrategy } from "./strategies/jwt.strategy";
 import { RedisCacheModule } from "../cache/redis_cache.module";
 import { RedisCacheService } from "../cache/redis_cache.service";
 import { ToolsService } from "../utils/service/tools.service";

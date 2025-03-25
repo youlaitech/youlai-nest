@@ -10,7 +10,7 @@
 
 import { HttpStatus } from "@nestjs/common";
 
-export const ResultCode = {
+export const ErrorCode = {
   /* 成功状态 */
   SUCCESS: { code: "00000", msg: "一切ok", httpStatus: HttpStatus.OK },
 
@@ -36,7 +36,7 @@ export const ResultCode = {
   USER_LOGIN_EXCEPTION: { code: "A0200", msg: "用户登录异常" },
   USER_ACCOUNT_FROZEN: { code: "A0201", msg: "用户账户被冻结" },
   USER_ACCOUNT_ABOLISHED: { code: "A0202", msg: "用户账户已作废" },
-  USER_LOGIN_CREDENTIALS_INVALID: {
+  USER_PASSWORD_ERROR: {
     code: "A0210",
     msg: "用户名或密码错误",
     httpStatus: HttpStatus.UNAUTHORIZED,
@@ -66,17 +66,17 @@ export const ResultCode = {
   },
 
   /* 验证码错误 */
-  VERIFICATION_CODE_ERROR: {
+  VERIFY_CODE_ERROR: {
     code: "A0240",
     msg: "验证码错误",
     httpStatus: HttpStatus.BAD_REQUEST,
   },
-  VERIFICATION_CODE_ATTEMPT_LIMIT: {
+  VERIFY_CODE_ATTEMPT_LIMIT: {
     code: "A0241",
     msg: "用户验证码尝试次数超限",
     httpStatus: HttpStatus.BAD_REQUEST,
   },
-  VERIFICATION_CODE_EXPIRED: {
+  VERIFY_CODE_EXPIRED: {
     code: "A0242",
     msg: "用户验证码过期",
     httpStatus: HttpStatus.BAD_REQUEST,

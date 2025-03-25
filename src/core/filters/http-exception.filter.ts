@@ -1,7 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, HttpException } from "@nestjs/common";
 import { Request, Response } from "express";
 import { BusinessException } from "../../common/exceptions/business.exception";
-import { ResultCode } from "../../common/enums/result-code.enum";
+import { ErrorCode } from "../../common/enums/error-code.enum";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -27,7 +27,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       Object.assign(responseBody, {
-        code: exceptionResponse["code"] || ResultCode.SYSTEM_ERROR.code,
+        code: exceptionResponse["code"] || ErrorCode.SYSTEM_ERROR.code,
         msg: exceptionResponse["msg"] || safeMessage,
       });
 
@@ -40,7 +40,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       Object.assign(responseBody, {
-        code: ResultCode.SYSTEM_ERROR.code,
+        code: ErrorCode.SYSTEM_ERROR.code,
         msg:
           typeof exceptionResponse === "object"
             ? (exceptionResponse as any).message || safeMessage
@@ -55,7 +55,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const error = exception as Error;
 
     Object.assign(responseBody, {
-      code: ResultCode.SYSTEM_ERROR.code,
+      code: ErrorCode.SYSTEM_ERROR.code,
       msg: isProduction ? safeMessage : error.message,
       stack: isProduction ? undefined : error.stack, // 非生产环境返回堆栈
     });

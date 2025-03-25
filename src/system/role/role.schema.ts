@@ -54,9 +54,9 @@ export class Role extends BaseSchema {
     type: [String],
     ref: "sys_menu",
     default: [],
-    comment: "角色拥有的菜单项",
+    comment: "角色的菜单ID集合",
   })
-  menus: string[];
+  menuIds: string[];
 }
 
 export const RoleSchema = SchemaFactory.createForClass(Role);

@@ -11,8 +11,10 @@ import { RoleService } from "../role/role.service";
 import { matchDeptPath } from "../../common/shared/regex-utils";
 import { DeptService } from "../dept/dept.service";
 import { RedisCacheService } from "../../cache/redis_cache.service";
-import { ResultCode } from "src/common/enums/result-code.enum";
+import { ErrorCode } from "src/common/enums/error-code.enum";
 import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
+import { CurrentUserDto } from "./dto/current-user.dto";
+import { AuthUser } from "src/common/interfaces/auth-user.interface";
 
 @Injectable()
 export class UserService {
@@ -42,7 +44,7 @@ export class UserService {
    * @param deptTreePath
    * @returns
    */
-  async getUserPage(
+  async findUserPage(
     pageNum: number,
     pageSize: number,
     deptId: string,
@@ -93,17 +95,81 @@ export class UserService {
   }
 
   /**
+   * 根据用户名查找用户
+   *
+   * @param username  用户名
+   * @returns
+   */
+  async findAuthUserByUsername(username: string): Promise<UserAuthInfo> {
+    const user = await this.userModel
+      .findOne({ username, isDeleted: 0 })
+      .select({
+        _id: 1,
+        username: 1,
+        password: 1,
+        salt: 1,
+        status: 1,
+        deptTreePath: 1,
+        roleIds: 1,
+      })
+      .lean()
+      .exec();
+
+    if (!user) {
+      return null;
+    }
+
+    // 角色ID列表转换为角色编码列表
+    const roles =
+      user.roleIds && user.roleIds.length > 0
+        ? await this.roleService.findCodesByIds(user.roleIds)
+        : [];
+
+    return {
+      id: user._id.toString(),
+      username: user.username,
+      password: user.password,
+      salt: user.salt,
+      status: user.status,
+      deptTreePath: user.UserDeptTreePath,
+      roles,
+    };
+  }
+
+  /**
    * 获取当前用户信息
    *
    * @param id 用户ID
    * @returns
    */
-  async findMe(id: string): Promise<User> {
-    const user = await this.userModel.findOne({ _id: id, isDeleted: 0 });
+  async findMe(authUser: AuthUser): Promise<CurrentUserDto> {
+    const userId = authUser.userId;
+
+    const user = await this.userModel
+      .findOne({ _id: userId, isDeleted: false })
+      .select("username nickname mobile email avatar")
+      .lean()
+      .exec();
+
     if (!user) {
       throw new BusinessException("用户不存在");
     }
-    return user;
+    const roles = authUser.roles;
+    let perms;
+    if (roles && roles.length > 0) {
+      perms = await this.roleService.findPermsByRoleCodes(roles);
+    }
+
+    return {
+      userId,
+      username: user.username,
+      nickname: user.nickname,
+      mobile: user.mobile,
+      email: user.email,
+      avatar: user.avatar,
+      roles: roles,
+      perms: perms,
+    };
   }
 
   /**
@@ -115,7 +181,7 @@ export class UserService {
   async create(createUserDto: CreateUserDto) {
     const { username, deptId, password } = createUserDto;
 
-    const existUser = await this.userModel.findOne({ username, isDeleted: 0 });
+    const existUser = await this.userModel.findOne({ username, isDeleted: false });
     if (existUser) {
       throw new BusinessException("用户已存在");
     }
@@ -129,31 +195,26 @@ export class UserService {
       throw new BusinessException("角色不能为空");
     }
 
-    const newUser = await this.userModel.create({
+    return await this.userModel.create({
       ...createUserDto,
       roles: createUserDto.roleIds,
       salt: salt,
       UserDeptTreePath: UserDeptTreePath,
       password: encry(password, salt),
     });
-
-    // 清除用户列表缓存
-    await this.cacheService.del(this.USER_LIST_CACHE_KEY);
-    return newUser;
   }
 
   /**
    * 获取用户表单数据
    *
-   * @param _id 用户ID
+   * @param userId 用户ID
    * @returns
    */
   async getUserForm(userId: string): Promise<User> {
-    const user = await this.userModel.findById(userId, { __v: 0, permIds: 0, salt: 0 });
+    const user = await this.userModel.findById(userId);
     if (!user) {
       throw new BusinessException("用户不存在");
     }
-    console.log("getUserForm", user);
     return user;
   }
 
@@ -198,48 +259,6 @@ export class UserService {
     const menuIds = await this.roleService.getMenuIdsByRoleIds(roleIds);
     console.log("menuIds", menuIds);
     return menuIds;
-  }
-
-  /**
-   * 根据用户名查找用户
-   *
-   * @param username  用户名
-   * @returns
-   */
-  async findAuthUserByUsername(username: string): Promise<UserAuthInfo> {
-    const user = await this.userModel
-      .findOne({ username, isDeleted: 0 })
-      .select({
-        _id: 1,
-        username: 1,
-        password: 1,
-        salt: 1,
-        status: 1,
-        deptTreePath: 1,
-        roleIds: 1,
-      })
-      .lean()
-      .exec();
-
-    if (!user) {
-      throw new BusinessException(ResultCode.USER_NOT_FOUND);
-    }
-
-    // 如果 roleIds 存在则转换为角色编码
-    const roles =
-      user.roleIds && user.roleIds.length > 0
-        ? await this.roleService.findCodesByIds(user.roleIds)
-        : [];
-
-    return {
-      id: user._id.toString(),
-      username: user.username,
-      password: user.password,
-      salt: user.salt,
-      status: user.status,
-      deptTreePath: user.UserDeptTreePath,
-      roles,
-    };
   }
 
   /**

@@ -5,7 +5,13 @@ import { UserService } from "../system/user/user.service";
 import type { LoginAuthDto } from "./dto/login-auth.dto";
 import jwtConfig from "src/config/jwt.config";
 import { ConfigType } from "@nestjs/config";
+import { LoginResponseVo } from "./vo/login.vo";
+import { BusinessException } from "src/common/exceptions/business.exception";
+import { ErrorCode } from "src/common/enums/error-code.enum";
 
+/**
+ * 认证服务
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -16,20 +22,17 @@ export class AuthService {
   ) {}
 
   /**
-   * 登录认证
-   *
-   * @param loginAuthDto
-   * @returns
+   * 用户登录认证
    */
-  async login(loginAuthDto: LoginAuthDto) {
-    const { username, password } = loginAuthDto;
-    const userAuthInfo = await this.userService.findAuthUserByUsername(username);
+  async login(loginDto: LoginAuthDto): Promise<LoginResponseVo> {
+    // 1. 验证用户凭证
+    const userAuthInfo = await this.userService.findAuthUserByUsername(loginDto.username);
 
-    // 校验密码，假设 encry 是加密方法
-    if (!userAuthInfo || userAuthInfo.password !== encry(password, userAuthInfo.salt)) {
-      throw new HttpException("密码错误", HttpStatus.UNAUTHORIZED);
+    if (!userAuthInfo || userAuthInfo.password !== encry(loginDto.password, userAuthInfo.salt)) {
+      throw new BusinessException(ErrorCode.USER_PASSWORD_ERROR);
     }
 
+    // 2. 生成 JWT 载荷
     const payload = {
       sub: userAuthInfo.id,
       username: userAuthInfo.username,
@@ -37,10 +40,16 @@ export class AuthService {
       roles: userAuthInfo.roles,
     };
 
+    // 3. 生成访问令牌
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: this.config.expiresIn,
     });
-    return { accessToken, tokenType: "Bearer" };
+
+    return {
+      accessToken,
+      expiresIn: this.config.expiresIn,
+      tokenType: "Bearer",
+    };
   }
 
   /**

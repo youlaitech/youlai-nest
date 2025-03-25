@@ -14,11 +14,13 @@ import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { User } from "./user.schema";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { DEFAULT_PASSWORD } from "src/common/constants";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { AuthUser } from "src/common/interfaces/auth-user.interface";
+import { CurrentUserDto } from "./dto/current-user.dto";
 
 @ApiTags("02.用户接口")
 @Controller("users")
@@ -31,8 +33,8 @@ export class UserController {
 
   @ApiOperation({ summary: "用户分页列表" })
   @Get("page")
-  async getUserPage(
-    @Req() request,
+  async findUserPage(
+    @CurrentUser("deptTreePath") deptTreePath: string,
     @Query("page") page: number,
     @Query("size") size: number,
     @Query("keywords") keywords: string,
@@ -41,10 +43,7 @@ export class UserController {
     @Query("deptId") deptId: string,
     @Query("endTime") endTime: string
   ) {
-    const deptTreePath = request["user"]?.deptTreePath || "0";
-
-    this.logger.info("用户分页列表");
-    return await this.userService.getUserPage(
+    return await this.userService.findUserPage(
       page,
       size,
       deptId,
@@ -58,9 +57,8 @@ export class UserController {
 
   @ApiOperation({ summary: "获取当前用户信息" })
   @Get("me")
-  async getMe(@Req() request): Promise<User> {
-    const id = request["user"]?.userId || "";
-    return await this.userService.findMe(id);
+  async findMe(@CurrentUser() authUser: AuthUser): Promise<CurrentUserDto> {
+    return await this.userService.findMe(authUser);
   }
 
   @ApiOperation({ summary: "新增用户" })
