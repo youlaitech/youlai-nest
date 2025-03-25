@@ -3,7 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
 import { IS_PUBLIC_KEY } from "../common/decorators/public.decorator";
 import { BusinessException } from "../common/exceptions/business.exception";
-import { ResultCode } from "src/common/enums/result-code.enum";
+import { ResultCode } from "../common/enums/result-code.enum";
 
 @Injectable()
 export class AuthGuard extends PassportAuthGuard("jwt") {

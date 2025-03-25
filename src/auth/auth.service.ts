@@ -5,9 +5,9 @@ import { UserService } from "../system/user/user.service";
 import type { LoginAuthDto } from "./dto/login-auth.dto";
 import jwtConfig from "src/config/jwt.config";
 import { ConfigType } from "@nestjs/config";
+
 @Injectable()
 export class AuthService {
-  // 构造注入
   constructor(
     @Inject(jwtConfig.KEY)
     private readonly config: ConfigType<typeof jwtConfig>,
@@ -15,21 +15,26 @@ export class AuthService {
     private readonly userService: UserService
   ) {}
 
-  // 登录
+  /**
+   * 登录认证
+   *
+   * @param loginAuthDto
+   * @returns
+   */
   async login(loginAuthDto: LoginAuthDto) {
     const { username, password } = loginAuthDto;
-    const user = await this.userService.findAuthUserByUsername(username);
+    const userAuthInfo = await this.userService.findAuthUserByUsername(username);
 
     // 校验密码，假设 encry 是加密方法
-    if (!user || user.password !== encry(password, user.salt)) {
+    if (!userAuthInfo || userAuthInfo.password !== encry(password, userAuthInfo.salt)) {
       throw new HttpException("密码错误", HttpStatus.UNAUTHORIZED);
     }
 
     const payload = {
-      sub: user.id,
-      username: user.username,
-      deptTreePath: user.deptTreePath,
-      roles: user.roles,
+      sub: userAuthInfo.id,
+      username: userAuthInfo.username,
+      deptTreePath: userAuthInfo.deptTreePath,
+      roles: userAuthInfo.roles,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -38,7 +43,9 @@ export class AuthService {
     return { accessToken, tokenType: "Bearer" };
   }
 
-  // 注销登录
+  /**
+   * 注销登录
+   */
   async logout() {
     //
     // // // 提取 JWT Token

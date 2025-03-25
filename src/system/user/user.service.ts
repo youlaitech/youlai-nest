@@ -3,7 +3,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
-import { User, UserSchema } from "./user.schema";
+import { User } from "./user.schema";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import * as crypto from "crypto";
 import encry from "../../utils/crypto";
@@ -12,7 +12,6 @@ import { matchDeptPath } from "../../common/shared/regex-utils";
 import { DeptService } from "../dept/dept.service";
 import { RedisCacheService } from "../../cache/redis_cache.service";
 import { ResultCode } from "src/common/enums/result-code.enum";
-import { BaseSchema } from "src/common/schemas/base.schema";
 import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 
 @Injectable()
@@ -208,19 +207,32 @@ export class UserService {
    * @returns
    */
   async findAuthUserByUsername(username: string): Promise<UserAuthInfo> {
-    const user = await this.userModel.findOne({ username, isDeleted: 0 }).exec();
+    const user = await this.userModel
+      .findOne({ username, isDeleted: 0 })
+      .select({
+        _id: 1,
+        username: 1,
+        password: 1,
+        salt: 1,
+        status: 1,
+        deptTreePath: 1,
+        roleIds: 1,
+      })
+      .lean()
+      .exec();
+
     if (!user) {
       throw new BusinessException(ResultCode.USER_NOT_FOUND);
     }
 
-    // 如果 roleIds 存在则转换为角色代码，否则设置为空数组
+    // 如果 roleIds 存在则转换为角色编码
     const roles =
       user.roleIds && user.roleIds.length > 0
         ? await this.roleService.findCodesByIds(user.roleIds)
         : [];
 
     return {
-      id: user.id,
+      id: user._id.toString(),
       username: user.username,
       password: user.password,
       salt: user.salt,

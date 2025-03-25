@@ -17,8 +17,6 @@ import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginResponse } from "./vo/auth.vo";
 import { Public } from "../common/decorators/public.decorator";
 import { ToolsService } from "../utils/service/tools.service";
-import { WINSTON_MODULE_PROVIDER } from "nest-winston";
-import { Logger } from "winston";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
 import { RedisCacheService } from "../cache/redis_cache.service";
@@ -31,14 +29,12 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly toolsService: ToolsService,
-    @Inject(WINSTON_MODULE_PROVIDER)
-    private readonly logger: Logger,
     @Inject(forwardRef(() => RedisCacheService))
     private readonly RedisService: RedisCacheService
   ) {}
 
   @ApiOperation({ summary: "登录接口" })
-  @ApiOkResponse({ description: "登录成功返回", type: LoginResponse })
+  @ApiOkResponse({ description: "登录响应", type: LoginResponse })
   @UseInterceptors(FileInterceptor(""))
   @Public()
   @Post("login")
