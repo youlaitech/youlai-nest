@@ -23,14 +23,16 @@ import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { LoggerMiddleware } from "./logger/logger.middleware";
-import { HttpExceptionFilter } from "./core/filters/http-exception.filter";
-import { XRequestInterceptor } from "./core/interceptors/request.interceptor";
-import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
+import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 
 import jwtConfig from "./config/jwt.config";
 import mongodbConfig from "./config/mongodb.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
+import { DataScopeGuard } from "./common/guards/data-scope.guard";
+import { DataScopeInterceptor } from "./common/interceptors/data-scope.interceptor";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 
@@ -96,9 +98,15 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
   controllers: [AppController],
   providers: [
     AppService,
+    // Jwt 认证解析守卫
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    // 数据权限全局守卫
+    {
+      provide: APP_GUARD,
+      useClass: DataScopeGuard,
     },
     // 应用http全局过滤器
     {
@@ -109,6 +117,11 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     {
       provide: APP_INTERCEPTOR,
       useClass: XRequestInterceptor,
+    },
+    // 数据权限拦截器
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DataScopeInterceptor,
     },
   ],
 })

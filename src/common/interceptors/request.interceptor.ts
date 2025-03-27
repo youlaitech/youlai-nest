@@ -11,7 +11,7 @@ import { tap, map } from "rxjs/operators";
 import { utils, XCommonRet } from "xmcommon";
 import { Response, Request } from "express";
 import { Reflector } from "@nestjs/core";
-import { METADATA_NOT_CHECK } from "../../common/decorators/not_check.decorator";
+import { METADATA_NOT_CHECK } from "../decorators/not_check.decorator";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 import { LoggerUtils } from "../../utils/logger.utils";

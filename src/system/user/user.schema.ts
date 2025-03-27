@@ -52,20 +52,11 @@ export class User extends BaseSchema {
   // 邮箱
   @Prop({ type: String, required: false })
   email: string;
-
   @Prop({
-    type: MongooseSchema.Types.String,
-    validate: {
-      validator: function (v: string) {
-        return v !== null; // 只要不是 null，就认为是有效的
-      },
-      message: "账号部门树路径不能为空",
-    },
-    default: "", // 默认值为空字符串
-    comment: "账号部门树路径，用于权限管理，当前账号的权限",
+    type: String,
+    required: true,
+    comment: "部门树路径，用于数据权限判断，比如 1,2 可以查看 1,2,3 或者 1,2,4 的数据",
   })
-  UserDeptTreePath?: string;
-  @Prop({ type: String, required: true, comment: "路径" })
   deptTreePath: string;
   @Prop({ type: String, required: false })
   salt: string;

@@ -2,8 +2,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nes
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { ErrorCode } from "../../common/enums/error-code.enum";
-import { Response } from "../../common/interfaces/response.interface";
+import { ErrorCode } from "../enums/error-code.enum";
+import { Response } from "../interfaces/response.interface";
 
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {

@@ -9,6 +9,9 @@ import {
   Query,
   Put,
   Inject,
+  UseGuards,
+  UseInterceptors,
+  SetMetadata,
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -19,11 +22,15 @@ import { DEFAULT_PASSWORD } from "src/common/constants";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { AuthUser } from "src/common/interfaces/auth-user.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
+import { JwtPayload } from "src/auth/interfaces/jwt-payload.interface";
+import { DataScopeGuard } from "src/common/guards/data-scope.guard";
+import { DataScopeInterceptor } from "src/common/interceptors/data-scope.interceptor";
 
 @ApiTags("02.用户接口")
 @Controller("users")
+@UseGuards(DataScopeGuard)
+@UseInterceptors(DataScopeInterceptor)
 export class UserController {
   constructor(
     private readonly userService: UserService,
@@ -33,8 +40,8 @@ export class UserController {
 
   @ApiOperation({ summary: "用户分页列表" })
   @Get("page")
+  @SetMetadata("resource", "sys_user")
   async findUserPage(
-    @CurrentUser("deptTreePath") deptTreePath: string,
     @Query("page") page: number,
     @Query("size") size: number,
     @Query("keywords") keywords: string,
@@ -50,15 +57,14 @@ export class UserController {
       keywords,
       status,
       startTime,
-      endTime,
-      deptTreePath
+      endTime
     );
   }
 
   @ApiOperation({ summary: "获取当前用户信息" })
   @Get("me")
-  async findMe(@CurrentUser() authUser: AuthUser): Promise<CurrentUserDto> {
-    return await this.userService.findMe(authUser);
+  async findMe(@CurrentUser() jwtPayload: JwtPayload): Promise<CurrentUserDto> {
+    return await this.userService.findMe(jwtPayload);
   }
 
   @ApiOperation({ summary: "新增用户" })

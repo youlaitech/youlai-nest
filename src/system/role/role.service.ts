@@ -103,7 +103,9 @@ export class RoleService {
       );
   }
 
-  // 创建角色
+  /**
+   * 创建角色
+   */
   async create(createRoleDto: CreateRoleDto) {
     const name = createRoleDto.name;
     const existRole = await this.roleModel.find({ name });

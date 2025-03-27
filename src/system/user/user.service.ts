@@ -8,13 +8,12 @@ import { BusinessException } from "../../common/exceptions/business.exception";
 import * as crypto from "crypto";
 import encry from "../../utils/crypto";
 import { RoleService } from "../role/role.service";
-import { matchDeptPath } from "../../common/shared/regex-utils";
+import { matchDeptPath } from "../../utils/regex-utils";
 import { DeptService } from "../dept/dept.service";
 import { RedisCacheService } from "../../cache/redis_cache.service";
-import { ErrorCode } from "src/common/enums/error-code.enum";
 import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
-import { AuthUser } from "src/common/interfaces/auth-user.interface";
+import { JwtPayload } from "src/auth/interfaces/jwt-payload.interface";
 
 @Injectable()
 export class UserService {
@@ -41,7 +40,6 @@ export class UserService {
    * @param status
    * @param startTime
    * @param endTime
-   * @param deptTreePath
    * @returns
    */
   async findUserPage(
@@ -51,8 +49,7 @@ export class UserService {
     keywords: string,
     status: number,
     startTime: string,
-    endTime: string,
-    deptTreePath: string
+    endTime: string
   ) {
     let query = {};
     query["isDeleted"] = 0;
@@ -82,14 +79,12 @@ export class UserService {
     }
     // 执行查询并分页
     const results = await this.userModel
-      .find({ ...matchDeptPath(deptTreePath), ...query })
+      .find({ ...query })
       .skip((pageNum - 1) * pageSize)
       .limit(pageSize)
       .exec();
 
-    const total = await this.userModel
-      .countDocuments({ ...matchDeptPath(deptTreePath), ...query })
-      .exec();
+    const total = await this.userModel.countDocuments({ ...query }).exec();
 
     return { list: results, total };
   }
@@ -131,7 +126,6 @@ export class UserService {
       password: user.password,
       salt: user.salt,
       status: user.status,
-      deptTreePath: user.UserDeptTreePath,
       roles,
     };
   }
@@ -142,8 +136,8 @@ export class UserService {
    * @param id 用户ID
    * @returns
    */
-  async findMe(authUser: AuthUser): Promise<CurrentUserDto> {
-    const userId = authUser.userId;
+  async findMe(jwtPayload: JwtPayload): Promise<CurrentUserDto> {
+    const userId = jwtPayload.sub;
 
     const user = await this.userModel
       .findOne({ _id: userId, isDeleted: false })
@@ -154,7 +148,7 @@ export class UserService {
     if (!user) {
       throw new BusinessException("用户不存在");
     }
-    const roles = authUser.roles;
+    const roles = jwtPayload.roles;
     let perms;
     if (roles && roles.length > 0) {
       perms = await this.roleService.findPermsByRoleCodes(roles);

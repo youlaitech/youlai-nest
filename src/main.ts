@@ -3,7 +3,7 @@ import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { NestInterceptor, ValidationPipe } from "@nestjs/common";
 
-import { TransformInterceptor } from "./core/interceptors/transform.interceptor";
+import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
 import { ConfigService } from "@nestjs/config";
 import * as session from "express-session";
 

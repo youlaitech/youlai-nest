@@ -1,9 +1,9 @@
 import { ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { AuthGuard as PassportAuthGuard } from "@nestjs/passport";
-import { IS_PUBLIC_KEY } from "../../common/decorators/public.decorator";
-import { BusinessException } from "../../common/exceptions/business.exception";
-import { ErrorCode } from "../../common/enums/error-code.enum";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { BusinessException } from "../exceptions/business.exception";
+import { ErrorCode } from "../enums/error-code.enum";
 
 /**
  * 认证守卫

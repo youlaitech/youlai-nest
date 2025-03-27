@@ -4,7 +4,7 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Dept } from "./dept.schema";
-import { matchDeptPath, rolesDeptPath } from "../../common/shared/regex-utils";
+import { matchDeptPath, rolesDeptPath } from "../../utils/regex-utils";
 
 /**
  * 部门服务
