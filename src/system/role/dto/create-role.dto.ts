@@ -1,7 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsArray, IsMongoId } from "class-validator";
-import { BaseDto } from "../../../common/dto/base.dto";
 
-export class CreateRoleDto extends BaseDto {
+export class CreateRoleDto {
   @IsString()
   readonly name: string;
 

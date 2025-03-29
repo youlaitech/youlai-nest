@@ -1,5 +1,3 @@
-import { BaseDto } from "../../../common/dto/base.dto";
-
 import { IsOptional, IsString, IsNumber, IsIn } from "class-validator";
 
 export class CreateDictDto {
@@ -59,7 +57,7 @@ export class DictPageVoDto {
 /**
  * 字典表单 DTO
  */
-export class DictFormDto extends BaseDto {
+export class DictFormDto {
   /**
    * 字典ID
    */

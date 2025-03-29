@@ -3,7 +3,6 @@ import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigType } from "@nestjs/config";
 import jwtConfig from "../../config/jwt.config";
-import { JwtPayload } from "../interfaces/jwt-payload.interface";
 
 /**
  * JWT 认证策略
@@ -30,9 +29,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * 验证并标准化 JWT 载荷
    *
    * @param payload 解码后的 JWT 载荷
-   * @returns 标准用户对象 (将挂载到 req.user)
+   * @returns 标准用户对象 (将挂载到 req.user) ，
    */
-  async validate(payload: JwtPayload) {
+  async validate(payload: any) {
     if (!payload.sub || !payload.username) {
       throw new UnauthorizedException("无效的令牌载荷");
     }
@@ -41,6 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       username: payload.username,
       roles: payload.roles || [],
+      deptId: payload.deptId,
+      deptTreePath: payload.deptTreePath,
       dataScope: payload.dataScope,
     };
   }

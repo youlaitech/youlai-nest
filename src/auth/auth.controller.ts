@@ -12,9 +12,9 @@ import {
 
 import { Request } from "express";
 import { AuthService } from "./auth.service";
-import { LoginAuthDto } from "./dto/login-auth.dto";
+import { LoginRequestDto } from "./dto/login-request.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { LoginResponseVo } from "./vo/login.vo";
+import { LoginResultDto } from "./dto/login-result.dto";
 import { Public } from "../common/decorators/public.decorator";
 import { ToolsService } from "../utils/service/tools.service";
 import { BusinessException } from "../common/exceptions/business.exception";
@@ -34,11 +34,11 @@ export class AuthController {
   ) {}
 
   @ApiOperation({ summary: "登录接口" })
-  @ApiOkResponse({ type: LoginResponseVo })
+  @ApiOkResponse({ type: LoginResultDto })
   @Public()
   @UseInterceptors(FileInterceptor(""))
   @Post("login")
-  async login(@Body() loginDto: LoginAuthDto) {
+  async login(@Body() loginDto: LoginRequestDto) {
     const { captchaCode, captchaKey } = loginDto;
 
     const cacheCaptchaCode = await this.RedisService.get(captchaKey);

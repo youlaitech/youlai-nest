@@ -1,9 +1,8 @@
 import { IsString, IsOptional, IsNumber, IsArray } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Types } from "mongoose";
-import { BaseDto } from "../../../common/dto/base.dto";
 
-export class CreateUserDto extends BaseDto {
+export class CreateUserDto {
   @ApiProperty({ description: "用户名", maxLength: 30, required: true })
   @IsString()
   @IsOptional()
@@ -25,6 +24,9 @@ export class CreateUserDto extends BaseDto {
   @ApiProperty({ description: "部门ID", required: false })
   @IsOptional()
   deptId?: Types.ObjectId | null;
+
+  @ApiProperty({ description: "部门树路径" })
+  deptTreePath?: string;
 
   @ApiProperty({ description: "头像", required: false })
   @IsString()
@@ -51,10 +53,6 @@ export class CreateUserDto extends BaseDto {
   @IsOptional()
   roleIds?: Types.ObjectId[];
 
-  @ApiProperty({ description: "部门树路径" })
-  deptTreePath?: string;
-  @ApiProperty({ description: "账号部门树路径" })
-  UserDeptTreePath?: string;
   @ApiProperty({ description: "密码盐", required: false })
   @IsString()
   @IsOptional()

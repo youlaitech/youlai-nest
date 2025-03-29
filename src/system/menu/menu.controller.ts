@@ -4,6 +4,7 @@ import { CreateMenuDto } from "./dto/create-menu.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { Route } from "./interface/menu.type";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
 @ApiTags("04.菜单接口")
 @Controller("menus")
@@ -32,11 +33,9 @@ export class MenuController {
 
   @ApiOperation({ summary: "创建菜单" })
   @Post()
-  async create(@Req() request, @Body() createMenuDto: CreateMenuDto) {
+  async create(@CurrentUser("userId") currentUserId: string, @Body() createMenuDto: CreateMenuDto) {
     return await this.menuService.create({
       ...createMenuDto,
-      createBy: request["user"]?.userId,
-      deptTreePath: request["user"]?.deptTreePath || "0",
     });
   }
 

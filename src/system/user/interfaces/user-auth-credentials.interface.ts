@@ -2,7 +2,7 @@
  * 用户认证信息接口
  * 用于认证过程中获取用户的关键信息，例如登录时需要的用户名、密码、盐值以及权限等。
  */
-export interface UserAuthInfo {
+export interface UserAuthCredentials {
   /**
    * 用户ID
    */
@@ -34,7 +34,21 @@ export interface UserAuthInfo {
   roles: string[];
 
   /**
+   * 部门ID
+   */
+  deptId: string;
+
+  /**
    * 部门树路径
    */
   deptTreePath: string;
+
+  /**
+   * 数据范围
+   * 0：全部数据权限
+   * 1：本部门及以下数据权限
+   * 2：本部门
+   * 3：本人
+   */
+  dataScope: number;
 }

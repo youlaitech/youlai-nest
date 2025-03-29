@@ -1,7 +1,7 @@
 /**
  * 数据权限范围枚举
  */
-enum DataScopeEnum {
+export enum DataScopeEnum {
   /**
    * 所有数据
    */

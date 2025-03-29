@@ -4,7 +4,6 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Dept } from "./dept.schema";
-import { matchDeptPath, rolesDeptPath } from "../../utils/regex-utils";
 
 /**
  * 部门服务
@@ -21,10 +20,9 @@ export class DeptService {
    *
    * @param keyword
    * @param status
-   * @param deptTreePath
    * @returns
    */
-  async findAll(keyword: string, status: string | number, deptTreePath: string | number) {
+  async findAll(keyword: string, status: string | number) {
     const query = {};
     if (keyword) {
       const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
@@ -38,7 +36,6 @@ export class DeptService {
         {
           $match: {
             ...query,
-            ...rolesDeptPath(deptTreePath),
             isDeleted: 0,
           },
         },
@@ -53,15 +50,14 @@ export class DeptService {
   /**
    * 查询部门下拉树形列表
    *
-   * @param deptTreePath
    * @returns
    */
-  async findAllOptions(deptTreePath) {
+  async findAllOptions() {
     const query = {};
     const Options = await this.deptModel
       .aggregate([
         {
-          $match: { ...query, ...matchDeptPath(deptTreePath), isDeleted: 0 },
+          $match: { ...query, isDeleted: 0 },
         },
         { $sort: { sort: 1 } },
         { $addFields: { id: "$_id" } }, // 将 _id 复制到 id

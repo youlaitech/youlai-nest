@@ -30,7 +30,6 @@ export class XRequestInterceptor implements NestInterceptor {
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
     const seq = requestSeq++;
-    const urlInfo = `${req.method} ${req.url}`;
 
     req["seq"] = seq;
 

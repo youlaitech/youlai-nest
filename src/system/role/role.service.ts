@@ -141,8 +141,8 @@ export class RoleService {
   /**
    * 更新角色菜单
    */
-  async updateMenus(id: string, menus: []) {
-    return await this.roleModel.findByIdAndUpdate(id, { menus: menus }, { new: true }).exec();
+  async updateMenus(id: string, menuIds: string[]) {
+    return await this.roleModel.findByIdAndUpdate(id, { menuIds: menuIds }, { new: true }).exec();
   }
 
   async remove(id: string) {
@@ -155,12 +155,11 @@ export class RoleService {
    * @param roleIds 角色ID集合
    * @returns
    */
-  async findCodesByIds(roleIds: Schema.Types.ObjectId[]): Promise<string[]> {
+  async findRolesByIds(roleIds: Schema.Types.ObjectId[]): Promise<Role[]> {
     const roles = await this.roleModel
       .find({ _id: { $in: roleIds } })
-      .select("code -_id")
+      .select("code dataScope -_id")
       .exec();
-
-    return roles.map((r) => r.code);
+    return roles;
   }
 }

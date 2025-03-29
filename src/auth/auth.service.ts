@@ -2,10 +2,10 @@ import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import encry from "../utils/crypto";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../system/user/user.service";
-import type { LoginAuthDto } from "./dto/login-auth.dto";
+import type { LoginRequestDto } from "./dto/login-request.dto";
 import jwtConfig from "src/config/jwt.config";
 import { ConfigType } from "@nestjs/config";
-import { LoginResponseVo } from "./vo/login.vo";
+import { LoginResultDto } from "./dto/login-result.dto";
 import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 
@@ -24,9 +24,9 @@ export class AuthService {
   /**
    * 用户登录认证
    */
-  async login(loginDto: LoginAuthDto): Promise<LoginResponseVo> {
+  async login(loginDto: LoginRequestDto): Promise<LoginResultDto> {
     // 1. 验证用户凭证
-    const userAuthInfo = await this.userService.findAuthUserByUsername(loginDto.username);
+    const userAuthInfo = await this.userService.getAuthCredentialsByUsername(loginDto.username);
 
     if (!userAuthInfo || userAuthInfo.password !== encry(loginDto.password, userAuthInfo.salt)) {
       throw new BusinessException(ErrorCode.USER_PASSWORD_ERROR);
@@ -36,6 +36,8 @@ export class AuthService {
     const payload = {
       sub: userAuthInfo.id,
       username: userAuthInfo.username,
+      deptId: userAuthInfo.deptId,
+      dataScope: userAuthInfo.dataScope,
       deptTreePath: userAuthInfo.deptTreePath,
       roles: userAuthInfo.roles,
     };

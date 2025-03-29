@@ -1,7 +1,6 @@
 import * as mongoose from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { BaseSchema } from "../../common/schemas/base.schema";
-import { Schema as MongooseSchema } from "mongoose";
 import { DateFormatService } from "src/utils/service/date-format.service";
 
 @Schema({

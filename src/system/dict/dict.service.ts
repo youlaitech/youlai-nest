@@ -61,7 +61,7 @@ export class DictService {
    * @returns
    */
   async createDict(dictFormDto: DictFormDto) {
-    const { dictCode, name, status, deptTreePath, createBy, createTime } = dictFormDto;
+    const { dictCode, name, status, createBy, createTime } = dictFormDto;
     const existCode = await this.dictModel.find({ dictCode, isDeleted: 0 });
     if (existCode.length > 0) {
       throw new BusinessException("字典已存在");
@@ -70,7 +70,6 @@ export class DictService {
       dictCode,
       name,
       status,
-      deptTreePath,
       createBy,
       createTime,
     });

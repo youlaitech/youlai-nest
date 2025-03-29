@@ -1,7 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsBoolean, MaxLength, IsMongoId } from "class-validator";
-import { BaseDto } from "../../../common/dto/base.dto";
 
-export class CreateMenuDto extends BaseDto {
+export class CreateMenuDto {
   // 菜单名称
   @IsString()
   @MaxLength(20)

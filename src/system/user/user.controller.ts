@@ -23,20 +23,16 @@ import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { CurrentUserDto } from "./dto/current-user.dto";
-import { JwtPayload } from "src/auth/interfaces/jwt-payload.interface";
 import { DataScopeGuard } from "src/common/guards/data-scope.guard";
 import { DataScopeInterceptor } from "src/common/interceptors/data-scope.interceptor";
+import { CurrentUserInfo } from "src/common/interfaces/current-user.interface";
 
 @ApiTags("02.用户接口")
 @Controller("users")
 @UseGuards(DataScopeGuard)
 @UseInterceptors(DataScopeInterceptor)
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    @Inject(WINSTON_MODULE_PROVIDER)
-    private logger: Logger
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @ApiOperation({ summary: "用户分页列表" })
   @Get("page")
@@ -63,17 +59,15 @@ export class UserController {
 
   @ApiOperation({ summary: "获取当前用户信息" })
   @Get("me")
-  async findMe(@CurrentUser() jwtPayload: JwtPayload): Promise<CurrentUserDto> {
-    return await this.userService.findMe(jwtPayload);
+  async findMe(@CurrentUser() currentUser: CurrentUserInfo): Promise<CurrentUserDto> {
+    return await this.userService.findMe(currentUser);
   }
 
   @ApiOperation({ summary: "新增用户" })
   @Post()
-  async create(@Req() request, @Body() createUserDto: CreateUserDto) {
+  async create(@CurrentUser("userId") currentUserId: string, @Body() createUserDto: CreateUserDto) {
     return await this.userService.create({
       ...createUserDto,
-      createBy: request["user"]?.sub,
-      deptTreePath: request["user"]?.deptTreePath || "0",
       password: DEFAULT_PASSWORD,
     });
   }
@@ -86,8 +80,14 @@ export class UserController {
 
   @ApiOperation({ summary: "修改用户" })
   @Put(":id")
-  updateMenu(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto): any {
-    return this.userService.update(id, updateUserDto);
+  updateMenu(
+    @CurrentUser("userId") currentUserId: string,
+    @Param("id") id: string,
+    @Body() updateUserDto: UpdateUserDto
+  ): any {
+    return this.userService.update(id, {
+      ...updateUserDto,
+    });
   }
 
   @ApiOperation({ summary: "删除用户" })

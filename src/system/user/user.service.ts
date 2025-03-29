@@ -8,12 +8,11 @@ import { BusinessException } from "../../common/exceptions/business.exception";
 import * as crypto from "crypto";
 import encry from "../../utils/crypto";
 import { RoleService } from "../role/role.service";
-import { matchDeptPath } from "../../utils/regex-utils";
 import { DeptService } from "../dept/dept.service";
 import { RedisCacheService } from "../../cache/redis_cache.service";
-import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
+import { UserAuthCredentials } from "./interfaces/user-auth-credentials.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
-import { JwtPayload } from "src/auth/interfaces/jwt-payload.interface";
+import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
 
 @Injectable()
 export class UserService {
@@ -25,10 +24,6 @@ export class UserService {
     private readonly deptService: DeptService,
     private readonly cacheService: RedisCacheService
   ) {}
-
-  // 用户缓存键前缀
-  private readonly USER_CACHE_PREFIX = "user:";
-  private readonly USER_LIST_CACHE_KEY = "user:list";
 
   /**
    * 用户分页列表
@@ -90,12 +85,12 @@ export class UserService {
   }
 
   /**
-   * 根据用户名查找用户
+   *  获取用户认证凭证信息
    *
-   * @param username  用户名
-   * @returns
+   * @param username   待验证的用户名
+   * @returns 用户认证凭证对象，包含密码、权限等关键信息
    */
-  async findAuthUserByUsername(username: string): Promise<UserAuthInfo> {
+  async getAuthCredentialsByUsername(username: string): Promise<UserAuthCredentials> {
     const user = await this.userModel
       .findOne({ username, isDeleted: 0 })
       .select({
@@ -104,6 +99,7 @@ export class UserService {
         password: 1,
         salt: 1,
         status: 1,
+        deptId: 1,
         deptTreePath: 1,
         roleIds: 1,
       })
@@ -114,11 +110,16 @@ export class UserService {
       return null;
     }
 
-    // 角色ID列表转换为角色编码列表
-    const roles =
-      user.roleIds && user.roleIds.length > 0
-        ? await this.roleService.findCodesByIds(user.roleIds)
-        : [];
+    let roleCodes = [];
+    let dataScope;
+    if (user.roleIds?.length > 0) {
+      const roles = await this.roleService.findRolesByIds(user.roleIds);
+
+      if (roles.length > 0) {
+        roleCodes = roles.map((r) => r.code);
+        dataScope = Math.min(...roles.map((r) => r.dataScope));
+      }
+    }
 
     return {
       id: user._id.toString(),
@@ -126,7 +127,10 @@ export class UserService {
       password: user.password,
       salt: user.salt,
       status: user.status,
-      roles,
+      deptId: user.deptId?.toString() || "",
+      deptTreePath: user.deptTreePath,
+      roles: roleCodes,
+      dataScope,
     };
   }
 
@@ -136,9 +140,9 @@ export class UserService {
    * @param id 用户ID
    * @returns
    */
-  async findMe(jwtPayload: JwtPayload): Promise<CurrentUserDto> {
-    const userId = jwtPayload.sub;
-
+  async findMe(currentUserInfo: CurrentUserInfo): Promise<CurrentUserDto> {
+    const userId = currentUserInfo.userId;
+    console.log("userId", userId);
     const user = await this.userModel
       .findOne({ _id: userId, isDeleted: false })
       .select("username nickname mobile email avatar")
@@ -148,7 +152,7 @@ export class UserService {
     if (!user) {
       throw new BusinessException("用户不存在");
     }
-    const roles = jwtPayload.roles;
+    const roles = currentUserInfo.roles;
     let perms;
     if (roles && roles.length > 0) {
       perms = await this.roleService.findPermsByRoleCodes(roles);
@@ -173,27 +177,31 @@ export class UserService {
    * @returns
    */
   async create(createUserDto: CreateUserDto) {
-    const { username, deptId, password } = createUserDto;
+    const { username, deptId, password, roleIds } = createUserDto;
 
-    const existUser = await this.userModel.findOne({ username, isDeleted: false });
-    if (existUser) {
+    if (roleIds?.length <= 0) {
+      throw new BusinessException("请选择角色");
+    }
+
+    const existingUser = await this.userModel.findOne({ username, isDeleted: false });
+    if (existingUser) {
       throw new BusinessException("用户已存在");
     }
     const salt = crypto.randomBytes(4).toString("base64");
-    const UserWithDept = await this.deptService.findOne(deptId.toString());
-    const UserDeptTreePath = `${UserWithDept.TreePath}/${UserWithDept.id}`;
 
-    const roleIds = createUserDto.roleIds;
-
-    if (!roleIds || roleIds.length === 0) {
-      throw new BusinessException("角色不能为空");
+    let userDeptTreePath;
+    if (deptId != null) {
+      const dept = await this.deptService.findOne(deptId.toString());
+      if (!dept) {
+        userDeptTreePath = `${dept.TreePath}/${deptId}`;
+      }
     }
 
     return await this.userModel.create({
       ...createUserDto,
       roles: createUserDto.roleIds,
       salt: salt,
-      UserDeptTreePath: UserDeptTreePath,
+      deptTreePath: userDeptTreePath,
       password: encry(password, salt),
     });
   }
@@ -215,25 +223,37 @@ export class UserService {
   /**
    * 更新用户
    *
-   * @param id 用户ID
+   * @param userId 用户ID
    * @param updateUserDto 更新用户数据
    * @returns
    */
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.userModel.findByIdAndUpdate(id, updateUserDto, {
-      new: true,
-    });
-
-    if (!user) {
-      throw new BusinessException("用户不存在");
+  async update(userId: string, updateUserDto: UpdateUserDto) {
+    const { username, deptId, roleIds } = updateUserDto;
+    // 校验角色是否为空
+    if (roleIds?.length <= 0) {
+      throw new BusinessException("请选择角色");
     }
 
-    // 更新缓存
-    await Promise.all([
-      this.cacheService.del(this.USER_CACHE_PREFIX + id),
-      this.cacheService.del(this.USER_LIST_CACHE_KEY),
-    ]);
+    // 校验用户是否存在 ,排除自己 后还存在相同的用户名
+    const existingUser = await this.userModel.findOne({ username, _id: { $ne: userId } });
+    if (existingUser) {
+      throw new BusinessException("用户已存在");
+    }
 
+    // 生成部门树路径
+    let userDeptTreePath;
+    if (deptId != null) {
+      const dept = await this.deptService.findOne(deptId.toString());
+      if (!dept) {
+        userDeptTreePath = `${dept.TreePath}/${deptId}`;
+      }
+    }
+
+    // 更新用户信息
+    updateUserDto.deptTreePath = userDeptTreePath;
+    const user = await this.userModel.findByIdAndUpdate(userId, updateUserDto, {
+      new: true,
+    });
     return user;
   }
 
@@ -267,12 +287,6 @@ export class UserService {
     if (!result) {
       return false;
     }
-
-    // 删除缓存
-    await Promise.all([
-      this.cacheService.del(this.USER_CACHE_PREFIX + id),
-      this.cacheService.del(this.USER_LIST_CACHE_KEY),
-    ]);
 
     return true;
   }

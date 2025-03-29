@@ -30,7 +30,6 @@ export class RoleController {
   create(@Req() request, @Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create({
       ...createRoleDto,
-      createBy: request["user"]?.userId,
     });
   }
 
@@ -57,14 +56,15 @@ export class RoleController {
 
   @ApiOperation({ summary: "获取角色权限" })
   @Get(":id/menuIds")
-  async findMenuIds(@Param("id") id: string) {
-    const data = await this.rolesService.findOne(id);
+  async findMenuIds(@Param("id") roleId: string) {
+    const data = await this.rolesService.findOne(roleId);
     return data.menuIds;
   }
 
-  @ApiOperation({ summary: "角色权限分配" })
+  @ApiOperation({ summary: "角色分配权限" })
   @Put(":id/menus")
-  async updateMenus(@Param("id") id: string, @Body() menuData: any): Promise<any> {
-    return await this.rolesService.updateMenus(id, menuData);
+  async updateMenus(@Param("id") id: string, @Body() menuIds: string[]): Promise<any> {
+    console.log("menuData", menuIds);
+    return await this.rolesService.updateMenus(id, menuIds);
   }
 }

@@ -20,7 +20,7 @@ export class BaseSchema extends Document {
   @Prop({
     type: Number,
     default: 0,
-    comment: "逻辑删除标识，0 表示未删除，1 表示已删除",
+    comment: "逻辑删除标识(1-已删除 0-未删除)",
   })
   isDeleted: number;
 

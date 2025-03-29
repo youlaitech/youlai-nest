@@ -3,7 +3,7 @@ import { ApiProperty } from "@nestjs/swagger";
 /**
  * 登录响应
  */
-export class LoginResponseVo {
+export class LoginResultDto {
   @ApiProperty({ description: "访问令牌" })
   accessToken: string;
 
