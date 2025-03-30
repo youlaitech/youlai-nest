@@ -16,13 +16,13 @@ import { RedisModule } from "@liaoliaots/nestjs-redis";
 import mongoose from "mongoose";
 
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
-import { RedisCacheModule } from "./cache/redis_cache.module";
-import { OssModule } from "./oss/oss.module"; // 对象存储模块
+import { RedisCacheModule } from "./shared/cache/redis_cache.module";
+import { OssModule } from "./shared/oss/oss.module"; // 对象存储模块
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { LoggerMiddleware } from "./logger/logger.middleware";
+import { LoggerMiddleware } from "./shared/logger/logger.middleware";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";

@@ -42,10 +42,7 @@ export class MenuController {
   @ApiOperation({ summary: "获取菜单表单数据" })
   @Get(":id/form")
   async getMenuForm(@Param("id") id: string): Promise<any> {
-    const form = await this.menuService.getMenuForm(id);
-    const data = { ...form, id: form._id };
-    delete data._id;
-    return data;
+    return await this.menuService.getMenuForm(id);
   }
 
   @ApiOperation({ summary: "修改菜单" })

@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { Request, Response, NextFunction } from "express";
-import { LoggerUtils } from "../utils/logger.utils";
+import { LoggerUtils } from "../../common/utils/logger.utils";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Inject } from "@nestjs/common";
 import { Logger } from "winston";

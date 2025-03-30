@@ -16,10 +16,10 @@ import { LoginRequestDto } from "./dto/login-request.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginResultDto } from "./dto/login-result.dto";
 import { Public } from "../common/decorators/public.decorator";
-import { ToolsService } from "../utils/service/tools.service";
+import { ToolsService } from "../common/utils/service/tools.service";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
-import { RedisCacheService } from "../cache/redis_cache.service";
+import { RedisCacheService } from "../shared/cache/redis_cache.service";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import { FileInterceptor } from "@nestjs/platform-express";
 

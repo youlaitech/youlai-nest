@@ -13,6 +13,8 @@ export class DateFormatService {
       keepOriginal?: boolean;
     }
   ) {
+    if (!date) return null;
+
     if (options?.keepOriginal) return date.toISOString();
 
     const pattern = options?.pattern || this.defaultPattern;

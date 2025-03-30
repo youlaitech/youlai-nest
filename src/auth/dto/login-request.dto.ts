@@ -1,6 +1,9 @@
 import { IsNotEmpty, Length } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * 登录请求
+ */
 export class LoginRequestDto {
   @IsNotEmpty({
     message: "用户名不能为空",

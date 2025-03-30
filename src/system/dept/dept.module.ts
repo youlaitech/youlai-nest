@@ -3,9 +3,8 @@ import { DeptService } from "./dept.service";
 import { DeptController } from "./dept.controller";
 import { MongooseModule } from "@nestjs/mongoose";
 import { deptSchema } from "./dept.schema";
-const DeptTable = MongooseModule.forFeature([{ name: "Dept", schema: deptSchema }]);
 @Module({
-  imports: [DeptTable],
+  imports: [MongooseModule.forFeature([{ name: "Dept", schema: deptSchema }])],
   controllers: [DeptController],
   providers: [DeptService],
   exports: [DeptService],

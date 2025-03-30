@@ -81,11 +81,9 @@ export class MenuService {
   async getRoutes(userId: string) {
     const menuIds: string[] = await this.userService.getUserMenuIds(userId);
     const menus: any = await this.menuModel
-      .find({ _id: { $in: menuIds }, type: { $ne: 3 } })
+      .find({ _id: { $in: menuIds }, type: { $ne: 3 } }) // 排除按钮
       .sort({ sort: "asc" })
       .exec();
-
-    console.log("获取菜单", menus);
 
     return this.buildRoutes(menus);
   }
@@ -107,6 +105,11 @@ export class MenuService {
     return this.buildMenuTree(menus);
   }
 
+  /**
+   * 获取菜单下拉树形列表
+   *
+   * @returns
+   */
   async findOptions() {
     try {
       const Options = await this.menuModel
@@ -120,6 +123,12 @@ export class MenuService {
     }
   }
 
+  /**
+   * 创建菜单
+   *
+   * @param createMenuDto 菜单创建数据
+   * @returns
+   */
   async create(createMenuDto: CreateMenuDto) {
     const createdMenu = new this.menuModel({
       ...createMenuDto,
@@ -136,7 +145,7 @@ export class MenuService {
    * @returns
    */
   async getMenuForm(id: string) {
-    return await this.menuModel.findById(id).lean().exec();
+    return await this.menuModel.findById(id).exec();
   }
 
   /**

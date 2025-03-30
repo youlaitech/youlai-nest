@@ -5,8 +5,8 @@ import { ErrorCode } from "../enums/error-code.enum";
 import { Response } from "../interfaces/response.interface";
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
+  intercept(_ctx: ExecutionContext, next: CallHandler): Observable<Response<T>> {
     return next.handle().pipe(
       map((data) => {
         return {

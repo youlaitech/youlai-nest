@@ -14,7 +14,7 @@ import { Reflector } from "@nestjs/core";
 import { METADATA_NOT_CHECK } from "../decorators/not_check.decorator";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
-import { LoggerUtils } from "../../utils/logger.utils";
+import { LoggerUtils } from "../../common/utils/logger.utils";
 
 let requestSeq = 0;
 
@@ -43,11 +43,10 @@ export class XRequestInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((data) => {
-        // 核心修改点：移除数据过滤
         if (isCheckAPI) {
           this.logger.info("API Response", {
             ...logRequest(),
-            response: data, // 直接记录原始数据
+            response: data,
           });
 
           if (res.statusCode === HttpStatus.CREATED && req.method === "POST") {
@@ -55,10 +54,7 @@ export class XRequestInterceptor implements NestInterceptor {
           }
         }
 
-        // 保持原有结构逻辑
-        return data instanceof XCommonRet
-          ? this.formatXCommonRet(data) // 移除过滤处理
-          : data;
+        return data instanceof XCommonRet ? this.formatXCommonRet(data) : data;
       }),
       tap(() => {
         this.logger.info(`Request ${seq} Completed`, {
@@ -69,7 +65,6 @@ export class XRequestInterceptor implements NestInterceptor {
     );
   }
 
-  // 保持原有格式化逻辑（无敏感数据处理）
   private formatXCommonRet(paramData: XCommonRet) {
     return {
       ret: paramData.err,

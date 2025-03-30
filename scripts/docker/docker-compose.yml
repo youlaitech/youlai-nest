@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   nest-app:
     build:
@@ -10,7 +10,7 @@ services:
       - redis-container
     restart: always
     ports:
-          - 8989:8989
+      - 9090:9090
     # ports:
     #   - 3005:3005
     networks:

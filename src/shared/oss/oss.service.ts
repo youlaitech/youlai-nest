@@ -3,7 +3,7 @@ import { Injectable, Inject } from "@nestjs/common";
 import * as Client from "ali-oss";
 import * as dayjs from "dayjs";
 import { ConfigType } from "@nestjs/config";
-import ossConfig from "../config/oss.config";
+import ossConfig from "../../config/oss.config";
 import OSS from "ali-oss";
 import * as $OpenApi from "@alicloud/openapi-client";
 import ocr_api20210707, * as $ocr_api20210707 from "@alicloud/ocr-api20210707";

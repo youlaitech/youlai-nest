@@ -26,9 +26,6 @@ export class DataScopeGuard implements CanActivate {
     const dataScope = user.dataScope;
 
     const resource = this.reflector.get<string>("resource", context.getHandler()); // 获取资源名称，用户表：sys_user
-
-    console.log("user", user);
-    console.log("resource", resource);
     request.dataFilter = this.buildDataFilter(dataScope, deptTreePath, deptId, userId, resource);
     return true;
   }
@@ -62,7 +59,6 @@ export class DataScopeGuard implements CanActivate {
         filter._id = null;
         break;
     }
-
     return filter;
   }
 }

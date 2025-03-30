@@ -37,7 +37,6 @@ export class JwtAuthGuard extends PassportAuthGuard("jwt") {
     if (err || !user) {
       throw new BusinessException(ErrorCode.ACCESS_TOKEN_INVALID);
     }
-    console.log("user", user);
     return user;
   }
 }

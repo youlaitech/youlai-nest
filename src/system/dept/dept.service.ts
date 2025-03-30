@@ -81,13 +81,13 @@ export class DeptService {
   }
 
   /**
-   * 查询部门详情
+   * 获取部门表单
    *
    * @param id
    * @returns
    */
-  async findOne(id: string) {
-    return await this.deptModel.findById(id).sort({ sort: "asc" }).exec();
+  async getDeptForm(id: string) {
+    return await this.deptModel.findById(id).exec();
   }
 
   /**
@@ -97,8 +97,8 @@ export class DeptService {
    * @param updateDeptDto
    * @returns
    */
-  async update(id: string, updateDeptDto: UpdateDeptDto) {
-    return await this.deptModel.findByIdAndUpdate(id, updateDeptDto, { new: true }).exec();
+  async updateDept(id: string, updateDeptDto: UpdateDeptDto) {
+    return await this.deptModel.findByIdAndUpdate(id, updateDeptDto).exec();
   }
 
   /**

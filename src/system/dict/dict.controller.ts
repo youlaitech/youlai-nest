@@ -17,7 +17,6 @@ import { UpdateDictDto } from "./dto/update-dict.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { IsCreateBy, IsUpdateBy } from "../../common/decorators/public.decorator";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
 @ApiTags("06.字典接口")
 @Controller("dicts")
@@ -40,11 +39,8 @@ export class DictController {
   @ApiOperation({ summary: "创建字典" })
   @IsCreateBy()
   @Post()
-  createDict(@CurrentUser("userId") currentUserId: string, @Body() dictForm: DictFormDto) {
-    return this.dictService.createDict({
-      ...dictForm,
-      createBy: currentUserId,
-    });
+  createDict(@Body() dictForm: DictFormDto) {
+    return this.dictService.createDict(dictForm);
   }
 
   @ApiOperation({ summary: "字典表单数据" })

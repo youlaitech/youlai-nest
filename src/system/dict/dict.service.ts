@@ -61,7 +61,7 @@ export class DictService {
    * @returns
    */
   async createDict(dictFormDto: DictFormDto) {
-    const { dictCode, name, status, createBy, createTime } = dictFormDto;
+    const { dictCode, name, status } = dictFormDto;
     const existCode = await this.dictModel.find({ dictCode, isDeleted: 0 });
     if (existCode.length > 0) {
       throw new BusinessException("字典已存在");
@@ -70,8 +70,6 @@ export class DictService {
       dictCode,
       name,
       status,
-      createBy,
-      createTime,
     });
 
     return await newDict.save();
@@ -294,7 +292,28 @@ export class DictService {
    * @param updateData
    * @returns
    */
-  async updateDictItem(id: string, updateData: any) {}
+  async updateDictItem(id: string, updateData: any) {
+    const dictItem = await this.dictItemModel.findById(id);
+    if (!dictItem) {
+      throw new BusinessException("字典项不存在");
+    }
+
+    // 检查值是否已存在
+    const existItem = await this.dictItemModel.findOne({
+      dictCode: dictItem.dictCode,
+      value: updateData.value,
+      isDeleted: 0,
+      _id: { $ne: id },
+    });
+    if (existItem) {
+      throw new BusinessException(`字典项值 "${updateData.value}" 已存在`);
+    }
+
+    // 更新字典项
+    await this.dictItemModel.findByIdAndUpdate(id, updateData, { new: true });
+
+    return true;
+  }
 
   /**
    * 删除字典项

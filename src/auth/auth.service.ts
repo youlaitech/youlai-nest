@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import encry from "../utils/crypto";
+import encry from "../common/utils/crypto";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../system/user/user.service";
 import type { LoginRequestDto } from "./dto/login-request.dto";

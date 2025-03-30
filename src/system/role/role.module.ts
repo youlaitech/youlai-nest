@@ -4,9 +4,11 @@ import { RoleController } from "./role.controller";
 import { MongooseModule } from "@nestjs/mongoose";
 import { RoleSchema } from "./role.schema";
 import { MenuModule } from "../menu/menu.module";
-const RolesTable = MongooseModule.forFeature([{ name: "Role", schema: RoleSchema }]);
 @Module({
-  imports: [RolesTable, forwardRef(() => MenuModule)],
+  imports: [
+    MongooseModule.forFeature([{ name: "Role", schema: RoleSchema }]),
+    forwardRef(() => MenuModule),
+  ],
   controllers: [RoleController],
   providers: [RoleService],
   exports: [RoleService],

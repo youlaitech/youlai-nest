@@ -36,7 +36,7 @@ export class RoleController {
   @ApiOperation({ summary: "角色表单数据" })
   @Get(":id/form")
   async getRoleForm(@Param("id") id: string) {
-    return await this.rolesService.findOne(id);
+    return await this.rolesService.getRoleForm(id);
   }
 
   @ApiOperation({ summary: "修改角色" })
@@ -57,14 +57,13 @@ export class RoleController {
   @ApiOperation({ summary: "获取角色权限" })
   @Get(":id/menuIds")
   async findMenuIds(@Param("id") roleId: string) {
-    const data = await this.rolesService.findOne(roleId);
+    const data = await this.rolesService.getRoleForm(roleId);
     return data.menuIds;
   }
 
   @ApiOperation({ summary: "角色分配权限" })
   @Put(":id/menus")
   async updateMenus(@Param("id") id: string, @Body() menuIds: string[]): Promise<any> {
-    console.log("menuData", menuIds);
     return await this.rolesService.updateMenus(id, menuIds);
   }
 }

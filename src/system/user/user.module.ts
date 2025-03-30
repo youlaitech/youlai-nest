@@ -6,7 +6,7 @@ import { UserSchema } from "./user.schema";
 import { RoleModule } from "../role/role.module";
 import { MenuModule } from "../menu/menu.module";
 import { DeptModule } from "../dept/dept.module";
-import { RedisCacheModule } from "../../cache/redis_cache.module";
+import { RedisCacheModule } from "../../shared/cache/redis_cache.module";
 
 @Module({
   imports: [

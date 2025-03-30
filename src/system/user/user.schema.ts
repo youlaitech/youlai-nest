@@ -1,7 +1,7 @@
 import * as mongoose from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { BaseSchema } from "../../common/schemas/base.schema";
-import { DateFormatService } from "src/utils/service/date-format.service";
+import { DateFormatService } from "../../common/utils/service/date-format.service";
 
 @Schema({
   collection: "sys_user",
@@ -12,7 +12,7 @@ import { DateFormatService } from "src/utils/service/date-format.service";
         pattern: "YYYY-MM-DD HH:mm",
       });
       ret.updateTime = DateFormatService.format(ret.updateTime, {
-        pattern: "YYYY-MM-DD HH:mm:ss",
+        pattern: "YYYY-MM-DD HH:mm",
       });
       delete ret.salt;
       delete ret.password;
@@ -41,6 +41,9 @@ export class User extends BaseSchema {
     comment: "部门ID",
   })
   deptId: mongoose.Schema.Types.ObjectId | null;
+
+  @Prop({ type: String, required: false, comment: "部门名称" })
+  deptName: string;
 
   @Prop({ type: String, required: false })
   avatar: string;

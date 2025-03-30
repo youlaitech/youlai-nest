@@ -25,6 +25,10 @@ export class CreateUserDto {
   @IsOptional()
   deptId?: Types.ObjectId | null;
 
+  @ApiProperty({ description: "部门名称", required: false })
+  @IsOptional()
+  deptName?: string;
+
   @ApiProperty({ description: "部门树路径" })
   deptTreePath?: string;
 

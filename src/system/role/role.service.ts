@@ -126,16 +126,15 @@ export class RoleService {
    * @param id  角色 ID
    * @returns
    */
-  async findOne(id: string) {
-    const role = await this.roleModel.findById(id).lean().exec();
-    return role;
+  async getRoleForm(id: string) {
+    return await this.roleModel.findById(id).exec();
   }
 
   /**
    * 更新角色
    */
   async update(id: string, updateMenuDto: UpdateMenuDto) {
-    return await this.roleModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
+    return await this.roleModel.findByIdAndUpdate(id, updateMenuDto).exec();
   }
 
   /**
@@ -145,6 +144,9 @@ export class RoleService {
     return await this.roleModel.findByIdAndUpdate(id, { menuIds: menuIds }, { new: true }).exec();
   }
 
+  /**
+   * 删除角色
+   */
   async remove(id: string) {
     return await this.roleModel.findByIdAndDelete(id).exec();
   }

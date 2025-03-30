@@ -13,19 +13,16 @@ import {
   UseInterceptors,
   UseGuards,
   SetMetadata,
+  Put,
 } from "@nestjs/common";
 import { DeptService } from "./dept.service";
 import { CreateDeptDto } from "./dto/create-dept.dto";
 import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { DataScopeGuard } from "../../common/guards/data-scope.guard";
-import { DataScopeInterceptor } from "../../common/interceptors/data-scope.interceptor";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
 @ApiTags("05.部门接口")
 @Controller("dept")
-@UseGuards(DataScopeGuard)
-@UseInterceptors(DataScopeInterceptor)
 export class DeptController {
   constructor(private readonly deptService: DeptService) {}
 
@@ -54,21 +51,19 @@ export class DeptController {
 
   @ApiOperation({ summary: "获取部门表单" })
   @Get(":id/form")
-  async findOne(@Param("id") id: string) {
-    return this.deptService.findOne(id);
+  async getDeptForm(@Param("id") id: string) {
+    const dept = await this.deptService.getDeptForm(id);
+    return dept;
   }
 
   @ApiOperation({ summary: "编辑部门" })
-  @Patch(":id")
-  update(
+  @Put(":id")
+  async update(
     @CurrentUser("userId") currentUserId: string,
     @Param("id") id: string,
     @Body() updateDeptDto: UpdateDeptDto
   ) {
-    return this.deptService.update(id, {
-      ...updateDeptDto,
-      updateBy: currentUserId,
-    });
+    return await this.deptService.updateDept(id, updateDeptDto);
   }
 
   @ApiOperation({ summary: "删除部门" })
