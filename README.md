@@ -1,5 +1,5 @@
 <div align="center">
-   <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1724259461244885014/4de96569_716974.png">
+   <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
    <h2>youlai-nest</h2>
 
    <a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
@@ -24,8 +24,6 @@
 **在线预览**: [https://vue.youlai.tech](https://vue.youlai.tech)
 
 基于 node18、nest.js、mongoDB、JWT、Redis、阿里云oss、Vue 3、Element-Plus 构建的前后端分离单体权限管理系统。
-
-> 📖 [查看详细启动文档](./docs/getting-started.md)
 
 - **🚀 开发框架**: 使用 nest.js 和 Vue 3，以及 Element-Plus 等主流技术栈，实时更新。
 
@@ -67,13 +65,6 @@
   - Prettier - 代码格式化工具
   - Jest - 单元测试框架
 
-## 💻 环境要求
-
-- Node.js >= 18.x
-- MongoDB >= 7.x
-- Redis >= 7.x
-- pnpm >= 8.x
-
 ## 📝 API 文档
 
 本项目使用 Swagger 自动生成 API 文档，包含以下特性：
@@ -99,7 +90,17 @@
 
 1. **数据库初始化**
 
-   导入mongodb内的数据完成基础数据的初始化
+- **命令行导入**
+
+  MongoDB 脚本放在项目的根目录 mongodb 下 ，复制到指定目录下(./mongodb/ ), 然后执行以下命令还原数据库：
+
+  ```bash
+  mongorestore -d youlai_nest ./mongodb/
+  ```
+
+- **Navicat 导入**
+
+  参考 [Navicat 导入](https://www.youlai.tech/youlai-nest/1.%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8/#%E6%96%B9%E6%B3%95%E4%BA%8C-navicat-%E5%8F%AF%E8%A7%86%E5%8C%96%E5%AF%BC%E5%85%A5) 进行数据库导入。
 
 2. **修改配置**
 
