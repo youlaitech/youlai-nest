@@ -1,10 +1,8 @@
 <div align="center">
    <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
-   <h2>youlai-nest</h2>
-
-   <a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
+   <h2><a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
      youlai-nest
-   </a>
+   </a></h2>
 
    <br/>
    <img alt="有来技术" src="https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg"/>
@@ -37,13 +35,9 @@
 
 ## 📚 项目文档
 
+- [官方文档](https://www.youlai.tech/youlai-nest/) - 详细的项目文档，包含安装、配置、使用等信息
 - [项目启动指南](./docs/getting-started.md) - 详细的环境准备和项目启动步骤
 - [项目结构与实现](./docs/project-structure.md) - 项目架构和核心功能实现说明
-  - 核心模块介绍
-  - 项目特性实现
-  - 最佳实践指南
-  - 常见问题解决方案
-  - 部署与维护指南
 
 ## 🛠️ 技术栈
 
