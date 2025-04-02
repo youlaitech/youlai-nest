@@ -72,24 +72,25 @@
 
 3. **启动项目**
 
-```bash
-# 克隆代码
+   ```bash
+   # 克隆代码
+   git clone https://gitee.com/youlaiorg/youlai-nest.git
 
-# 切换目录
-cd youlai-nest
+   # 切换目录
+   cd youlai-nest
 
-# 安装 pnpm
-npm install pnpm -g
+   # 安装 pnpm
+   npm install pnpm -g
 
-# 设置镜像源(可忽略)
-pnpm config set registry https://registry.npmmirror.com
+   # 设置镜像源(可忽略)
+   pnpm config set registry https://registry.npmmirror.com
 
-# 安装依赖
-pnpm install
+   # 安装依赖
+   pnpm install
 
-# 启动运行
-pnpm run start:dev
-```
+   # 启动运行
+   pnpm run start:dev
+   ```
 
 访问接口文档地址 [http://localhost:9090/apiDoc](http://localhost:9090/doc.html) 验证项目启动是否成功.
 
