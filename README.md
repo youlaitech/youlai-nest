@@ -37,16 +37,16 @@
 
 | 项目类型       | Gitee                                                                      | Github                                                                       | GitCode                                                                   |
 | -------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| ✅ Node 后端   | [youlai-boot](https://gitee.com/youlaiorg/youlai-nest)                     | [youlai-nest](https://github.com/youlaitech/youlai-nest)                     | [youlai-nest](https://gitcode.com/youlai/youlai-nest)                     |
+| ✅ Node 后端   | [youlai-nest](https://gitee.com/youlaiorg/youlai-nest)                     | [youlai-nest](https://github.com/youlaitech/youlai-nest)                     | [youlai-nest](https://gitcode.com/youlai/youlai-nest)                     |
 | vue3 前端      | [vue3-element-template](https://gitee.com/youlaiorg/vue3-element-template) | [vue3-element-template](https://github.com/youlaitech/vue3-element-template) | [vue3-element-template](https://gitcode.com/youlai/vue3-element-template) |
 | uni-app 移动端 | [vue-uniapp-template](https://gitee.com/youlaiorg/vue-uniapp-template)     | [vue-uniapp-template](https://github.com/youlaitech/vue-uniapp-template)     | [vue-uniapp-template](https://gitcode.com/youlai/vue-uniapp-template)     |
 
 ## 📚 项目文档
 
-| 文档名称           | 访问地址                                                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 在线接口文档       | [https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
-| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                                                                         |
+| 文档名称           | 访问地址                                                                                                 |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| 在线接口文档       | [https://www.apifox.cn/apidoc](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
+| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                             |
 
 ## 🚀 项目启动
 
