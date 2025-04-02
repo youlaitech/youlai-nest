@@ -46,10 +46,10 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => {
-        const uri = config.get<string>("MONGOODB_URI");
+        console.log("mongodb.uri", config.get("mongodb.uri"));
         return {
-          uri,
-          dbName: config.get<string>("MONGOODB_NAME"),
+          uri: config.get("mongodb.uri"), // 从 registerAs 的命名空间获取
+          dbName: config.get("mongodb.dbName"), // 从 registerAs 的命名空间获取
         };
       },
       inject: [ConfigService],
