@@ -33,54 +33,24 @@
 
 - **📘 接口文档**: 自动生成接口文档，支持在线调试，提高开发效率。
 
+## 🌈 项目源码
+
+| 项目类型       | Gitee                                                                      | Github                                                                       | GitCode                                                                   |
+| -------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| ✅ Node 后端   | [youlai-boot](https://gitee.com/youlaiorg/youlai-nest)                     | [youlai-nest](https://github.com/youlaitech/youlai-nest)                     | [youlai-nest](https://gitcode.com/youlai/youlai-nest)                     |
+| vue3 前端      | [vue3-element-template](https://gitee.com/youlaiorg/vue3-element-template) | [vue3-element-template](https://github.com/youlaitech/vue3-element-template) | [vue3-element-template](https://gitcode.com/youlai/vue3-element-template) |
+| uni-app 移动端 | [vue-uniapp-template](https://gitee.com/youlaiorg/vue-uniapp-template)     | [vue-uniapp-template](https://github.com/youlaitech/vue-uniapp-template)     | [vue-uniapp-template](https://gitcode.com/youlai/vue-uniapp-template)     |
+
 ## 📚 项目文档
 
-- [官方文档](https://www.youlai.tech/youlai-nest/) - 详细的项目文档，包含安装、配置、使用等信息
-- [项目启动指南](./docs/getting-started.md) - 详细的环境准备和项目启动步骤
-- [项目结构与实现](./docs/project-structure.md) - 项目架构和核心功能实现说明
-
-## 🛠️ 技术栈
-
-- **后端框架：**
-
-  - NestJS v11.x - 渐进式 Node.js 框架
-  - MongoDB v8.x - MongoDB数据库
-  - Redis v7.x - 缓存数据库
-  - JWT - 用户认证
-  - Swagger/OpenAPI - API文档生成
-
-- **存储服务：**
-
-  - 阿里云OSS - 对象存储服务
-
-- **开发工具：**
-  - TypeScript v5.x - JavaScript的超集
-  - ESLint - 代码检查工具
-  - Prettier - 代码格式化工具
-  - Jest - 单元测试框架
-
-## 📝 API 文档
-
-本项目使用 Swagger 自动生成 API 文档，包含以下特性：
-
-- 接口描述
-- 请求/响应参数说明
-- 在线调试功能
-- 接口分组管理
-
-访问地址：
-
-- 本地开发：http://localhost:9090/apiDoc
-- 线上环境：https://你的域名/apiDoc
-- `apifox` 在线接口文档：[https://www.apifox.cn/apidoc](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5)
-
-## 🌺 前端工程
-
-| Gitee                                                                | Github                                                                 | Github |
-| -------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------ |
-| [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin) | [vue3-element-admin](https://github.com/youlaitech/vue3-element-admin) |
+| 文档名称           | 访问地址                                                                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 在线接口文档       | [https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
+| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                                                                         |
 
 ## 🚀 项目启动
+
+📚 完整流程参考: [项目启动](https://www.youlai.tech/youlai-nest/1.%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8/)
 
 1. **数据库初始化**
 
@@ -98,7 +68,7 @@
 
 2. **修改配置**
 
-   [env](src/main/resources/application-dev.yml) 修改 Mongodb、阿里云oss、Redis连接配置；
+   默认连接`有来`线上环境的 MongoDB/Redis（仅读权限），本地开发时请修改 [.env.dev](.env.dev) 中的 MongoDB/Redis 连接信息。
 
 3. **启动项目**
 
@@ -125,7 +95,7 @@ pnpm run start:dev
 
 ## 💖 加交流群
 
-> 关注公众号【有来技术】，获取交流群二维码，不想关注公众号或二维码过期欢迎加我微信(`haoxianrui`)备注【有来】即可，拉你进群。
+① 关注「有来技术」公众号，点击菜单 **交流群** 获取加群二维码（此举防止广告进群，感谢理解和支持）。
+② 直接添加微信 **`haoxianrui`** 备注「前端/后端/全栈」
 
-| ![](https://s2.loli.net/2022/11/19/OGjum9wr8f6idLX.png) |
-| ------------------------------------------------------- |
+![有来技术公众号](https://foruda.gitee.com/images/1737108820762592766/3390ed0d_716974.png)
