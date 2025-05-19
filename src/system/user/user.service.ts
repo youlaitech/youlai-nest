@@ -13,6 +13,9 @@ import { UserAuthCredentials } from "./interfaces/user-auth-credentials.interfac
 import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
 import { DEFAULT_PASSWORD } from "src/common/constants";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { SysUser } from "./entities/sys-user.entity";
 
 @Injectable()
 export class UserService {
@@ -21,7 +24,9 @@ export class UserService {
     @Inject(forwardRef(() => RoleService))
     private readonly roleService: RoleService,
     @Inject(forwardRef(() => DeptService))
-    private readonly deptService: DeptService
+    private readonly deptService: DeptService,
+    @InjectRepository(SysUser)
+    private userRepository: Repository<SysUser>
   ) {}
 
   /**
@@ -182,36 +187,9 @@ export class UserService {
    * @param createUserDto 用户数据
    * @returns
    */
-  async create(createUserDto: CreateUserDto) {
-    const { username, deptId, roleIds } = createUserDto;
-
-    const password = DEFAULT_PASSWORD;
-
-    if (roleIds?.length <= 0) {
-      throw new BusinessException("请选择角色");
-    }
-
-    const existingUser = await this.userModel.findOne({ username, isDeleted: false });
-    if (existingUser) {
-      throw new BusinessException("用户已存在");
-    }
-    const salt = crypto.randomBytes(4).toString("base64");
-
-    let userDeptTreePath;
-    if (deptId != null) {
-      const dept = await this.deptService.getDeptForm(deptId.toString());
-      if (!dept) {
-        userDeptTreePath = `${dept.TreePath}/${deptId}`;
-      }
-    }
-
-    return await this.userModel.create({
-      ...createUserDto,
-      roles: createUserDto.roleIds,
-      salt: salt,
-      deptTreePath: userDeptTreePath,
-      password: encry(password, salt),
-    });
+  async create(createUserDto: CreateUserDto): Promise<SysUser> {
+    const user = this.userRepository.create(createUserDto);
+    return await this.userRepository.save(user);
   }
 
   /**
@@ -292,5 +270,27 @@ export class UserService {
     }
 
     return true;
+  }
+
+  async findAll(): Promise<SysUser[]> {
+    return await this.userRepository.find({
+      where: { isDeleted: 0 },
+    });
+  }
+
+  async findOne(id: number): Promise<SysUser> {
+    return await this.userRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
+  }
+
+  async findByUsername(username: string): Promise<SysUser> {
+    return await this.userRepository.findOne({
+      where: { username, isDeleted: 0 },
+    });
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.userRepository.update(id, { isDeleted: 1 });
   }
 }

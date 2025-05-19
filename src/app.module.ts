@@ -7,13 +7,12 @@ import {
 } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
-import { MongooseModule } from "@nestjs/mongoose";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
 import * as winston from "winston";
 import "winston-daily-rotate-file";
 import { WinstonModule } from "nest-winston";
 import { RedisModule } from "@liaoliaots/nestjs-redis";
-import mongoose from "mongoose";
 
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
 import { RedisCacheModule } from "./shared/cache/redis_cache.module";
@@ -28,7 +27,7 @@ import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 
 import jwtConfig from "./config/jwt.config";
-import mongodbConfig from "./config/mongodb.config";
+import typeormConfig from "./config/typeorm.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
 import { DataScopeGuard } from "./common/guards/data-scope.guard";
@@ -41,17 +40,13 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [".env", envPath],
-      load: [mongodbConfig, redisConfig, ossConfig, jwtConfig],
+      load: [typeormConfig, redisConfig, ossConfig, jwtConfig],
     }),
-    MongooseModule.forRootAsync({
+    TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => {
-        console.log("mongodb.uri", config.get("mongodb.uri"));
-        return {
-          uri: config.get("mongodb.uri"), // 从 registerAs 的命名空间获取
-          dbName: config.get("mongodb.dbName"), // 从 registerAs 的命名空间获取
-        };
-      },
+      useFactory: async (config: ConfigService) => ({
+        ...config.get("typeorm"),
+      }),
       inject: [ConfigService],
     }),
     RedisModule.forRootAsync({
@@ -125,26 +120,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     },
   ],
 })
-export class AppModule implements OnModuleInit, NestModule {
-  onModuleInit() {
-    mongoose.set("toJSON", {
-      virtuals: true,
-      transform: (_doc, ret) => {
-        ret.id = ret._id.toString(); // 转换 _id 为 id
-        delete ret._id; // 删除 _id 字段
-        delete ret.__v; // 删除版本字段（如果存在）
-      },
-    });
-
-    mongoose.set("toObject", {
-      virtuals: true,
-      transform: (doc, ret) => {
-        ret.id = ret._id.toString(); // 转换 _id 为 id
-        delete ret._id; // 删除 _id 字段
-        delete ret.__v; // 删除版本字段（如果存在）
-      },
-    });
-  }
+export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
   }
