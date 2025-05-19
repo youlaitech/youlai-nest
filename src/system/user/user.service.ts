@@ -12,6 +12,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Like } from "typeorm";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
+import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class UserService {
@@ -137,7 +138,24 @@ export class UserService {
    * 新增用户
    */
   async create(createUserDto: CreateUserDto): Promise<SysUser> {
-    const user = this.userRepository.create(createUserDto);
+    const { username, password = DEFAULT_PASSWORD } = createUserDto;
+
+    // 检查用户名是否已存在
+    const existingUser = await this.userRepository.findOne({
+      where: { username, isDeleted: 0 },
+    });
+    if (existingUser) {
+      throw new BusinessException("用户名已存在");
+    }
+
+    // 使用 bcrypt 加密密码
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = this.userRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+
     return await this.userRepository.save(user);
   }
 
@@ -155,7 +173,7 @@ export class UserService {
    * 更新用户
    */
   async update(userId: number, updateUserDto: UpdateUserDto) {
-    const { username, deptId, roleIds } = updateUserDto;
+    const { username, deptId, roleIds, password } = updateUserDto;
 
     // 校验角色是否为空
     if (!roleIds?.length) {
@@ -164,11 +182,11 @@ export class UserService {
 
     // 校验用户是否存在，排除自己后还存在相同的用户名
     const existingUser = await this.userRepository.findOne({
-      where: { username, id: Number(userId) },
+      where: { username, id: Number(userId), isDeleted: 0 },
     });
 
-    if (existingUser) {
-      throw new BusinessException("用户已存在");
+    if (existingUser && existingUser.id !== userId) {
+      throw new BusinessException("用户名已存在");
     }
 
     // 生成部门树路径
@@ -186,8 +204,15 @@ export class UserService {
       throw new BusinessException("用户不存在");
     }
 
+    // 如果提供了新密码，则加密新密码
+    let hashedPassword;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
     Object.assign(user, {
       ...updateUserDto,
+      password: hashedPassword || user.password, // 如果没有新密码，保留原密码
       deptTreePath: userDeptTreePath,
     });
 
