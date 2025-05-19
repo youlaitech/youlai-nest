@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { BusinessException } from "../../common/exceptions/business.exception";
@@ -13,6 +13,7 @@ import { Repository, Like } from "typeorm";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import * as bcrypt from "bcrypt";
+import { UserFormDto } from "./dto/user-form.dto";
 
 @Injectable()
 export class UserService {
@@ -302,5 +303,35 @@ export class UserService {
    */
   async remove(id: number): Promise<void> {
     await this.userRepository.delete(id);
+  }
+
+  async getUserFormData(id: number): Promise<UserFormDto> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`未找到 ID 为 ${id} 的用户`);
+    }
+
+    // 获取用户角色
+    const userRoles = await this.userRoleRepository.find({
+      where: { userId: id },
+    });
+
+    // 转换为表单所需的格式
+    return {
+      id: user.id.toString(),
+      username: user.username,
+      nickname: user.nickname,
+      mobile: user.mobile,
+      gender: user.gender,
+      avatar: user.avatar,
+      email: user.email || "",
+      status: user.status,
+      deptId: user.deptId?.toString(),
+      roleIds: userRoles?.map((role) => role.roleId.toString()) || [],
+      openId: user.openid,
+    };
   }
 }

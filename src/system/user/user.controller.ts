@@ -78,7 +78,13 @@ export class UserController {
   @ApiOperation({ summary: "获取用户表单数据" })
   @Get(":id/form")
   async getUserForm(@Param("id") id: number) {
-    return await this.userService.getUserForm(id);
+    return await this.userService.getUserFormData(id);
+  }
+
+  @ApiOperation({ summary: "获取用户表单数据" })
+  @Get(":id/form/data")
+  async getUserFormData(@Param("id") id: string) {
+    return await this.userService.getUserFormData(+id);
   }
 
   @ApiOperation({ summary: "修改用户" })
