@@ -1,12 +1,10 @@
 import { IsString, IsOptional, IsNumber, IsArray } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { Types } from "mongoose";
 
 export class CreateUserDto {
-  @ApiProperty({ description: "用户名", maxLength: 30, required: true })
+  @ApiProperty({ description: "用户名", maxLength: 64, required: true })
   @IsString()
-  @IsOptional()
-  username?: string;
+  username: string;
 
   @ApiProperty({ description: "昵称", required: false })
   @IsString()
@@ -19,13 +17,16 @@ export class CreateUserDto {
   gender?: number;
 
   @ApiProperty({ description: "密码" })
-  password?: string;
+  @IsString()
+  password: string;
 
   @ApiProperty({ description: "部门ID", required: false })
+  @IsNumber()
   @IsOptional()
-  deptId?: Types.ObjectId | null;
+  deptId?: number;
 
   @ApiProperty({ description: "部门名称", required: false })
+  @IsString()
   @IsOptional()
   deptName?: string;
 
@@ -52,10 +53,10 @@ export class CreateUserDto {
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ description: "角色编码集合", required: false })
+  @ApiProperty({ description: "角色ID集合", required: false })
   @IsArray()
   @IsOptional()
-  roleIds?: Types.ObjectId[];
+  roleIds?: number[];
 
   @ApiProperty({ description: "密码盐", required: false })
   @IsString()

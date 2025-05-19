@@ -5,8 +5,7 @@ import { FilterQuery, Model } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { User } from "./user.schema";
 import { BusinessException } from "../../common/exceptions/business.exception";
-import * as crypto from "crypto";
-import encry from "../../common/utils/crypto";
+
 import { RoleService } from "../role/role.service";
 import { DeptService } from "../dept/dept.service";
 import { UserAuthCredentials } from "./interfaces/user-auth-credentials.interface";
@@ -188,7 +187,7 @@ export class UserService {
    * @returns
    */
   async create(createUserDto: CreateUserDto): Promise<SysUser> {
-    const user = this.userRepository.create(createUserDto);
+    const user = await this.userRepository.create(createUserDto);
     return await this.userRepository.save(user);
   }
 

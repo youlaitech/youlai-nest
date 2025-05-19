@@ -12,4 +12,7 @@ export class LoginResultDto {
 
   @ApiProperty({ description: "令牌类型" })
   tokenType: string;
+
+  @ApiProperty({ description: "用户信息" })
+  userInfo: any;
 }

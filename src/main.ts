@@ -2,52 +2,66 @@ import { NestFactory, Reflector } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { NestInterceptor, ValidationPipe } from "@nestjs/common";
-
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
 import { ConfigService } from "@nestjs/config";
 import * as session from "express-session";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 
 async function bootstrap() {
-  try {
-    const configService = new ConfigService();
-    const app = await NestFactory.create(AppModule);
-    app.setGlobalPrefix("/api/v1");
-    app.enableCors({
-      origin: true,
-      methods: "GET,PUT,POST,DELETE,PATCH",
-      allowedHeaders: "Content-Type,Authorization",
-      exposedHeaders: "Content-Range,X-Content-Range",
-      credentials: true,
-      maxAge: 3600,
-    });
-    const options = new DocumentBuilder()
-      .setTitle("基础代码") // 标题
-      .setDescription("后台管理系统接口文档") // 描述
-      .setVersion("1.0") // 版本
-      .build();
-    // session
-    app.use(
-      session({
-        secret: "dmyxs",
-        resave: false,
-        saveUninitialized: true,
-        cookie: {
-          sameSite: "none",
-          secure: true,
-          maxAge: 100000,
-          httpOnly: true,
-        }, //以cookie存储到客户端
-        // rolling: true, //每次重新请求时，重新设置cookie
-      })
-    );
-    const document = SwaggerModule.createDocument(app, options);
-    //配置swgger地址
-    SwaggerModule.setup("apiDoc", app, document);
-    app.useGlobalInterceptors(<NestInterceptor>new ResponseInterceptor());
-    app.useGlobalPipes(new ValidationPipe());
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-    await app.listen(configService.get("SERVER_PORT"));
-    console.log("http://localhost:" + configService.get("SERVER_PORT"));
-  } catch (e) {}
+  // 全局前缀
+  app.setGlobalPrefix("/api/v1");
+
+  // 跨域设置
+  app.enableCors({
+    origin: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+    credentials: true,
+  });
+
+  // 全局过滤器
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // 全局拦截器
+  app.useGlobalInterceptors(new ResponseInterceptor());
+
+  // 全局验证管道
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    })
+  );
+
+  // Swagger 配置
+  const config = new DocumentBuilder()
+    .setTitle("有来技术")
+    .setDescription("有来技术接口文档")
+    .setVersion("1.0")
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("api-docs", app, document);
+
+  // Session 配置
+  app.use(
+    session({
+      secret: configService.get("JWT_SECRET"),
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7天
+      },
+    })
+  );
+
+  const port = configService.get("SERVER_PORT", 3000);
+  await app.listen(port);
+  console.log(`应用已启动: http://localhost:${port}`);
+  console.log(`接口文档: http://localhost:${port}/api-docs`);
 }
+
 bootstrap();

@@ -1,20 +1,17 @@
-import { forwardRef, Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserService } from "./user.service";
 import { UserController } from "./user.controller";
-import { MongooseModule } from "@nestjs/mongoose";
-import { UserSchema } from "./user.schema";
+import { SysUser } from "./entities/sys-user.entity";
+import { SysUserRole } from "./entities/sys-user-role.entity";
 import { RoleModule } from "../role/role.module";
-import { MenuModule } from "../menu/menu.module";
 import { DeptModule } from "../dept/dept.module";
-import { RedisCacheModule } from "../../shared/cache/redis_cache.module";
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: "User", schema: UserSchema }]),
-    forwardRef(() => MenuModule),
+    TypeOrmModule.forFeature([SysUser, SysUserRole]),
     forwardRef(() => RoleModule),
     forwardRef(() => DeptModule),
-    RedisCacheModule,
   ],
   controllers: [UserController],
   providers: [UserService],
