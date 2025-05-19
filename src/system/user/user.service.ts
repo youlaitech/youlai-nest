@@ -93,7 +93,6 @@ export class UserService {
       id: user.id.toString(),
       username: user.username,
       password: user.password,
-      salt: user.salt,
       status: user.status,
       deptId: user.deptId?.toString() || "",
       deptTreePath: user.deptTreePath,

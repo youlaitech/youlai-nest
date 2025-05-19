@@ -18,9 +18,6 @@ export class SysUser {
   @Column({ length: 100, comment: "密码" })
   password: string;
 
-  @Column({ length: 32, nullable: true, comment: "密码盐" })
-  salt: string;
-
   @Column({ name: "dept_id", nullable: true, comment: "部门ID" })
   deptId: number;
 

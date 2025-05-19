@@ -49,7 +49,7 @@ async function bootstrap() {
   // Session 配置
   app.use(
     session({
-      secret: configService.get("JWT_SECRET"),
+      secret: configService.get("JWT_SECRET_KEY"),
       resave: false,
       saveUninitialized: false,
       cookie: {

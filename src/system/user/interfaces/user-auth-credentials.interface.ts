@@ -1,6 +1,6 @@
 /**
  * 用户认证信息接口
- * 用于认证过程中获取用户的关键信息，例如登录时需要的用户名、密码、盐值以及权限等。
+ * 用于认证过程中获取用户的关键信息，例如登录时需要的用户名、密码以及权限等。
  */
 export interface UserAuthCredentials {
   /**
@@ -17,11 +17,6 @@ export interface UserAuthCredentials {
    * 密码
    */
   password: string;
-
-  /**
-   * 盐值，用于密码加密
-   */
-  salt: string;
 
   /**
    * 用户状态（1 正常，0 禁用）
