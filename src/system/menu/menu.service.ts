@@ -30,12 +30,15 @@ export class MenuService {
     });
   }
 
-  async findALLButtons() {
-    const permslist = await this.menuRepository.find({
-      where: { type: 3 },
-      order: { sort: "ASC" },
+  async findALLButtons(): Promise<string[]> {
+    const buttons = await this.menuRepository.find({
+      where: { type: 4, isDeleted: 0 },
+      select: ["perm"],
     });
-    return permslist.map((item) => item.perm).filter(Boolean);
+
+    return Array.from(
+      new Set(buttons.map((menu) => menu.perm?.trim()).filter((perm): perm is string => !!perm))
+    );
   }
 
   async findButtons(menuIds: string[]) {
@@ -53,7 +56,7 @@ export class MenuService {
     if (!menuIds?.length) return [];
 
     const menus = await this.menuRepository.find({
-      where: { id: In(menuIds.map(Number)), type: 3 },
+      where: { id: In(menuIds.map(Number)), type: 4 },
       select: ["perm"],
     });
 

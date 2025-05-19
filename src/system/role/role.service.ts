@@ -56,14 +56,35 @@ export class RoleService {
    * 根据角色编码查询权限标识集合
    */
   async findPermsByRoleCodes(roles: string[]): Promise<string[]> {
-    const roleMenus = await this.roleRepository
-      .createQueryBuilder("role")
-      .leftJoinAndSelect(SysRoleMenu, "roleMenu", "role.id = roleMenu.roleId")
-      .where("role.code IN (:...roles)", { roles })
-      .getMany();
+    try {
+      if (!roles?.length) return [];
 
-    const menuIds = roleMenus.map((rm) => rm.id.toString());
-    return await this.menuService.findPermsByMenuIds(menuIds);
+      // 1. 根据角色编码查询角色ID
+      const roleEntities = await this.roleRepository.find({
+        where: { code: In(roles), isDeleted: 0, status: 1 }, // 只查询正常状态的角色
+        select: ["id"],
+      });
+
+      if (!roleEntities?.length) return [];
+
+      const roleIds = roleEntities.map((role) => role.id);
+
+      // 2. 根据角色ID查询关联的菜单ID
+      const roleMenus = await this.roleMenuRepository.find({
+        where: { roleId: In(roleIds) },
+      });
+
+      if (!roleMenus?.length) return [];
+
+      // 3. 提取菜单ID并去重
+      const menuIds = [...new Set(roleMenus.map((rm) => rm.menuId.toString()))];
+
+      // 4. 根据菜单ID查询权限标识
+      return await this.menuService.findPermsByMenuIds(menuIds);
+    } catch (error) {
+      console.error("获取角色权限失败:", error);
+      return [];
+    }
   }
 
   /**
@@ -146,5 +167,13 @@ export class RoleService {
       where: { id: In(roleIds), isDeleted: 0 },
       select: ["code", "dataScope"],
     });
+  }
+
+  /**
+   * 获取所有权限标识
+   */
+  async findAllPerms(): Promise<string[]> {
+    // 直接使用 MenuService 获取所有按钮类型的权限标识
+    return await this.menuService.findALLButtons();
   }
 }

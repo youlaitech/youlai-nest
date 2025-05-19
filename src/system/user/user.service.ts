@@ -105,34 +105,66 @@ export class UserService {
    * 获取当前用户信息
    */
   async findMe(currentUserInfo: CurrentUserInfo): Promise<CurrentUserDto> {
-    const userId = currentUserInfo.userId;
-    const user = await this.userRepository.findOne({
-      where: { id: Number(userId), isDeleted: 0 },
-      select: ["id", "username", "nickname", "mobile", "email", "avatar"],
-      relations: ["roles"],
-    });
+    try {
+      const userId = currentUserInfo.userId;
 
-    if (!user) {
-      throw new BusinessException("用户不存在");
+      // 1. 获取用户基本信息
+      const user = await this.userRepository.findOne({
+        where: { id: Number(userId), isDeleted: 0 },
+        select: ["id", "username", "nickname", "mobile", "email", "avatar"],
+      });
+
+      if (!user) {
+        throw new BusinessException("用户不存在");
+      }
+
+      // 2. 获取用户角色
+      const userRoles = await this.userRoleRepository.find({
+        where: { userId: Number(userId) },
+      });
+
+      console.log(userRoles, "userRoles");
+      if (!userRoles?.length) {
+        return {
+          userId: user.id.toString(),
+          username: user.username,
+          nickname: user.nickname,
+          mobile: user.mobile,
+          email: user.email,
+          avatar: user.avatar,
+          roles: [],
+          perms: [],
+        };
+      }
+
+      // 3. 获取角色信息
+      const roles = await this.roleService.findRolesByIds(userRoles.map((ur) => ur.roleId));
+      console.log(roles, "roles");
+      const roleCodes = roles.map((role) => role.code);
+      console.log(roleCodes, "roleCodes");
+      // 4. 获取权限列表
+      let perms: string[] = [];
+      if (roleCodes.includes("ROOT")) {
+        // 超级管理员获取所有权限
+        perms = await this.roleService.findAllPerms();
+      } else {
+        // 其他用户获取角色对应的权限
+        perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+      }
+
+      return {
+        userId: user.id.toString(),
+        username: user.username,
+        nickname: user.nickname,
+        mobile: user.mobile,
+        email: user.email,
+        avatar: user.avatar,
+        roles: roleCodes,
+        perms: perms,
+      };
+    } catch (error) {
+      console.log(error, "error");
     }
-
-    const roles = user.roles ? user.roles.map((role) => role.code) : [];
-
-    let perms = [];
-    if (roles && roles.length > 0) {
-      perms = await this.roleService.findPermsByRoleCodes(roles);
-    }
-
-    return {
-      userId: user.id.toString(),
-      username: user.username,
-      nickname: user.nickname,
-      mobile: user.mobile,
-      email: user.email,
-      avatar: user.avatar,
-      roles: roles,
-      perms: perms,
-    };
   }
 
   /**
