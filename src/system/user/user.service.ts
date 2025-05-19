@@ -109,13 +109,15 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: { id: Number(userId), isDeleted: 0 },
       select: ["id", "username", "nickname", "mobile", "email", "avatar"],
+      relations: ["roles"],
     });
 
     if (!user) {
       throw new BusinessException("用户不存在");
     }
 
-    const roles = currentUserInfo.roles;
+    const roles = user.roles ? user.roles.map((role) => role.code) : [];
+
     let perms = [];
     if (roles && roles.length > 0) {
       perms = await this.roleService.findPermsByRoleCodes(roles);
