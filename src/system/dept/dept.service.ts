@@ -79,12 +79,29 @@ export class DeptService {
       return null;
     }
 
+    // 构建更新数据对象
+    const updateData: Partial<SysDept> = {
+      name: updateDeptDto.name,
+      code: updateDeptDto.code,
+      parentId: updateDeptDto.parentId,
+      sort: updateDeptDto.sort,
+      status: updateDeptDto.status,
+      updateBy: updateDeptDto.updateBy,
+      updateTime: new Date(),
+    };
+
+    // 如果更新了父部门ID，重新构建treePath
     if (updateDeptDto.parentId !== undefined) {
-      updateDeptDto.treePath = await this.buildTreePath(updateDeptDto.parentId);
+      updateData.treePath = await this.buildTreePath(updateDeptDto.parentId);
     }
 
-    Object.assign(dept, updateDeptDto);
-    return await this.deptRepository.save(dept);
+    // 过滤掉undefined的字段
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key]
+    );
+
+    await this.deptRepository.update(id, updateData);
+    return await this.deptRepository.findOne({ where: { id } });
   }
 
   /**

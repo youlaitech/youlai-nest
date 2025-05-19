@@ -10,6 +10,8 @@ import {
   HttpException,
   HttpStatus,
   SetMetadata,
+  UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 import { DeptService } from "./dept.service";
 import { CreateDeptDto } from "./dto/create-dept.dto";
@@ -60,12 +62,22 @@ export class DeptController {
   async update(
     @CurrentUser("userId") currentUserId: number,
     @Param("id") id: number,
-    @Body() updateDeptDto: UpdateDeptDto
+    @Body() requestBody: any
   ) {
+    // 只提取需要的字段
+    const updateDeptDto: UpdateDeptDto = {
+      name: requestBody.name,
+      code: requestBody.code,
+      parentId: Number(requestBody.parentId),
+      sort: Number(requestBody.sort),
+      status: Number(requestBody.status),
+    };
+
     const result = await this.deptService.updateDept(id, {
       ...updateDeptDto,
       updateBy: currentUserId,
     });
+
     if (!result) {
       throw new HttpException("部门不存在", HttpStatus.NOT_FOUND);
     }

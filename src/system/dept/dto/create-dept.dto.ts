@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class CreateDeptDto {
   @IsNotEmpty()
@@ -10,6 +11,7 @@ export class CreateDeptDto {
   code: string; // 部门编号
 
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   parentId?: number; // 父节点id
 
@@ -18,10 +20,12 @@ export class CreateDeptDto {
   treePath?: string; // 父节点id路径
 
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   sort?: number; // 显示顺序
 
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   @IsIn([0, 1], { message: "状态只能是0或1" })
   status?: number; // 状态 (1-正常 0-禁用)
