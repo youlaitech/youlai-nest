@@ -21,9 +21,6 @@ export class SysUser {
   @Column({ name: "dept_id", nullable: true, comment: "部门ID" })
   deptId: number;
 
-  @Column({ name: "dept_tree_path", length: 255, nullable: true, comment: "部门树路径" })
-  deptTreePath: string;
-
   @Column({ length: 255, nullable: true, comment: "用户头像" })
   avatar: string;
 

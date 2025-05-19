@@ -35,38 +35,42 @@ export class AuthService {
    * 用户登录认证
    */
   async login(loginDto: LoginRequestDto): Promise<LoginResultDto> {
-    const { username, password } = loginDto;
-    const user = await this.validateUser(username, password);
+    try {
+      const { username, password } = loginDto;
+      const user = await this.validateUser(username, password);
+      console.log(user);
+      if (!user) {
+        throw new BusinessException("用户名或密码错误");
+      }
 
-    if (!user) {
-      throw new BusinessException("用户名或密码错误");
+      if (user.status === 0) {
+        throw new BusinessException("用户已被禁用");
+      }
+
+      // 2. 生成 JWT 载荷
+      const payload = {
+        userId: user.id,
+        username: user.username,
+        deptId: user.deptId,
+        dataScope: user.dataScope,
+        deptTreePath: user.deptTreePath,
+        roles: user.roles,
+      };
+
+      // 3. 生成访问令牌
+      const accessToken = await this.jwtService.signAsync(payload, {
+        expiresIn: this.config.expiresIn,
+      });
+
+      return {
+        accessToken,
+        expiresIn: this.config.expiresIn,
+        tokenType: "Bearer",
+        userInfo: user,
+      };
+    } catch (error) {
+      throw new BusinessException("登录失败");
     }
-
-    if (user.status === 0) {
-      throw new BusinessException("用户已被禁用");
-    }
-
-    // 2. 生成 JWT 载荷
-    const payload = {
-      userId: user.id,
-      username: user.username,
-      deptId: user.deptId,
-      dataScope: user.dataScope,
-      deptTreePath: user.deptTreePath,
-      roles: user.roles,
-    };
-
-    // 3. 生成访问令牌
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: this.config.expiresIn,
-    });
-
-    return {
-      accessToken,
-      expiresIn: this.config.expiresIn,
-      tokenType: "Bearer",
-      userInfo: user,
-    };
   }
 
   /**

@@ -96,7 +96,6 @@ export class UserService {
       password: user.password,
       status: user.status,
       deptId: user.deptId?.toString() || "",
-      deptTreePath: user.deptTreePath,
       roles: roleCodes,
       dataScope,
     };
@@ -189,15 +188,6 @@ export class UserService {
       throw new BusinessException("用户名已存在");
     }
 
-    // 生成部门树路径
-    let userDeptTreePath;
-    if (deptId != null) {
-      const dept = await this.deptService.getDeptForm(deptId);
-      if (dept) {
-        userDeptTreePath = `${dept.treePath}/${deptId}`;
-      }
-    }
-
     // 更新用户信息
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -213,7 +203,6 @@ export class UserService {
     Object.assign(user, {
       ...updateUserDto,
       password: hashedPassword || user.password, // 如果没有新密码，保留原密码
-      deptTreePath: userDeptTreePath,
     });
 
     // 更新用户-角色关联
@@ -270,6 +259,7 @@ export class UserService {
    * 根据用户名查询用户
    */
   async findByUsername(username: string): Promise<SysUser> {
+    console.log(username, "根据用户名查询用户");
     return await this.userRepository.findOne({ where: { username } });
   }
 

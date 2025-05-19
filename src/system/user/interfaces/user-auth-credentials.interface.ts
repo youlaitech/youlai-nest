@@ -34,11 +34,6 @@ export interface UserAuthCredentials {
   deptId: string;
 
   /**
-   * 部门树路径
-   */
-  deptTreePath: string;
-
-  /**
    * 数据范围
    * 0：全部数据权限
    * 1：本部门及以下数据权限
