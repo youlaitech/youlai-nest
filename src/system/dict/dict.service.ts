@@ -133,10 +133,7 @@ export class DictService {
    */
   async getDictItemPage(pageNum: number, pageSize: number, dictCode: string, keywords?: string) {
     const queryBuilder = this.dictItemRepository.createQueryBuilder("item");
-    queryBuilder.where("item.dictCode = :dictCode AND item.isDeleted = :isDeleted", {
-      dictCode,
-      isDeleted: 0,
-    });
+    queryBuilder.where("item.dictCode = :dictCode", { dictCode });
 
     if (keywords) {
       queryBuilder.andWhere("(item.label LIKE :keywords OR item.value LIKE :keywords)", {
@@ -169,7 +166,6 @@ export class DictService {
     const items = await this.dictItemRepository.find({
       where: {
         dictCode,
-        isDeleted: 0,
       },
       order: {
         sort: "ASC",
@@ -197,7 +193,7 @@ export class DictService {
 
     // 检查值是否已存在
     const existItem = await this.dictItemRepository.findOne({
-      where: { dictCode, value, isDeleted: 0 },
+      where: { dictCode, value },
     });
 
     if (existItem) {
@@ -232,7 +228,7 @@ export class DictService {
    */
   async getDictItemForm(id: number) {
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id },
     });
 
     if (!dictItem) {
@@ -254,7 +250,7 @@ export class DictService {
    */
   async updateDictItem(id: number, updateData: UpdateDictItemDto) {
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id },
     });
 
     if (!dictItem) {
@@ -267,7 +263,6 @@ export class DictService {
         where: {
           dictCode: dictItem.dictCode,
           value: updateData.value,
-          isDeleted: 0,
           id: Not(id),
         },
       });
@@ -286,18 +281,14 @@ export class DictService {
    */
   async deleteDictItems(id: number) {
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id },
     });
 
     if (!dictItem) {
       throw new BusinessException("字典项不存在");
     }
 
-    await this.dictItemRepository.update(id, {
-      isDeleted: 1,
-      updateTime: new Date(),
-    });
-
+    await this.dictItemRepository.delete(id);
     return true;
   }
 }
