@@ -18,7 +18,7 @@ export class MenuService {
 
   async findAll() {
     return await this.menuRepository.find({
-      where: { type: Not(3), isDeleted: 0 },
+      where: { type: Not(3) },
       order: { sort: "ASC" },
     });
   }
@@ -30,9 +30,12 @@ export class MenuService {
     });
   }
 
+  /**
+   * 获取所有按钮权限标识
+   */
   async findALLButtons(): Promise<string[]> {
     const buttons = await this.menuRepository.find({
-      where: { type: 4, isDeleted: 0 },
+      where: { type: 4, visible: 1 },
       select: ["perm"],
     });
 
@@ -43,7 +46,7 @@ export class MenuService {
 
   async findButtons(menuIds: string[]) {
     const permslist = await this.menuRepository.find({
-      where: { id: In(menuIds.map(Number)), type: 3 },
+      where: { id: In(menuIds.map(Number)), type: 4 },
       order: { sort: "ASC" },
     });
     return permslist.map((item) => item.perm).filter(Boolean);
@@ -72,7 +75,7 @@ export class MenuService {
     // 超级管理员返回所有菜单
     if (userId === "1") {
       const menuList = await this.menuRepository.find({
-        where: { type: In([1, 2]), visible: 1, isDeleted: 0 },
+        where: { type: In([1, 2]), visible: 1 },
         order: { sort: "ASC" },
       });
       return this.buildRoutes(menuList);
@@ -85,7 +88,7 @@ export class MenuService {
     }
 
     const menuList = await this.menuRepository.find({
-      where: { id: In(menuIds), type: In([1, 2]), visible: 1, isDeleted: 0 },
+      where: { id: In(menuIds), type: In([1, 2]), visible: 1 },
       order: { sort: "ASC" },
     });
     return this.buildRoutes(menuList);
@@ -96,10 +99,9 @@ export class MenuService {
    */
   async getMenus(keyword: string) {
     const queryBuilder = this.menuRepository.createQueryBuilder("menu");
-    queryBuilder.where("menu.isDeleted = :isDeleted", { isDeleted: 0 });
 
     if (keyword) {
-      queryBuilder.andWhere("menu.name LIKE :keyword", { keyword: `%${keyword}%` });
+      queryBuilder.where("menu.name LIKE :keyword", { keyword: `%${keyword}%` });
     }
 
     queryBuilder.orderBy("menu.sort", "ASC");
@@ -114,7 +116,6 @@ export class MenuService {
   async findOptions() {
     const menus = await this.menuRepository.find({
       select: ["id", "name", "parentId"],
-      where: { isDeleted: 0 },
       order: { sort: "ASC" },
     });
     return this.buildOptionsTree(menus);
@@ -138,7 +139,7 @@ export class MenuService {
    */
   async getMenuForm(id: number) {
     return await this.menuRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id },
     });
   }
 
@@ -146,7 +147,7 @@ export class MenuService {
    * 更新菜单
    */
   async update(id: number, updateMenuDto: UpdateMenuDto) {
-    const menu = await this.menuRepository.findOne({ where: { id, isDeleted: 0 } });
+    const menu = await this.menuRepository.findOne({ where: { id } });
     if (!menu) {
       return null;
     }
@@ -164,7 +165,7 @@ export class MenuService {
    * 删除菜单
    */
   async deleteMenu(id: number) {
-    return await this.menuRepository.update(id, { isDeleted: 1 });
+    return await this.menuRepository.delete(id);
   }
 
   /**

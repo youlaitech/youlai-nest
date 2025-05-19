@@ -61,7 +61,7 @@ export class RoleService {
 
       // 1. 根据角色编码查询角色ID
       const roleEntities = await this.roleRepository.find({
-        where: { code: In(roles), isDeleted: 0, status: 1 }, // 只查询正常状态的角色
+        where: { code: In(roles), status: 1 },
         select: ["id"],
       });
 
@@ -173,7 +173,6 @@ export class RoleService {
    * 获取所有权限标识
    */
   async findAllPerms(): Promise<string[]> {
-    // 直接使用 MenuService 获取所有按钮类型的权限标识
     return await this.menuService.findALLButtons();
   }
 }
