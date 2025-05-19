@@ -1,28 +1,28 @@
-import { IsString, IsOptional, IsNumber, IsArray } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsArray, IsEmail } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateUserDto {
-  @ApiProperty({ description: "用户名", maxLength: 64, required: true })
+  @IsNotEmpty({ message: "用户名不能为空" })
   @IsString()
   username: string;
 
-  @ApiProperty({ description: "昵称", required: false })
+  @IsNotEmpty({ message: "昵称不能为空" })
   @IsString()
-  @IsOptional()
-  nickname?: string;
+  nickname: string;
 
   @ApiProperty({ description: "性别(1-男 2-女 0-保密)", required: false })
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   gender?: number;
 
   @ApiProperty({ description: "密码" })
+  @IsOptional()
   @IsString()
-  password: string;
+  password?: string;
 
   @ApiProperty({ description: "部门ID", required: false })
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   deptId?: number;
 
   @ApiProperty({ description: "部门名称", required: false })
@@ -34,37 +34,45 @@ export class CreateUserDto {
   deptTreePath?: string;
 
   @ApiProperty({ description: "头像", required: false })
-  @IsString()
   @IsOptional()
+  @IsString()
   avatar?: string;
 
   @ApiProperty({ description: "手机号", required: false })
-  @IsString()
   @IsOptional()
+  @IsString()
   mobile?: string;
 
   @ApiProperty({ description: "状态(1-正常 0-禁用)", required: false })
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   status?: number;
 
   @ApiProperty({ description: "邮箱", required: false })
-  @IsString()
   @IsOptional()
+  @IsEmail()
   email?: string;
 
   @ApiProperty({ description: "角色ID集合", required: false })
-  @IsArray()
   @IsOptional()
+  @IsArray()
   roleIds?: number[];
 
   @ApiProperty({ description: "密码盐", required: false })
-  @IsString()
   @IsOptional()
+  @IsString()
   salt?: string;
 
   @ApiProperty({ description: "权限标识集合", required: false })
   @IsArray()
   @IsOptional()
   perms?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  createBy?: number;
+
+  @IsOptional()
+  @IsNumber()
+  updateBy?: number;
 }

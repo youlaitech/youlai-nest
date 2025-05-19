@@ -18,8 +18,11 @@ import { ToolsService } from "../common/utils/service/tools.service";
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
-        secret: config.get("jwt.secret"),
-        signOptions: { expiresIn: config.get("jwt.expiresIn") },
+        secret: config.get("JWT_SECRET_KEY"),
+        signOptions: {
+          expiresIn: config.get("JWT_EXPIRES_IN"),
+          issuer: config.get("JWT_ISSUER"),
+        },
       }),
       inject: [ConfigService],
     }),

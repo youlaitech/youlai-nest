@@ -81,4 +81,12 @@ export class SysMenu {
 
   @Column({ length: 255, nullable: true, comment: "路由参数" })
   params: string;
+
+  @Column({
+    name: "is_deleted",
+    type: "tinyint",
+    default: 0,
+    comment: "逻辑删除标识（0-未删除 1-已删除）",
+  })
+  isDeleted: number;
 }

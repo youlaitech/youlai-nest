@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
+import { SysRole } from "../../role/entities/sys-role.entity";
 
 @Entity("sys_user")
 export class SysUser {
@@ -17,8 +18,14 @@ export class SysUser {
   @Column({ length: 100, comment: "密码" })
   password: string;
 
+  @Column({ length: 32, nullable: true, comment: "密码盐" })
+  salt: string;
+
   @Column({ name: "dept_id", nullable: true, comment: "部门ID" })
   deptId: number;
+
+  @Column({ name: "dept_tree_path", length: 255, nullable: true, comment: "部门树路径" })
+  deptTreePath: string;
 
   @Column({ length: 255, nullable: true, comment: "用户头像" })
   avatar: string;
@@ -54,4 +61,12 @@ export class SysUser {
 
   @Column({ length: 28, nullable: true, comment: "微信 openid" })
   openid: string;
+
+  @ManyToMany(() => SysRole)
+  @JoinTable({
+    name: "sys_user_role",
+    joinColumn: { name: "user_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "role_id", referencedColumnName: "id" },
+  })
+  roles: SysRole[];
 }

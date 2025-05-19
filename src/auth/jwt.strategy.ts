@@ -16,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
       ignoreExpiration: false, // 是否忽略令牌过期
-      secretOrKey: configService.get("jwt.secret"), // 用于验证签名的密钥
+      secretOrKey: configService.get("JWT_SECRET_KEY"), // 用于验证签名的密钥
     });
   }
 
@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * 验证并标准化 JWT 载荷
    *
    * @param payload 解码后的 JWT 载荷
-   * @returns 标准用户对象 (将挂载到 req.user) ，
+   * @returns 标准用户对象 (将挂载到 req.user)
    */
   async validate(payload: any) {
     if (!payload.sub || !payload.username) {

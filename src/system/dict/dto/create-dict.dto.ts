@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateDictDto {
   dict_code: string;
@@ -58,38 +59,20 @@ export class DictPageVoDto {
  * 字典表单 DTO
  */
 export class DictFormDto {
-  /**
-   * 字典ID
-   */
-  @IsOptional()
+  @ApiProperty({ description: "字典编码" })
   @IsString()
-  id?: string;
+  dictCode: string;
 
-  /**
-   * 字典名称
-   */
-  @IsOptional()
+  @ApiProperty({ description: "字典名称" })
   @IsString()
-  name?: string;
+  name: string;
 
-  /**
-   * 字典编码
-   */
-  @IsOptional()
+  @ApiProperty({ description: "状态(0:正常;1:禁用)" })
+  @IsNumber()
+  status: number;
+
+  @ApiProperty({ description: "备注" })
   @IsString()
-  dictCode?: string;
-
-  /**
-   * 字典状态（1-启用，0-禁用）
-   */
   @IsOptional()
-  @IsIn([0, 1])
-  status?: number;
-
-  /**
-   * 备注
-   */
-  @IsOptional()
-  @IsString()
   remark?: string;
 }

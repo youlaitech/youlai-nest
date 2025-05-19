@@ -3,17 +3,13 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   Query,
   HttpException,
   HttpStatus,
-  Req,
-  UseInterceptors,
-  UseGuards,
   SetMetadata,
-  Put,
 } from "@nestjs/common";
 import { DeptService } from "./dept.service";
 import { CreateDeptDto } from "./dto/create-dept.dto";
@@ -29,7 +25,7 @@ export class DeptController {
   @ApiOperation({ summary: "获取部门表格树形列表" })
   @Get()
   @SetMetadata("resource", "sys_dept")
-  async findAll(@Query("keywords") keywords: string, @Query("status") status: string) {
+  async findAll(@Query("keywords") keywords?: string, @Query("status") status?: string) {
     return await this.deptService.findAll(keywords, status);
   }
 
@@ -42,7 +38,7 @@ export class DeptController {
 
   @ApiOperation({ summary: "创建部门" })
   @Post()
-  async create(@CurrentUser("userId") currentUserId: string, @Body() createDeptDto: CreateDeptDto) {
+  async create(@CurrentUser("userId") currentUserId: number, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
       ...createDeptDto,
       createBy: currentUserId,
@@ -51,35 +47,42 @@ export class DeptController {
 
   @ApiOperation({ summary: "获取部门表单" })
   @Get(":id/form")
-  async getDeptForm(@Param("id") id: string) {
+  async getDeptForm(@Param("id") id: number) {
     const dept = await this.deptService.getDeptForm(id);
+    if (!dept) {
+      throw new HttpException("部门不存在", HttpStatus.NOT_FOUND);
+    }
     return dept;
   }
 
   @ApiOperation({ summary: "编辑部门" })
   @Put(":id")
   async update(
-    @CurrentUser("userId") currentUserId: string,
-    @Param("id") id: string,
+    @CurrentUser("userId") currentUserId: number,
+    @Param("id") id: number,
     @Body() updateDeptDto: UpdateDeptDto
   ) {
-    return await this.deptService.updateDept(id, updateDeptDto);
+    const result = await this.deptService.updateDept(id, {
+      ...updateDeptDto,
+      updateBy: currentUserId,
+    });
+    if (!result) {
+      throw new HttpException("部门不存在", HttpStatus.NOT_FOUND);
+    }
+    return result;
   }
 
   @ApiOperation({ summary: "删除部门" })
   @Delete(":ids")
   async deleteDepartments(@Param("ids") ids: string) {
-    const idArray = ids.split(",");
+    const idArray = ids.split(",").map((id) => Number(id));
 
     for (const id of idArray) {
       const success = await this.deptService.deleteDept(id);
       if (!success) {
-        throw new HttpException(
-          `Failed to delete department with ID: ${id}`,
-          HttpStatus.BAD_REQUEST
-        );
+        throw new HttpException(`删除部门失败，ID: ${id}`, HttpStatus.BAD_REQUEST);
       }
     }
-    return { message: "Departments deleted successfully" };
+    return { message: "部门删除成功" };
   }
 }

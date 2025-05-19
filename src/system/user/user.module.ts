@@ -6,12 +6,14 @@ import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import { RoleModule } from "../role/role.module";
 import { DeptModule } from "../dept/dept.module";
+import { MenuModule } from "../menu/menu.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SysUser, SysUserRole]),
     forwardRef(() => RoleModule),
     forwardRef(() => DeptModule),
+    forwardRef(() => MenuModule),
   ],
   controllers: [UserController],
   providers: [UserService],

@@ -1,167 +1,150 @@
-import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateRoleDto } from "./dto/create-role.dto";
-import { Model, Schema } from "mongoose";
-import { InjectModel } from "@nestjs/mongoose";
-import { Role } from "./role.schema";
-import { BusinessException } from "../../common/exceptions/business.exception";
-import { UpdateMenuDto } from "../menu/dto/update-menu.dto";
+import { UpdateRoleDto } from "./dto/update-role.dto";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, In } from "typeorm";
+import { SysRole } from "./entities/sys-role.entity";
+import { SysRoleMenu } from "./entities/sys-role-menu.entity";
 import { MenuService } from "../menu/menu.service";
-import { ROOT_ROLE_CODE } from "../../common/constants";
+import { BusinessException } from "../../common/exceptions/business.exception";
 
 @Injectable()
 export class RoleService {
   constructor(
-    @InjectModel(Role.name)
-    private roleModel: Model<Role>,
+    @InjectRepository(SysRole)
+    private roleRepository: Repository<SysRole>,
+    @InjectRepository(SysRoleMenu)
+    private roleMenuRepository: Repository<SysRoleMenu>,
     @Inject(forwardRef(() => MenuService))
     private readonly menuService: MenuService
   ) {}
 
   /**
    * 角色分页列表
-   *
-   * @param pageNum 页码
-   * @param pageSize 每页数量
-   * @param keywords 关键字
-   * @returns
    */
-  async getRolePage(pageNum, pageSize, keywords) {
-    const filter = {};
-    if (keywords) {
-      const regex = new RegExp(keywords, "i");
-      filter["name"] = { $regex: regex };
-    }
-    const data = await this.roleModel
-      .find({ ...filter })
-      .sort({ sort: "asc" })
-      .skip((pageNum - 1) * pageSize) // 跳过前 (pageNum - 1) * pageSize 条数据
-      .limit(pageSize) // 限制每页的数据数量
-      .exec();
-    const total = await this.roleModel.countDocuments({ filter }).exec();
+  async getRolePage(pageNum: number, pageSize: number, keywords?: string) {
+    const queryBuilder = this.roleRepository.createQueryBuilder("role");
+    queryBuilder.where("role.isDeleted = :isDeleted", { isDeleted: 0 });
 
-    return { list: data, total };
+    if (keywords) {
+      queryBuilder.andWhere("role.name LIKE :keywords", { keywords: `%${keywords}%` });
+    }
+
+    queryBuilder.orderBy("role.sort", "ASC");
+    queryBuilder.skip((pageNum - 1) * pageSize);
+    queryBuilder.take(pageSize);
+
+    const [list, total] = await queryBuilder.getManyAndCount();
+    return { list, total };
   }
 
   /**
    * 根据角色查询菜单
-   *
-   * @param roleIds 角色ID集合
-   * @returns
    */
-  async getMenuIdsByRoleIds(roleIds: Schema.Types.ObjectId[]): Promise<string[]> {
+  async getMenuIdsByRoleIds(roleIds: number[]): Promise<number[]> {
     if (!roleIds?.length) return [];
 
-    // 超级管理员角色，返回全部菜单权限
-    /* if (roles.includes(ROOT_ROLE_CODE)) {
-      return {
-        permIds: (await this.menuService.findAll()).map((item) => item.id),
-      };
-    } */
-    // 根据角色查询菜单权限
-    const menuIds = (
-      await this.roleModel
-        .find({
-          _id: { $in: roleIds },
-          isDeleted: 0,
-        })
-        .lean()
-    ).flatMap((role) => role.menuIds || []);
+    const roleMenus = await this.roleMenuRepository
+      .createQueryBuilder("roleMenu")
+      .where("roleMenu.roleId IN (:...roleIds)", { roleIds })
+      .getMany();
 
-    // 去重菜单权限
-    return [...new Set(menuIds)];
+    return [...new Set(roleMenus.map((rm) => rm.menuId))];
   }
 
   /**
    * 根据角色编码查询权限标识集合
-   *
-   * @param roles  角色编码集合
-   * @returns 权限标识集合
    */
   async findPermsByRoleCodes(roles: string[]): Promise<string[]> {
-    const menuIds = await this.roleModel.distinct("menuIds", { code: { $in: roles } }).exec();
+    const roleMenus = await this.roleRepository
+      .createQueryBuilder("role")
+      .leftJoinAndSelect(SysRoleMenu, "roleMenu", "role.id = roleMenu.roleId")
+      .where("role.code IN (:...roles)", { roles })
+      .getMany();
+
+    const menuIds = roleMenus.map((rm) => rm.id.toString());
     return await this.menuService.findPermsByMenuIds(menuIds);
   }
 
   /**
    * 角色下拉列表
-   *
-   * @returns 角色下拉列表 { label: string, value: string }[]
    */
   async getRoleOptions() {
-    return this.roleModel
-      .find({}, "name _id")
-      .sort({ sort: "asc" })
-      .lean()
-      .exec()
-      .then((results) =>
-        results
-          .filter(({ name }) => !!name?.trim())
-          .map(({ name, _id }) => ({
-            label: name,
-            value: _id.toString(),
-          }))
-      );
+    const roles = await this.roleRepository.find({
+      where: { isDeleted: 0 },
+      order: { sort: "ASC" },
+    });
+
+    return roles
+      .filter(({ name }) => !!name?.trim())
+      .map(({ id, name }) => ({
+        label: name,
+        value: id,
+      }));
   }
 
   /**
    * 创建角色
    */
   async create(createRoleDto: CreateRoleDto) {
-    const name = createRoleDto.name;
-    const existRole = await this.roleModel.find({ name });
-    if (existRole.length > 0) {
+    const existRole = await this.roleRepository.findOne({
+      where: { name: createRoleDto.name, isDeleted: 0 },
+    });
+
+    if (existRole) {
       throw new BusinessException("角色已存在");
     }
 
-    const newRoleModel = new this.roleModel({
-      ...createRoleDto,
-    });
-    const newRole = await newRoleModel.save();
-    return newRole;
+    const role = this.roleRepository.create(createRoleDto);
+    return await this.roleRepository.save(role);
   }
 
   /**
    * 根据 ID 查询角色
-   *
-   * @param id  角色 ID
-   * @returns
    */
-  async getRoleForm(id: string) {
-    return await this.roleModel.findById(id).exec();
+  async getRoleForm(id: number) {
+    return await this.roleRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
   }
 
   /**
    * 更新角色
    */
-  async update(id: string, updateMenuDto: UpdateMenuDto) {
-    return await this.roleModel.findByIdAndUpdate(id, updateMenuDto).exec();
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
+    return await this.roleRepository.update(id, updateRoleDto);
   }
 
   /**
    * 更新角色菜单
    */
-  async updateMenus(id: string, menuIds: string[]) {
-    return await this.roleModel.findByIdAndUpdate(id, { menuIds: menuIds }, { new: true }).exec();
+  async updateMenus(roleId: number, menuIds: number[]) {
+    // 先删除原有的关联
+    await this.roleMenuRepository.delete({ roleId });
+
+    // 创建新的关联
+    const roleMenus = menuIds.map((menuId) => ({
+      roleId,
+      menuId,
+    }));
+
+    return await this.roleMenuRepository.save(roleMenus);
   }
 
   /**
    * 删除角色
    */
-  async remove(id: string) {
-    return await this.roleModel.findByIdAndDelete(id).exec();
+  async remove(id: number) {
+    return await this.roleRepository.update(id, { isDeleted: 1 });
   }
 
   /**
-   * 查询角色编码集合
-   *
-   * @param roleIds 角色ID集合
-   * @returns
+   * 查询角色信息
    */
-  async findRolesByIds(roleIds: Schema.Types.ObjectId[]): Promise<Role[]> {
-    const roles = await this.roleModel
-      .find({ _id: { $in: roleIds } })
-      .select("code dataScope -_id")
-      .exec();
-    return roles;
+  async findRolesByIds(roleIds: number[]): Promise<SysRole[]> {
+    return await this.roleRepository.find({
+      where: { id: In(roleIds), isDeleted: 0 },
+      select: ["code", "dataScope"],
+    });
   }
 }

@@ -37,59 +37,67 @@ export class UserController {
   @Get("page")
   @SetMetadata("resource", "sys_user")
   async getUserPage(
-    @Query("page") page: number,
-    @Query("size") size: number,
-    @Query("keywords") keywords: string,
-    @Query("status") status: number,
-    @Query("startTime") startTime: string,
-    @Query("deptId") deptId: string,
-    @Query("endTime") endTime: string,
-    @Req() req
+    @Query("pageNum") pageNum: number,
+    @Query("pageSize") pageSize: number,
+    @Query("deptId") deptId?: number,
+    @Query("keywords") keywords?: string,
+    @Query("status") status?: number,
+    @Query("startTime") startTime?: string,
+    @Query("endTime") endTime?: string
   ) {
     this.logger.info("Fetching user list", {
       context: "UserController",
-      metadata: { page: 1, pageSize: 20 },
+      metadata: { page: pageNum, pageSize: pageSize },
     });
     return await this.userService.getUserPage(
-      page,
-      size,
+      pageNum,
+      pageSize,
       deptId,
       keywords,
       status,
       startTime,
-      endTime,
-      req.dataFilter
+      endTime
     );
   }
 
-  @ApiOperation({ summary: "获取当前用户信息" })
+  @ApiOperation({ summary: "获取当前登录用户信息" })
   @Get("me")
-  async findMe(@CurrentUser() currentUser: CurrentUserInfo): Promise<CurrentUserDto> {
-    return await this.userService.findMe(currentUser);
+  async getCurrentUser(@Req() req) {
+    return await this.userService.findMe(req.user);
   }
 
   @ApiOperation({ summary: "新增用户" })
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.userService.create(createUserDto);
+  async create(@CurrentUser("userId") currentUserId: number, @Body() createUserDto: CreateUserDto) {
+    return await this.userService.create({
+      ...createUserDto,
+      createBy: currentUserId,
+    });
   }
 
   @ApiOperation({ summary: "获取用户表单数据" })
   @Get(":id/form")
-  getUserForm(@Param("id") id: string) {
-    return this.userService.getUserForm(id);
+  async getUserForm(@Param("id") id: number) {
+    return await this.userService.getUserForm(id);
   }
 
   @ApiOperation({ summary: "修改用户" })
   @Put(":id")
-  updateMenu(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto): any {
-    return this.userService.update(id, updateUserDto);
+  async update(
+    @CurrentUser("userId") currentUserId: number,
+    @Param("id") id: number,
+    @Body() updateUserDto: UpdateUserDto
+  ) {
+    return await this.userService.update(id, {
+      ...updateUserDto,
+      updateBy: currentUserId,
+    });
   }
 
   @ApiOperation({ summary: "删除用户" })
   @Delete(":ids")
-  async deleteUser(@Param("ids") ids: string) {
-    const idArray = ids.split(",");
+  async deleteUsers(@Param("ids") ids: string) {
+    const idArray = ids.split(",").map((id) => Number(id));
     const results = await Promise.all(
       idArray.map(async (id) => {
         const success = await this.userService.deleteUser(id);
