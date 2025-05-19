@@ -49,7 +49,7 @@ export class AuthService {
 
       // 2. 生成 JWT 载荷
       const payload = {
-        userId: user.id,
+        sub: user.id,
         username: user.username,
         deptId: user.deptId,
         dataScope: user.dataScope,
