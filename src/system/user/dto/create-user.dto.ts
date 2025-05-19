@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber, IsArray, IsEmail } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 
 export class CreateUserDto {
   @IsNotEmpty({ message: "用户名不能为空" })
@@ -12,6 +13,7 @@ export class CreateUserDto {
 
   @ApiProperty({ description: "性别(1-男 2-女 0-保密)", required: false })
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   gender?: number;
 
@@ -22,6 +24,7 @@ export class CreateUserDto {
 
   @ApiProperty({ description: "部门ID", required: false })
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   deptId?: number;
 
@@ -45,6 +48,7 @@ export class CreateUserDto {
 
   @ApiProperty({ description: "状态(1-正常 0-禁用)", required: false })
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   status?: number;
 
