@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsMongoId, IsIn } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class CreateDeptDto {
   @IsNotEmpty()
@@ -10,30 +11,32 @@ export class CreateDeptDto {
   code: string; // 部门编号
 
   @IsOptional()
-  parentId?: string | number; // 父节点id
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
+  @IsNumber()
+  parentId?: number; // 父节点id
 
   @IsOptional()
-  deptTreePath?: string;
+  @IsString()
+  treePath?: string; // 父节点id路径
 
   @IsOptional()
-  TreePath?: string; // 父节点id路径
-
-  @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   sort?: number; // 显示顺序
 
   @IsOptional()
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
   @IsIn([0, 1], { message: "状态只能是0或1" })
   status?: number; // 状态 (1-正常 0-禁用)
 
   @IsOptional()
-  @IsMongoId({ message: "创建人ID必须是有效的ObjectId" })
-  createBy?: string; // 创建人ID
+  @IsNumber()
+  createBy?: number; // 创建人ID
 
   @IsOptional()
-  @IsMongoId({ message: "修改人ID必须是有效的ObjectId" })
-  updateBy?: string; // 修改人ID
+  @IsNumber()
+  updateBy?: number; // 修改人ID
 
-  createTime?: number; // 创建时间
+  createTime?: Date; // 创建时间
 }

@@ -1,17 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsNumber, IsEnum } from "class-validator";
-import { TagType } from "../dict.schema";
+import { IsString, IsNumber, IsOptional } from "class-validator";
 
 export class CreateDictItemDto {
   @ApiProperty({ description: "字典编码" })
   @IsString()
   dictCode: string;
 
-  @ApiProperty({ description: "字典标签" })
+  @ApiProperty({ description: "字典项标签" })
   @IsString()
   label: string;
 
-  @ApiProperty({ description: "字典值" })
+  @ApiProperty({ description: "字典项值" })
   @IsString()
   value: string;
 
@@ -19,20 +18,21 @@ export class CreateDictItemDto {
   @IsNumber()
   sort: number;
 
-  @ApiProperty({ description: "状态" })
+  @ApiProperty({ description: "状态(1-正常 0-停用)" })
   @IsNumber()
   status: number;
 
   @ApiProperty({ description: "标签类型" })
-  @IsEnum(TagType)
-  tagType: TagType;
-
-  @ApiProperty({ description: "创建人" })
   @IsString()
-  createBy?: string;
+  tagType: string;
 
-  @ApiProperty({ description: "创建时间" })
+  @ApiProperty({ description: "备注" })
+  @IsString()
+  @IsOptional()
+  remark?: string;
+
+  @ApiProperty({ description: "创建人ID" })
   @IsNumber()
-  createTime?: number;
-  deptTreePath: string;
+  @IsOptional()
+  createBy?: number;
 }

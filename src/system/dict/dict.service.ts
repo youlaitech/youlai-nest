@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { DictFormDto } from "./dto/create-dict.dto";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { Dict, DictItem } from "./dict.schema";
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, Not } from "typeorm";
+import { SysDict } from "./entities/sys-dict.entity";
+import { SysDictItem } from "./entities/sys-dict-item.entity";
 import { BusinessException } from "../../common/exceptions/business.exception";
+import { DictFormDto } from "./dto/create-dict.dto";
 import { UpdateDictDto } from "./dto/update-dict.dto";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
+import { UpdateDictItemDto } from "./dto/update-dict-item.dto";
 
 /**
  * 字典服务
@@ -13,81 +15,72 @@ import { CreateDictItemDto } from "./dto/create-dict-item.dto";
 @Injectable()
 export class DictService {
   constructor(
-    @InjectModel(Dict.name)
-    private readonly dictModel: Model<Dict>,
-    @InjectModel(DictItem.name)
-    private readonly dictItemModel: Model<DictItem>
+    @InjectRepository(SysDict)
+    private readonly dictRepository: Repository<SysDict>,
+    @InjectRepository(SysDictItem)
+    private readonly dictItemRepository: Repository<SysDictItem>
   ) {}
 
   /**
    * 字典分页列表
    */
   async getDictPage(pageNum: number, pageSize: number, keywords: string) {
-    const query: any = { isDeleted: 0 };
+    const queryBuilder = this.dictRepository.createQueryBuilder("dict");
+    queryBuilder.where("dict.isDeleted = :isDeleted", { isDeleted: 0 });
+
     if (keywords) {
-      query.$or = [
-        { name: { $regex: new RegExp(keywords, "i") } },
-        { dict_code: { $regex: new RegExp(keywords, "i") } },
-      ];
+      queryBuilder.andWhere("(dict.name LIKE :keywords OR dict.dictCode LIKE :keywords)", {
+        keywords: `%${keywords}%`,
+      });
     }
 
-    const [dicts, total] = await Promise.all([
-      this.dictModel
-        .find(query)
-        .select("name dictCode status")
-        .skip((pageNum - 1) * pageSize)
-        .limit(pageSize)
-        .sort({ createTime: -1 })
-        .lean()
-        .exec(),
-      this.dictModel.countDocuments(query).exec(),
-    ]);
+    const [dicts, total] = await queryBuilder
+      .select(["dict.id", "dict.name", "dict.dictCode", "dict.status"])
+      .skip((pageNum - 1) * pageSize)
+      .take(pageSize)
+      .orderBy("dict.createTime", "DESC")
+      .getManyAndCount();
 
-    // 转换返回结果格式
-    const result = dicts.map((dict) => ({
-      id: dict._id,
-      name: dict.name,
-      dictCode: dict.dictCode,
-      status: dict.status,
-    }));
-
-    return { list: result, total };
+    return { list: dicts, total };
   }
 
   /**
    * 创建字典
-   *
-   * @param dictFormDto
-   * @returns
    */
   async createDict(dictFormDto: DictFormDto) {
     const { dictCode, name, status } = dictFormDto;
-    const existCode = await this.dictModel.find({ dictCode, isDeleted: 0 });
-    if (existCode.length > 0) {
+
+    const existDict = await this.dictRepository.findOne({
+      where: { dictCode, isDeleted: 0 },
+    });
+
+    if (existDict) {
       throw new BusinessException("字典已存在");
     }
-    const newDict = await this.dictModel.create({
+
+    const dict = this.dictRepository.create({
       dictCode,
       name,
       status,
     });
 
-    return await newDict.save();
+    return await this.dictRepository.save(dict);
   }
 
   /**
    * 获取字典表单
-   *
-   * @param id
-   * @returns
    */
-  async getDictForm(id: string) {
-    const dict = await this.dictModel.findById(id).lean().exec();
+  async getDictForm(id: number) {
+    const dict = await this.dictRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
+
     if (!dict) {
       throw new BusinessException("字典不存在");
     }
+
     return {
-      id: dict._id,
+      id: dict.id,
       name: dict.name,
       dictCode: dict.dictCode,
       status: dict.status,
@@ -96,33 +89,38 @@ export class DictService {
 
   /**
    * 更新字典
-   *
-   * @param id
-   * @param updateDictDto
-   * @returns
    */
-  async updateDict(id: string, updateDictDto: UpdateDictDto) {
-    return await this.dictModel.findByIdAndUpdate(id, updateDictDto, { new: true }).exec();
-  }
-
-  /**
-   * 删除字典
-   *
-   * @param id
-   * @returns
-   */
-  async deleteDict(id: string, updateBy: string, updateTime: number) {
-    const dict = await this.dictModel.findById(id);
+  async updateDict(id: number, updateDictDto: UpdateDictDto) {
+    const dict = await this.dictRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
 
     if (!dict) {
       throw new BusinessException("字典不存在");
     }
 
-    await this.dictModel.findByIdAndUpdate(id, {
+    await this.dictRepository.update(id, updateDictDto);
+    return true;
+  }
+
+  /**
+   * 删除字典
+   */
+  async deleteDict(id: number, updateBy: number) {
+    const dict = await this.dictRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
+
+    if (!dict) {
+      throw new BusinessException("字典不存在");
+    }
+
+    await this.dictRepository.update(id, {
       isDeleted: 1,
       updateBy,
-      updateTime,
+      updateTime: new Date(),
     });
+
     return true;
   }
 
@@ -132,151 +130,113 @@ export class DictService {
 
   /**
    * 字典数据分页列表
-   *
-   * @param pageNum
-   * @param pageSize
-   * @param dictCode
-   * @param keywords
-   * @returns
    */
   async getDictItemPage(pageNum: number, pageSize: number, dictCode: string, keywords?: string) {
-    // 构建查询条件
-    const query: any = {
-      dictCode: dictCode,
-      isDeleted: 0,
-    };
+    const queryBuilder = this.dictItemRepository.createQueryBuilder("item");
+    queryBuilder.where("item.dictCode = :dictCode", { dictCode });
 
-    // 如果有关键词，添加名称或值的模糊查询
     if (keywords) {
-      query.$or = [
-        { name: { $regex: new RegExp(keywords, "i") } },
-        { value: { $regex: new RegExp(keywords, "i") } },
-      ];
+      queryBuilder.andWhere("(item.label LIKE :keywords OR item.value LIKE :keywords)", {
+        keywords: `%${keywords}%`,
+      });
     }
 
-    // 查询字典项总数
-    const total = await this.dictItemModel.countDocuments(query);
-
-    // 查询字典项
-    const dictData = await this.dictItemModel
-      .find(query)
-      .sort({ sort: 1 })
+    const [items, total] = await queryBuilder
+      .select([
+        "item.id",
+        "item.dictCode",
+        "item.label",
+        "item.value",
+        "item.sort",
+        "item.status",
+        "item.tagType",
+      ])
+      .orderBy("item.sort", "ASC")
       .skip((pageNum - 1) * pageSize)
-      .limit(pageSize)
-      .lean();
+      .take(pageSize)
+      .getManyAndCount();
 
-    // 格式化返回数据
-    const result = dictData.map((item) => ({
-      id: item._id,
-      dictCode: dictCode,
-      label: item.label,
-      value: item.value,
-      sort: item.sort,
-      status: item.status,
-      tagType: item.tagType,
-    }));
-
-    return {
-      list: result,
-      total,
-    };
+    return { list: items, total };
   }
 
   /**
    * 字典项列表
-   *
-   * @param dictCode 字典编码
-   * @returns
    */
   async getDictItems(dictCode: string) {
-    const dictItems = await this.dictItemModel
-      .find({
-        dictCode: dictCode,
-        isDeleted: 0,
-      })
-      .sort({ sort: 1 })
-      .lean();
-    console.log("获取字典项列表", dictCode, dictItems);
+    const items = await this.dictItemRepository.find({
+      where: {
+        dictCode,
+      },
+      order: {
+        sort: "ASC",
+      },
+      select: ["label", "value", "tagType"],
+    });
 
-    const result = dictItems.map((item) => ({
-      label: item.label,
-      value: item.value,
-      tagType: item.tagType,
-    }));
-
-    return result;
+    return items;
   }
 
   /**
    * 创建字典项
-   *
-   * @param createDictItemDto
-   * @returns
    */
   async createDictItem(createDictItemDto: CreateDictItemDto) {
-    const { dictCode, label, value, sort, status, tagType, createBy, createTime, deptTreePath } =
-      createDictItemDto;
+    const { dictCode, label, value, sort, status, tagType } = createDictItemDto;
 
-    // 查找对应的字典
-    const dict = await this.dictModel.findOne({
-      dict_code: dictCode,
-      isDeleted: 0,
+    // 检查字典是否存在
+    const dict = await this.dictRepository.findOne({
+      where: { dictCode, isDeleted: 0 },
     });
+
     if (!dict) {
       throw new BusinessException("字典不存在");
     }
 
     // 检查值是否已存在
-    const existItem = await this.dictItemModel.findOne({
-      dictId: dict._id,
-      value,
-      isDeleted: 0,
+    const existItem = await this.dictItemRepository.findOne({
+      where: { dictCode, value },
     });
+
     if (existItem) {
       throw new BusinessException(`字典项值 "${value}" 已存在`);
     }
 
     // 创建新的字典项
-    const newDictItem = new this.dictItemModel({
-      dictId: dict._id,
-      name: label,
+    const dictItem = this.dictItemRepository.create({
+      dictCode,
+      label,
       value,
       sort,
       status,
       tagType,
-      createBy,
-      createTime,
-      deptTreePath,
     });
 
-    // 保存字典项
-    const savedDictItem = await newDictItem.save();
+    const savedItem = await this.dictItemRepository.save(dictItem);
 
     return {
-      id: savedDictItem._id,
+      id: savedItem.id,
       dictCode,
-      label: savedDictItem.label,
-      value: savedDictItem.value,
-      sort: savedDictItem.sort,
-      status: savedDictItem.status,
-      tagType: savedDictItem.tagType,
+      label: savedItem.label,
+      value: savedItem.value,
+      sort: savedItem.sort,
+      status: savedItem.status,
+      tagType: savedItem.tagType,
     };
   }
 
   /**
    * 字典项表单数据
-   *
-   * @param id
-   * @returns
    */
-  async getDictItemForm(id: string) {
-    const dictItem = await this.dictItemModel.findById(id).lean();
+  async getDictItemForm(id: number) {
+    const dictItem = await this.dictItemRepository.findOne({
+      where: { id },
+    });
+
     if (!dictItem) {
       throw new BusinessException("字典项不存在");
     }
 
     return {
-      id: dictItem._id,
+      id: dictItem.id,
       dictCode: dictItem.dictCode,
       label: dictItem.label,
       value: dictItem.value,
@@ -287,54 +247,48 @@ export class DictService {
 
   /**
    * 更新字典项
-   *
-   * @param id
-   * @param updateData
-   * @returns
    */
-  async updateDictItem(id: string, updateData: any) {
-    const dictItem = await this.dictItemModel.findById(id);
+  async updateDictItem(id: number, updateData: UpdateDictItemDto) {
+    const dictItem = await this.dictItemRepository.findOne({
+      where: { id },
+    });
+
     if (!dictItem) {
       throw new BusinessException("字典项不存在");
     }
 
     // 检查值是否已存在
-    const existItem = await this.dictItemModel.findOne({
-      dictCode: dictItem.dictCode,
-      value: updateData.value,
-      isDeleted: 0,
-      _id: { $ne: id },
-    });
-    if (existItem) {
-      throw new BusinessException(`字典项值 "${updateData.value}" 已存在`);
+    if (updateData.value) {
+      const existItem = await this.dictItemRepository.findOne({
+        where: {
+          dictCode: dictItem.dictCode,
+          value: updateData.value,
+          id: Not(id),
+        },
+      });
+
+      if (existItem) {
+        throw new BusinessException(`字典项值 "${updateData.value}" 已存在`);
+      }
     }
 
-    // 更新字典项
-    await this.dictItemModel.findByIdAndUpdate(id, updateData, { new: true });
-
+    await this.dictItemRepository.update(id, updateData);
     return true;
   }
 
   /**
    * 删除字典项
-   *
-   * @param id
-   * @returns
    */
-  async deleteDictItems(id: string) {
-    const dictItem = await this.dictItemModel.findById(id);
+  async deleteDictItems(id: number) {
+    const dictItem = await this.dictItemRepository.findOne({
+      where: { id },
+    });
+
     if (!dictItem) {
       throw new BusinessException("字典项不存在");
     }
 
-    await this.dictItemModel.findByIdAndUpdate(
-      id,
-      {
-        isDeleted: 1,
-      },
-      { new: true }
-    );
-
+    await this.dictItemRepository.delete(id);
     return true;
   }
 }

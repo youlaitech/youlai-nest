@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import encry from "../common/utils/crypto";
+
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "../system/user/user.service";
 import type { LoginRequestDto } from "./dto/login-request.dto";
@@ -8,6 +8,7 @@ import { ConfigType } from "@nestjs/config";
 import { LoginResultDto } from "./dto/login-result.dto";
 import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
+import * as bcrypt from "bcrypt";
 
 /**
  * 认证服务
@@ -21,37 +22,55 @@ export class AuthService {
     private readonly userService: UserService
   ) {}
 
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.userService.findByUsername(username);
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
+  }
+
   /**
    * 用户登录认证
    */
   async login(loginDto: LoginRequestDto): Promise<LoginResultDto> {
-    // 1. 验证用户凭证
-    const userAuthInfo = await this.userService.getAuthCredentialsByUsername(loginDto.username);
+    try {
+      const { username, password } = loginDto;
+      const user = await this.validateUser(username, password);
+      console.log(user);
+      if (!user) {
+        throw new BusinessException("用户名或密码错误");
+      }
 
-    if (!userAuthInfo || userAuthInfo.password !== encry(loginDto.password, userAuthInfo.salt)) {
-      throw new BusinessException(ErrorCode.USER_PASSWORD_ERROR);
+      if (user.status === 0) {
+        throw new BusinessException("用户已被禁用");
+      }
+
+      // 2. 生成 JWT 载荷
+      const payload = {
+        sub: user.id,
+        username: user.username,
+        deptId: user.deptId,
+        dataScope: user.dataScope,
+        deptTreePath: user.deptTreePath,
+        roles: user.roles,
+      };
+
+      // 3. 生成访问令牌
+      const accessToken = await this.jwtService.signAsync(payload, {
+        expiresIn: this.config.expiresIn,
+      });
+
+      return {
+        accessToken,
+        expiresIn: this.config.expiresIn,
+        tokenType: "Bearer",
+        userInfo: user,
+      };
+    } catch (error) {
+      throw new BusinessException("登录失败");
     }
-
-    // 2. 生成 JWT 载荷
-    const payload = {
-      sub: userAuthInfo.id,
-      username: userAuthInfo.username,
-      deptId: userAuthInfo.deptId,
-      dataScope: userAuthInfo.dataScope,
-      deptTreePath: userAuthInfo.deptTreePath,
-      roles: userAuthInfo.roles,
-    };
-
-    // 3. 生成访问令牌
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: this.config.expiresIn,
-    });
-
-    return {
-      accessToken,
-      expiresIn: this.config.expiresIn,
-      tokenType: "Bearer",
-    };
   }
 
   /**

@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { CreateDeptDto } from "./dto/create-dept.dto";
 import { UpdateDeptDto } from "./dto/update-dept.dto";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { Dept } from "./dept.schema";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { SysDept } from "./entities/sys-dept.entity";
 
 /**
  * 部门服务
@@ -11,132 +11,125 @@ import { Dept } from "./dept.schema";
 @Injectable()
 export class DeptService {
   constructor(
-    @InjectModel(Dept.name)
-    private readonly deptModel: Model<Dept>
+    @InjectRepository(SysDept)
+    private readonly deptRepository: Repository<SysDept>
   ) {}
 
   /**
    * 查询部门列表
-   *
-   * @param keyword
-   * @param status
-   * @returns
    */
-  async findAll(keyword: string, status: string | number) {
-    const query = {};
+  async findAll(keyword?: string, status?: string | number) {
+    const queryBuilder = this.deptRepository.createQueryBuilder("dept");
+    queryBuilder.where("dept.isDeleted = :isDeleted", { isDeleted: 0 });
+
     if (keyword) {
-      const regex = new RegExp(keyword, "i"); // 'i' 表示不区分大小写
-      query["name"] = { $regex: regex };
+      queryBuilder.andWhere("dept.name LIKE :keyword", { keyword: `%${keyword}%` });
     }
-    if (!isNaN(Number(status))) {
-      query["status"] = Number(status);
+
+    if (status !== undefined && status !== null) {
+      queryBuilder.andWhere("dept.status = :status", { status: Number(status) });
     }
-    const deptList = await this.deptModel
-      .aggregate([
-        {
-          $match: {
-            ...query,
-            isDeleted: 0,
-          },
-        },
-        { $sort: { sort: 1 } },
-        { $addFields: { id: "$_id" } },
-        { $project: { _id: 0, __v: 0 } },
-      ])
-      .exec();
+
+    queryBuilder.orderBy("dept.sort", "ASC");
+    const deptList = await queryBuilder.getMany();
     return this.buildDeptTree(deptList);
   }
 
   /**
    * 查询部门下拉树形列表
-   *
-   * @returns
    */
   async findAllOptions() {
-    const query = {};
-    const Options = await this.deptModel
-      .aggregate([
-        {
-          $match: { ...query, isDeleted: 0 },
-        },
-        { $sort: { sort: 1 } },
-        { $addFields: { id: "$_id" } }, // 将 _id 复制到 id
-        { $project: { _id: 0, __v: 0 } }, // 排除 _id 字段
-      ])
-      .exec();
-    return this.buildOptionsTree(Options);
+    const depts = await this.deptRepository.find({
+      where: { isDeleted: 0 },
+      order: { sort: "ASC" },
+    });
+    return this.buildOptionsTree(depts);
   }
 
   /**
    * 创建部门
-   *
-   * @param createDeptDto
-   * @returns
    */
   async create(createDeptDto: CreateDeptDto) {
-    const TreePath = await this.buildTreePath(createDeptDto.parentId);
-    const createdMenu = new this.deptModel({ ...createDeptDto, TreePath });
-    await createdMenu.save();
-    return await createdMenu.save();
+    const treePath = await this.buildTreePath(createDeptDto.parentId);
+    const dept = this.deptRepository.create({
+      ...createDeptDto,
+      treePath,
+    });
+    return await this.deptRepository.save(dept);
   }
 
   /**
    * 获取部门表单
-   *
-   * @param id
-   * @returns
    */
-  async getDeptForm(id: string) {
-    return await this.deptModel.findById(id).exec();
+  async getDeptForm(id: number) {
+    return await this.deptRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
   }
 
   /**
    * 编辑部门
-   *
-   * @param id
-   * @param updateDeptDto
-   * @returns
    */
-  async updateDept(id: string, updateDeptDto: UpdateDeptDto) {
-    return await this.deptModel.findByIdAndUpdate(id, updateDeptDto).exec();
+  async updateDept(id: number, updateDeptDto: UpdateDeptDto) {
+    const dept = await this.deptRepository.findOne({
+      where: { id, isDeleted: 0 },
+    });
+
+    if (!dept) {
+      return null;
+    }
+
+    // 构建更新数据对象
+    const updateData: Partial<SysDept> = {
+      name: updateDeptDto.name,
+      code: updateDeptDto.code,
+      parentId: updateDeptDto.parentId,
+      sort: updateDeptDto.sort,
+      status: updateDeptDto.status,
+      updateBy: updateDeptDto.updateBy,
+      updateTime: new Date(),
+    };
+
+    // 如果更新了父部门ID，重新构建treePath
+    if (updateDeptDto.parentId !== undefined) {
+      updateData.treePath = await this.buildTreePath(updateDeptDto.parentId);
+    }
+
+    // 过滤掉undefined的字段
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key]
+    );
+
+    await this.deptRepository.update(id, updateData);
+    return await this.deptRepository.findOne({ where: { id } });
   }
 
   /**
    * 删除部门
-   *
-   * @param id 部门ID
-   * @returns
    */
-  async deleteDept(id: string) {
-    return await this.deptModel.findByIdAndUpdate(id, { isDeleted: true }).exec();
+  async deleteDept(id: number) {
+    const result = await this.deptRepository.update({ id }, { isDeleted: 1 });
+    return result.affected > 0;
   }
+
   /**
    * 构建部门树结构
-   *
-   * @param deptList  部门列表
-   * @returns
    */
-  private buildDeptTree(deptList: any[]): any[] {
-    const map: { [key: string]: any } = {};
+  private buildDeptTree(deptList: SysDept[]): any[] {
+    const map: { [key: number]: any } = {};
     const roots: any[] = [];
 
-    // 为每个菜单项创建一个映射
     deptList.forEach((dept) => {
-      // 复制对象并初始化children为数组
       map[dept.id] = {
         ...dept,
         children: [],
-        id: dept.id,
       };
     });
 
-    // 组装树结构
     deptList.forEach((dept) => {
-      // 如果菜单项没有parentId或者parentId为0，视为根节点
-      if (dept.parentId === 0 || !map[dept.parentId]) {
+      if (!dept.parentId || dept.parentId === 0) {
         roots.push(map[dept.id]);
       } else {
-        // 如果有parentId，则将其添加到父菜单的children中
         if (map[dept.parentId]) {
           map[dept.parentId].children.push(map[dept.id]);
         }
@@ -145,26 +138,29 @@ export class DeptService {
 
     return roots;
   }
-  // 树结构数据
-  private buildOptionsTree(menus: any[]): any[] {
-    const map = new Map<string, any>();
+
+  /**
+   * 构建部门选项树
+   */
+  private buildOptionsTree(depts: SysDept[]): any[] {
+    const map: { [key: number]: any } = {};
     const roots: any[] = [];
 
-    // 为每个菜单项创建一个 Map，并初始化 children
-    menus.forEach((menu) => {
-      map.set(menu.id.toString(), {
-        label: menu.name,
-        value: menu.id,
+    depts.forEach((dept) => {
+      map[dept.id] = {
+        label: dept.name,
+        value: dept.id,
         children: [],
-      });
+      };
     });
 
-    // 遍历菜单项，根据 parentId 构建树形结构
-    menus.forEach((menu) => {
-      if (menu.parentId && map.has(menu.parentId.toString())) {
-        map.get(menu.parentId.toString()).children.push(map.get(menu.id.toString()));
+    depts.forEach((dept) => {
+      if (!dept.parentId || dept.parentId === 0) {
+        roots.push(map[dept.id]);
       } else {
-        roots.push(map.get(menu.id.toString()));
+        if (map[dept.parentId]) {
+          map[dept.parentId].children.push(map[dept.id]);
+        }
       }
     });
 
@@ -172,16 +168,15 @@ export class DeptService {
   }
 
   /**
-   * 构建部门 TreePath
-   *
-   * @param parentId 父节点ID
-   * @returns
+   * 构建部门 treePath
    */
-  private async buildTreePath(parentId: string | number) {
-    if (Number(parentId) === 0) {
+  private async buildTreePath(parentId: number): Promise<string> {
+    if (parentId === 0) {
       return "0";
     }
-    const parentDept = await this.deptModel.findById(parentId);
-    return `${parentDept.TreePath}/${parentDept.id}`;
+    const parentDept = await this.deptRepository.findOne({
+      where: { id: parentId, isDeleted: 0 },
+    });
+    return parentDept ? `${parentDept.treePath}/${parentDept.id}` : "0";
   }
 }

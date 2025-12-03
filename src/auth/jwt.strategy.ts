@@ -1,8 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
-import { ConfigType } from "@nestjs/config";
-import jwtConfig from "../config/jwt.config";
+import { ConfigService } from "@nestjs/config";
 
 /**
  * JWT 认证策略
@@ -13,15 +12,11 @@ import jwtConfig from "../config/jwt.config";
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    @Inject(jwtConfig.KEY)
-    private readonly config: ConfigType<typeof jwtConfig>
-  ) {
+  constructor(private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
-      secretOrKey: config.secretKey, // 用于验证签名的密钥
-      issuer: config.issuer, // 令牌签发者
       ignoreExpiration: false, // 是否忽略令牌过期
+      secretOrKey: configService.get("JWT_SECRET_KEY"), // 用于验证签名的密钥
     });
   }
 
@@ -29,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * 验证并标准化 JWT 载荷
    *
    * @param payload 解码后的 JWT 载荷
-   * @returns 标准用户对象 (将挂载到 req.user) ，
+   * @returns 标准用户对象 (将挂载到 req.user)
    */
   async validate(payload: any) {
     if (!payload.sub || !payload.username) {
@@ -41,7 +36,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       username: payload.username,
       roles: payload.roles || [],
       deptId: payload.deptId,
-      deptTreePath: payload.deptTreePath,
       dataScope: payload.dataScope,
     };
   }

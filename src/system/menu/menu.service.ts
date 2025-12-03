@@ -1,203 +1,193 @@
-import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateMenuDto } from "./dto/create-menu.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
-import { Model } from "mongoose";
-import { InjectModel } from "@nestjs/mongoose";
-import { Menu } from "./menu.schema";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, In, Not } from "typeorm";
+import { SysMenu } from "./entities/sys-menu.entity";
 import { UserService } from "../user/user.service";
 import { MenuItem, Route } from "./interface/menu.type";
 
 @Injectable()
 export class MenuService {
   constructor(
-    @InjectModel(Menu.name)
-    private menuModel: Model<Menu>,
+    @InjectRepository(SysMenu)
+    private menuRepository: Repository<SysMenu>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService
   ) {}
 
   async findAll() {
-    return await this.menuModel
-      .find({ type: { $ne: 3 }, isDeleted: 0 })
-      .sort({ sort: "asc" })
-      .exec();
-  }
-  async find(menuIds: any) {
-    return await this.menuModel
-      .find({ _id: { $in: menuIds } })
-      .sort({ sort: "asc" })
-      .exec();
-  }
-  async findALLButtons() {
-    const permslist: any = await this.menuModel
-      .find({ type: 3 })
-      .sort({ sort: "asc" })
-      .lean()
-      .exec();
-    const perms: string[] = [];
-    permslist.map((item: any) => {
-      perms.push(item.perm);
+    return await this.menuRepository.find({
+      where: { type: Not(3) },
+      order: { sort: "ASC" },
     });
-    return perms;
   }
+
+  async find(menuIds: number[]) {
+    return await this.menuRepository.find({
+      where: { id: In(menuIds) },
+      order: { sort: "ASC" },
+    });
+  }
+
+  /**
+   * 获取所有按钮权限标识
+   */
+  async findALLButtons(): Promise<string[]> {
+    const buttons = await this.menuRepository.find({
+      where: { type: 4, visible: 1 },
+      select: ["perm"],
+    });
+
+    return Array.from(
+      new Set(buttons.map((menu) => menu.perm?.trim()).filter((perm): perm is string => !!perm))
+    );
+  }
+
   async findButtons(menuIds: string[]) {
-    const permslist: any = await this.menuModel
-      .find({ _id: { $in: menuIds }, type: 3 })
-      .sort({ sort: "asc" })
-      .lean()
-      .exec();
-    const perms: string[] = [];
-    permslist.map((item: any) => {
-      perms.push(item.perm);
+    const permslist = await this.menuRepository.find({
+      where: { id: In(menuIds.map(Number)), type: 4 },
+      order: { sort: "ASC" },
     });
-    return perms;
+    return permslist.map((item) => item.perm).filter(Boolean);
   }
 
   /**
    * 根据菜单ID查询权限集合
-   *
-   * @param menuIds 菜单ID集合
-   * @returns
    */
   async findPermsByMenuIds(menuIds: string[]): Promise<string[]> {
     if (!menuIds?.length) return [];
 
-    const menuDocs: any = await this.menuModel
-      .find({ _id: { $in: menuIds }, type: 3 }) // type: 3 表示按钮权限
-      .select("perm -_id") // 只查询 perm 字段 并排除 _id 字段
-      .lean()
-      .exec();
+    const menus = await this.menuRepository.find({
+      where: { id: In(menuIds.map(Number)), type: 4 },
+      select: ["perm"],
+    });
 
     return Array.from(
-      new Set(menuDocs.map((doc) => doc.perm?.trim()).filter((perm): perm is string => !!perm))
+      new Set(menus.map((menu) => menu.perm?.trim()).filter((perm): perm is string => !!perm))
     );
   }
 
   /**
-   *  获取用户菜单
-   *
-   * @param userId 用户ID
+   * 获取用户菜单
    */
-  async getRoutes(userId: string) {
-    const menuIds: string[] = await this.userService.getUserMenuIds(userId);
-    const menus: any = await this.menuModel
-      .find({ _id: { $in: menuIds }, type: { $ne: 3 } }) // 排除按钮
-      .sort({ sort: "asc" })
-      .exec();
+  async getRoutes(userId: string): Promise<Route[]> {
+    // 超级管理员返回所有菜单
+    if (userId === "1") {
+      const menuList = await this.menuRepository.find({
+        where: { type: In([1, 2]), visible: 1 },
+        order: { sort: "ASC" },
+      });
+      return this.buildRoutes(menuList);
+    }
 
-    return this.buildRoutes(menus);
+    // 其他用户返回其角色对应的菜单
+    const menuIds = await this.userService.getUserMenuIds(Number(userId));
+    if (!menuIds || menuIds.length === 0) {
+      return [];
+    }
+
+    const menuList = await this.menuRepository.find({
+      where: { id: In(menuIds), type: In([1, 2]), visible: 1 },
+      order: { sort: "ASC" },
+    });
+    return this.buildRoutes(menuList);
   }
 
   /**
    * 获取菜单树形表格列表
-   *
-   * @param keyword
-   * @returns
    */
   async getMenus(keyword: string) {
-    const regex = new RegExp(keyword, "i");
-    let query = {};
+    const queryBuilder = this.menuRepository.createQueryBuilder("menu");
+
     if (keyword) {
-      query = { name: { $regex: regex } };
+      queryBuilder.where("menu.name LIKE :keyword", { keyword: `%${keyword}%` });
     }
-    const menus = await this.menuModel.find(query).sort({ sort: "asc" }).lean().exec();
+
+    queryBuilder.orderBy("menu.sort", "ASC");
+    const menus = await queryBuilder.getMany();
 
     return this.buildMenuTree(menus);
   }
 
   /**
    * 获取菜单下拉树形列表
-   *
-   * @returns
    */
   async findOptions() {
-    try {
-      const Options = await this.menuModel
-        .find({}, { name: 1, parentId: 1, _id: 1 })
-        .sort({ sort: "asc" })
-        .lean()
-        .exec();
-      return this.buildOptionsTree(Options);
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    const menus = await this.menuRepository.find({
+      select: ["id", "name", "parentId"],
+      order: { sort: "ASC" },
+    });
+    return this.buildOptionsTree(menus);
   }
 
   /**
    * 创建菜单
-   *
-   * @param createMenuDto 菜单创建数据
-   * @returns
    */
   async create(createMenuDto: CreateMenuDto) {
-    const createdMenu = new this.menuModel({
+    const menu = this.menuRepository.create({
       ...createMenuDto,
-      createTime: Math.floor(Date.now() / 1000),
+      parentId: createMenuDto.parentId ? Number(createMenuDto.parentId) : 0,
+      createTime: new Date(),
     });
-    await createdMenu.save();
+    await this.menuRepository.save(menu);
     return true;
   }
 
   /**
    * 获取菜单表单
-   *
-   * @param id  菜单ID
-   * @returns
    */
-  async getMenuForm(id: string) {
-    return await this.menuModel.findById(id).exec();
+  async getMenuForm(id: number) {
+    return await this.menuRepository.findOne({
+      where: { id },
+    });
   }
 
   /**
    * 更新菜单
-   *
-   * @param id
-   * @param updateMenuDto
-   * @returns
    */
-  async update(id: string, updateMenuDto: UpdateMenuDto) {
-    return await this.menuModel.findByIdAndUpdate(id, updateMenuDto, { new: true }).exec();
+  async update(id: number, updateMenuDto: UpdateMenuDto) {
+    const menu = await this.menuRepository.findOne({ where: { id } });
+    if (!menu) {
+      return null;
+    }
+
+    const updatedMenu = {
+      ...updateMenuDto,
+      parentId: updateMenuDto.parentId ? Number(updateMenuDto.parentId) : 0,
+      updateTime: new Date(),
+    };
+
+    return await this.menuRepository.update(id, updatedMenu);
   }
 
   /**
    * 删除菜单
-   *
-   * @param id
-   * @returns
    */
-  async deleteMenu(id: string) {
-    return await this.menuModel.findByIdAndDelete(id).exec();
+  async deleteMenu(id: number) {
+    return await this.menuRepository.delete(id);
   }
 
   /**
    * 菜单树形数据处理
-   *
-   * @param menuList
-   * @returns
    */
-  private buildMenuTree(menuList: any[]): any[] {
-    const map: { [key: string]: any } = {};
+  private buildMenuTree(menuList: SysMenu[]): any[] {
+    const map: { [key: number]: any } = {};
     const roots: any[] = [];
 
-    // 为每个菜单项创建一个映射
     menuList.forEach((menu) => {
-      // 复制对象并初始化children为数组
-      map[menu._id] = {
+      map[menu.id] = {
         ...menu,
         children: [],
-        id: menu._id,
       };
     });
 
-    // 组装树结构
     menuList.forEach((menu) => {
-      // 如果菜单项没有parentId或者parentId为0，视为根节点
-      if (menu.parentId === 0 || !map[menu.parentId]) {
-        roots.push(map[menu._id]);
+      if (!menu.parentId || menu.parentId === 0) {
+        roots.push(map[menu.id]);
       } else {
-        // 如果有parentId，则将其添加到父菜单的children中
         if (map[menu.parentId]) {
-          map[menu.parentId].children.push(map[menu._id]);
+          map[menu.parentId].children.push(map[menu.id]);
         }
       }
     });
@@ -206,30 +196,27 @@ export class MenuService {
   }
 
   /**
-   * 构建菜单树形下拉选项
-   *
-   * @param menus
-   * @returns
+   * 构建菜单选项树
    */
-  private buildOptionsTree(menus: any[]): any[] {
-    const map = new Map<string, any>();
+  private buildOptionsTree(menus: SysMenu[]): any[] {
+    const map: { [key: number]: any } = {};
     const roots: any[] = [];
 
-    // 为每个菜单项创建一个 Map，并初始化 children
     menus.forEach((menu) => {
-      map.set(menu._id.toString(), {
+      map[menu.id] = {
+        value: menu.id,
         label: menu.name,
-        value: menu._id,
         children: [],
-      });
+      };
     });
 
-    // 遍历菜单项，根据 parentId 构建树形结构
     menus.forEach((menu) => {
-      if (menu.parentId && map.has(menu.parentId.toString())) {
-        map.get(menu.parentId.toString()).children.push(map.get(menu._id.toString()));
+      if (!menu.parentId || menu.parentId === 0) {
+        roots.push(map[menu.id]);
       } else {
-        roots.push(map.get(menu._id.toString()));
+        if (map[menu.parentId]) {
+          map[menu.parentId].children.push(map[menu.id]);
+        }
       }
     });
 
@@ -237,39 +224,36 @@ export class MenuService {
   }
 
   /**
-   * 构建菜单路由
-   *
-   * @param data 菜单数据
-   * @param parentId 父菜单ID
-   * @returns
+   * 构建前端路由
    */
-  private buildRoutes(data: MenuItem[], parentId: string = "0"): Route[] {
-    return data
-      .filter((item) => item.parentId === parentId)
-      .map((item) => {
+  private buildRoutes(menus: SysMenu[], parentId: number = 0): Route[] {
+    const routes: Route[] = [];
+
+    menus.forEach((menu) => {
+      if (menu.parentId === parentId) {
         const route: Route = {
-          path: item.routePath,
-          component: item.component || "Layout",
-          name: item.routeName || item.name,
+          path: menu.routePath || "",
+          component: menu.component || "",
+          name: menu.routeName || "",
           meta: {
-            title: item.name,
-            icon: item.icon || "el-icon-ElementPlus",
-            hidden: item.visible === 0,
-            alwaysShow: item.alwaysShow === 1,
-            keepAlive: item.keepAlive === 1,
-            params:
-              item.params && item.params.length > 0
-                ? Object.fromEntries(item.params.map((param) => [param.key, param.value]))
-                : null,
+            title: menu.name,
+            icon: menu.icon || "",
+            hidden: menu.visible === 0,
+            keepAlive: menu.keepAlive === 1,
+            alwaysShow: menu.alwaysShow === 1,
+            params: menu.params ? JSON.parse(menu.params) : {},
           },
-          children: this.buildRoutes(data, item.id),
+          children: this.buildRoutes(menus, menu.id),
         };
 
-        if (route.children && route.children.length === 0) {
+        if (route.children.length === 0) {
           delete route.children;
         }
 
-        return route;
-      });
+        routes.push(route);
+      }
+    });
+
+    return routes;
   }
 }

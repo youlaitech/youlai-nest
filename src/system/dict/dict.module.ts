@@ -1,15 +1,13 @@
 import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { DictService } from "./dict.service";
 import { DictController } from "./dict.controller";
-import { MongooseModule } from "@nestjs/mongoose";
-import { dictSchema } from "./dict.schema";
-import { dictItemaSchema } from "./dict.schema";
+import { SysDict } from "./entities/sys-dict.entity";
+import { SysDictItem } from "./entities/sys-dict-item.entity";
+import { RedisCacheModule } from "../../shared/cache/redis_cache.module";
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: "Dict", schema: dictSchema }]),
-    MongooseModule.forFeature([{ name: "DictItem", schema: dictItemaSchema }]),
-  ],
+  imports: [TypeOrmModule.forFeature([SysDict, SysDictItem]), RedisCacheModule],
   controllers: [DictController],
   providers: [DictService],
   exports: [DictService],

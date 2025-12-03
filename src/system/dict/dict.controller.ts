@@ -17,6 +17,7 @@ import { UpdateDictDto } from "./dto/update-dict.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { IsCreateBy, IsUpdateBy } from "../../common/decorators/public.decorator";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
+import { UpdateDictItemDto } from "./dto/update-dict-item.dto";
 
 @ApiTags("06.字典接口")
 @Controller("dicts")
@@ -29,9 +30,9 @@ export class DictController {
   @ApiOperation({ summary: "字典分页列表" })
   @Get("page")
   async getDictPage(
-    @Query("pageNum") pageNum: number,
-    @Query("pageSize") pageSize: number,
-    @Query("name") keywords: string
+    @Query("pageNum") pageNum: number = 1,
+    @Query("pageSize") pageSize: number = 10,
+    @Query("keywords") keywords?: string
   ) {
     return await this.dictService.getDictPage(pageNum, pageSize, keywords);
   }
@@ -39,30 +40,30 @@ export class DictController {
   @ApiOperation({ summary: "创建字典" })
   @IsCreateBy()
   @Post()
-  createDict(@Body() dictForm: DictFormDto) {
-    return this.dictService.createDict(dictForm);
+  async createDict(@Body() dictFormDto: DictFormDto) {
+    return await this.dictService.createDict(dictFormDto);
   }
 
   @ApiOperation({ summary: "字典表单数据" })
   @Get(":id/form")
-  getDictForm(@Param("id") id: string) {
-    return this.dictService.getDictForm(id);
+  async getDictForm(@Param("id") id: number) {
+    return await this.dictService.getDictForm(id);
   }
 
   @ApiOperation({ summary: "修改字典" })
+  @IsUpdateBy()
   @Put(":id")
-  async updateDict(@Param("id") id: string, @Body() updateDictDto: UpdateDictDto) {
+  async updateDict(@Param("id") id: number, @Body() updateDictDto: UpdateDictDto) {
     return await this.dictService.updateDict(id, updateDictDto);
   }
 
   @ApiOperation({ summary: "删除字典" })
   @IsUpdateBy()
   @Delete(":ids")
-  async deleteDict(@Body() body, @Param("ids") ids: string) {
-    const idArray = ids.split(",");
-
+  async deleteDict(@Param("ids") ids: string) {
+    const idArray = ids.split(",").map((id) => parseInt(id));
     for (const id of idArray) {
-      const success = await this.dictService.deleteDict(id, body.updateBy, body.updateTime);
+      const success = await this.dictService.deleteDict(id, 1); // 这里的 1 是临时的 updateBy 值
       if (!success) {
         throw new HttpException(
           `Failed to delete department with ID: ${id}`,
@@ -79,8 +80,8 @@ export class DictController {
   @ApiOperation({ summary: "字典项分页列表" })
   @Get(":dictCode/items/page")
   async getDictItemPage(
-    @Query("pageNum") pageNum: number,
-    @Query("pageSize") pageSize: number,
+    @Query("pageNum") pageNum: number = 1,
+    @Query("pageSize") pageSize: number = 10,
     @Param("dictCode") dictCode: string,
     @Query("keywords") keywords?: string
   ) {
@@ -96,31 +97,38 @@ export class DictController {
   @ApiOperation({ summary: "新增字典项" })
   @IsCreateBy()
   @Post(":dictCode/items")
-  async createDictItem(@Req() request, @Body() createDictItemDto: CreateDictItemDto) {
-    return await this.dictService.createDictItem({
-      ...createDictItemDto,
-      createBy: request["user"]?.userId,
-      deptTreePath: request["user"]?.deptTreePath || "0",
-    });
+  async createDictItem(
+    @Param("dictCode") dictCode: string,
+    @Body() createDictItemDto: CreateDictItemDto
+  ) {
+    createDictItemDto.dictCode = dictCode;
+    return await this.dictService.createDictItem(createDictItemDto);
   }
 
   @ApiOperation({ summary: "字典项表单数据" })
   @Get(":dictCode/items/:itemId/form")
-  async getDictItemForm(@Param("itemId") itemId: string) {
+  async getDictItemForm(@Param("itemId") itemId: number) {
     return await this.dictService.getDictItemForm(itemId);
   }
 
   @ApiOperation({ summary: "更新字典项" })
   @IsUpdateBy()
   @Put(":dictCode/items/:itemId")
-  async updateDictData(@Param("itemId") itemId: string, @Body() updateData: any) {
-    return await this.dictService.updateDictItem(itemId, updateData);
+  async updateDictItem(
+    @Param("itemId") itemId: number,
+    @Body() updateDictItemDto: UpdateDictItemDto
+  ) {
+    return await this.dictService.updateDictItem(itemId, updateDictItemDto);
   }
 
   @ApiOperation({ summary: "删除字典项" })
   @IsUpdateBy()
   @Delete(":dictCode/items/:itemIds")
-  async deleteDictData(@Param("itemIds") itemIds: string) {
-    return await this.dictService.deleteDictItems(itemIds);
+  async deleteDictItems(@Param("itemIds") itemIds: string) {
+    const idArray = itemIds.split(",").map((id) => parseInt(id));
+    for (const id of idArray) {
+      await this.dictService.deleteDictItems(id);
+    }
+    return true;
   }
 }
