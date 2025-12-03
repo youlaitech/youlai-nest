@@ -35,6 +35,3 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 .history
-
-# env files (can opt-in for committing if needed)
-.env*

@@ -7,6 +7,9 @@ export class LoginResultDto {
   @ApiProperty({ description: "访问令牌" })
   accessToken: string;
 
+  @ApiProperty({ description: "刷新令牌" })
+  refreshToken?: string;
+
   @ApiProperty({ description: "令牌过期时间(秒)" })
   expiresIn: number;
 

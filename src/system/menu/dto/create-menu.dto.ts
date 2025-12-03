@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, MaxLength, IsMongoId } from "class-validator";
+import { IsString, IsNumber, IsOptional, IsBoolean, MaxLength } from "class-validator";
 
 export class CreateMenuDto {
   // 菜单名称
@@ -13,7 +13,6 @@ export class CreateMenuDto {
 
   // 父级ID
   @IsOptional()
-  // @IsMongoId()
   parentId?: string | number;
 
   // 菜单类型（M目录 C菜单 F按钮）

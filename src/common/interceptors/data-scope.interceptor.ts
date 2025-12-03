@@ -1,19 +1,11 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
-import { map } from "rxjs";
 
+/**
+ * 占位拦截器，目前数据权限逻辑已由 TypeORM 全局插件处理。
+ */
 @Injectable()
 export class DataScopeInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler) {
-    const request = context.switchToHttp().getRequest();
-
-    return next.handle().pipe(
-      map((data) => {
-        // 自动注入数据范围条件
-        if (data instanceof Array) {
-          return data.map((item) => ({ ...item }));
-        }
-        return data;
-      })
-    );
+  intercept(_context: ExecutionContext, next: CallHandler) {
+    return next.handle();
   }
 }

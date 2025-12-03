@@ -58,11 +58,10 @@ export class AuthController {
   @Public()
   @Delete("logout")
   async logout(@Req() req: Request) {
-    // // 提取 JWT Token
-    const token = req.headers.authorization?.split(" ")[1];
-    // 如果 Token 存在，清除 JWT Token
-    if (!token) {
-      // 后面用等redis 存储token
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring("Bearer ".length);
+      await this.authService.blacklistToken(token);
     }
 
     // 清除用户信息

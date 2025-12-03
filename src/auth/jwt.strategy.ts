@@ -2,6 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigService } from "@nestjs/config";
+import { RedisCacheService } from "src/shared/cache/redis_cache.service";
 
 /**
  * JWT 认证策略
@@ -12,7 +13,10 @@ import { ConfigService } from "@nestjs/config";
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly redisCacheService: RedisCacheService
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
       ignoreExpiration: false, // 是否忽略令牌过期
@@ -31,8 +35,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException("无效的令牌载荷");
     }
 
+    const userId = payload.sub;
+
+    // 1. 校验安全版本号：用于按用户维度失效历史 Token
+    const tokenVersion: number = payload.securityVersion ?? 0;
+    const versionKey = `auth:user:security_version:${userId}`;
+    const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
+    const currentVersion = currentVersionRaw ?? 0;
+
+    if (tokenVersion < currentVersion) {
+      throw new UnauthorizedException("Token 已失效，请重新登录");
+    }
+
+    // 2. 校验黑名单：用于精确作废指定 Token
+    const jti: string | undefined = payload.jti;
+    if (jti) {
+      const blacklistKey = `auth:token:blacklist:${jti}`;
+      const inBlacklist = await this.redisCacheService.hasKey(blacklistKey);
+      if (inBlacklist) {
+        throw new UnauthorizedException("Token 已失效，请重新登录");
+      }
+    }
+
     return {
-      userId: payload.sub,
+      userId,
       username: payload.username,
       roles: payload.roles || [],
       deptId: payload.deptId,

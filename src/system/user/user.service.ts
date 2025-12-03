@@ -10,6 +10,8 @@ import { CurrentUserInfo } from "../../common/interfaces/current-user.interface"
 import { DEFAULT_PASSWORD } from "src/common/constants";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Like } from "typeorm";
+import { ConfigService } from "@nestjs/config";
+import { RedisCacheService } from "src/shared/cache/redis_cache.service";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import * as bcrypt from "bcrypt";
@@ -25,7 +27,9 @@ export class UserService {
     @InjectRepository(SysUser)
     private userRepository: Repository<SysUser>,
     @InjectRepository(SysUserRole)
-    private userRoleRepository: Repository<SysUserRole>
+    private userRoleRepository: Repository<SysUserRole>,
+    private readonly configService: ConfigService,
+    private readonly redisCacheService: RedisCacheService
   ) {}
 
   /**
@@ -190,7 +194,51 @@ export class UserService {
       password: hashedPassword,
     });
 
-    return await this.userRepository.save(user);
+    const result = await this.userRepository.save(user);
+
+    // 密码修改或禁用用户时，失效该用户所有会话
+    const needInvalidateSessions = !!password || status === 0;
+    if (needInvalidateSessions) {
+      await this.invalidateUserSessions(userId);
+    }
+
+    return result;
+  }
+
+  /**
+   * 失效指定用户的所有会话（对齐 Java 的 invalidateUserSessions）
+   * - JWT 模式：递增用户安全版本号 auth:user:security_version:{userId}
+   * - redis-token 模式：删除该用户的 access/refresh 映射
+   */
+  private async invalidateUserSessions(userId: number): Promise<void> {
+    if (!userId) return;
+
+    const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
+
+    // 1. JWT 模式：提升安全版本号，旧 JWT 全部失效
+    const versionKey = `auth:user:security_version:${userId}`;
+    const currentVersion = await this.redisCacheService.get<number>(versionKey);
+    const nextVersion = (currentVersion ?? 0) + 1;
+    await this.redisCacheService.set(versionKey, nextVersion);
+
+    // 2. redis-token 模式：清理 access/refresh 映射
+    if (sessionType === "redis-token") {
+      const accessKey = `auth:user:access:${userId}`;
+      const refreshKey = `auth:user:refresh:${userId}`;
+
+      const accessToken = await this.redisCacheService.get<string>(accessKey);
+      const refreshToken = await this.redisCacheService.get<string>(refreshKey);
+
+      if (accessToken) {
+        await this.redisCacheService.del(`auth:token:access:${accessToken}`);
+      }
+      if (refreshToken) {
+        await this.redisCacheService.del(`auth:token:refresh:${refreshToken}`);
+      }
+
+      await this.redisCacheService.del(accessKey);
+      await this.redisCacheService.del(refreshKey);
+    }
   }
 
   /**
@@ -207,7 +255,7 @@ export class UserService {
    * 更新用户
    */
   async update(userId: number, updateUserDto: UpdateUserDto) {
-    const { username, deptId, roleIds, password } = updateUserDto;
+    const { username, deptId, roleIds, password, status } = updateUserDto;
 
     // 校验角色是否为空
     if (!roleIds?.length) {

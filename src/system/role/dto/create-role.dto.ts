@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsArray, IsMongoId } from "class-validator";
+import { IsString, IsNumber, IsOptional, IsArray } from "class-validator";
 
 export class CreateRoleDto {
   @IsString()
@@ -20,6 +20,5 @@ export class CreateRoleDto {
 
   @IsArray()
   @IsOptional()
-  @IsMongoId({ each: true })
-  readonly menus?: string[];
+  readonly menus?: number[];
 }
