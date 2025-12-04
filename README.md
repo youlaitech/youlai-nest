@@ -105,7 +105,7 @@
    pnpm run start:dev
    ```
 
-访问接口文档地址 [http://localhost:9090/apiDoc](http://localhost:9090/doc.html) 验证项目启动是否成功.
+访问接口文档地址 [http://localhost:8000/api-docs](http://localhost:8000/api-docs) 验证项目启动是否成功。
 
 ## 💖 加交流群
 
