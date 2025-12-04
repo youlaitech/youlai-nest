@@ -194,15 +194,8 @@ export class UserService {
       password: hashedPassword,
     });
 
-    const result = await this.userRepository.save(user);
-
-    // 密码修改或禁用用户时，失效该用户所有会话
-    const needInvalidateSessions = !!password || status === 0;
-    if (needInvalidateSessions) {
-      await this.invalidateUserSessions(userId);
-    }
-
-    return result;
+    // 新增用户场景仅负责创建用户记录，不涉及会话失效逻辑
+    return await this.userRepository.save(user);
   }
 
   /**

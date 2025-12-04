@@ -100,7 +100,7 @@ export class RoleService {
       .filter(({ name }) => !!name?.trim())
       .map(({ id, name }) => ({
         label: name,
-        value: id,
+        value: id.toString(),
       }));
   }
 
