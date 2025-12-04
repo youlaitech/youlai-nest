@@ -1,4 +1,24 @@
 <div align="center">
+
+## 🎉 正在参加 Gitee 2025 最受欢迎开源软件评选
+
+<a href="https://gitee.com/activity/2025opensource?ident=I6VXEH" target="_blank">
+  <img src="https://img.shields.io/badge/🗳️_立即投票-支持本项目-ff6b35?style=for-the-badge&logo=gitee" alt="投票" height="50"/>
+</a>
+
+<p>
+  <strong>一票就够，不用每天投 🙏 您的支持是我们持续更新的最大动力！</strong>
+</p>
+
+<p>
+  <a href="https://gitee.com/activity/2025opensource?ident=I6VXEH" target="_blank">
+    <strong>👉 点击徽章或这里投票 👈</strong>
+  </a>
+</p>
+
+</div>
+
+<div align="center">
    <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
    <h2><a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
      youlai-nest
@@ -21,7 +41,7 @@
 
 **在线预览**: [https://vue.youlai.tech](https://vue.youlai.tech)
 
-基于 node18、nest.js、mongoDB、JWT、Redis、阿里云oss、Vue 3、Element-Plus 构建的前后端分离单体权限管理系统。
+基于 node18、nest.js、MySQL、JWT、Redis、阿里云oss、Vue 3、Element-Plus 构建的前后端分离单体权限管理系统。
 
 - **🚀 开发框架**: 使用 nest.js 和 Vue 3，以及 Element-Plus 等主流技术栈，实时更新。
 
@@ -52,23 +72,16 @@
 
 📚 完整流程参考: [项目启动](https://www.youlai.tech/youlai-nest/1.%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8/)
 
-1. **数据库初始化**
+1. **数据库初始化（MySQL）**
 
-- **命令行导入**
+   MySQL 初始化脚本位于：`sql/mysql/youlai_admin.sql`，脚本会创建示例库 `youlai_admin` 并初始化基础表结构与数据。
+   - **可视化工具导入（Navicat 等）**
 
-  MongoDB 脚本放在项目的根目录 mongodb 下 ，复制到指定目录下(./mongodb/ ), 然后执行以下命令还原数据库：
-
-  ```bash
-  mongorestore -d youlai_nest ./mongodb/
-  ```
-
-- **Navicat 导入**
-
-  参考 [Navicat 导入](https://www.youlai.tech/youlai-nest/1.%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8/#%E6%96%B9%E6%B3%95%E4%BA%8C-navicat-%E5%8F%AF%E8%A7%86%E5%8C%96%E5%AF%BC%E5%85%A5) 进行数据库导入。
+     使用 Navicat/HeidiSQL 等工具，选择你自己的 MySQL 实例，执行 `sql/mysql/youlai_admin.sql` 脚本即可。
 
 2. **修改配置**
 
-   默认连接`有来`线上环境的 MongoDB/Redis（仅读权限），本地开发时请修改 [.env.dev](.env.dev) 中的 MongoDB/Redis 连接信息。
+   默认使用 `.env`/`.env.dev` 中配置的 MySQL/Redis 连接信息，本地开发时请根据实际数据库地址、账号密码进行修改。
 
 3. **启动项目**
 
