@@ -20,7 +20,7 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
 @ApiTags("05.部门接口")
-@Controller("dept")
+@Controller("depts")
 export class DeptController {
   constructor(private readonly deptService: DeptService) {}
 
