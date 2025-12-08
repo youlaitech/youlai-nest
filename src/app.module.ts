@@ -21,6 +21,7 @@ import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
 import { WebsocketModule } from "./platform/websocket/websocket.module";
 import { LogModule } from "./system/log/log.module";
+import { NoticeModule } from "./system/notice/notice.module";
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
@@ -97,10 +98,13 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     SystemConfigModule,
     WebsocketModule,
     LogModule,
+    NoticeModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    JwtAuthGuard,
+    RedisTokenAuthGuard,
     // 会话认证守卫：根据 SESSION_TYPE 选择 JWT 模式或 Redis 会话模式
     {
       provide: APP_GUARD,

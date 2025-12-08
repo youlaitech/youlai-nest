@@ -23,6 +23,10 @@ export class NoticeService {
   async getNoticePage(query: NoticePageQueryDto) {
     const { pageNum, pageSize, keywords, type, level, publishStatus } = query;
 
+    // 在 Service 层自行处理分页参数，避免对外部请求做过强约束
+    const page = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const size = Number(pageSize) > 0 ? Number(pageSize) : 10;
+
     const qb = this.noticeRepository.createQueryBuilder("n");
     qb.where("n.isDeleted = :isDeleted", { isDeleted: 0 });
 
@@ -30,23 +34,23 @@ export class NoticeService {
       qb.andWhere("n.title LIKE :keywords", { keywords: `%${keywords}%` });
     }
 
-    if (type !== undefined && type !== null) {
-      qb.andWhere("n.type = :type", { type });
+    if (type !== undefined && type !== null && type !== "") {
+      qb.andWhere("n.type = :type", { type: Number(type) });
     }
 
     if (level) {
       qb.andWhere("n.level = :level", { level });
     }
 
-    if (publishStatus !== undefined && publishStatus !== null) {
-      qb.andWhere("n.publishStatus = :publishStatus", { publishStatus });
+    if (publishStatus !== undefined && publishStatus !== null && publishStatus !== "") {
+      qb.andWhere("n.publishStatus = :publishStatus", { publishStatus: Number(publishStatus) });
     }
 
     qb.orderBy("n.createTime", "DESC");
 
     const [list, total] = await qb
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+      .skip((page - 1) * size)
+      .take(size)
       .getManyAndCount();
 
     return { list, total };
@@ -179,7 +183,10 @@ export class NoticeService {
   }
 
   async getMyNoticePage(userId: number, query: NoticePageQueryDto) {
-    const { pageNum, pageSize } = query;
+    const { pageNum, pageSize, isRead } = query;
+
+    const page = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const size = Number(pageSize) > 0 ? Number(pageSize) : 5;
 
     const qb = this.userNoticeRepository
       .createQueryBuilder("un")
@@ -189,9 +196,14 @@ export class NoticeService {
       .andWhere("n.isDeleted = 0")
       .orderBy("n.publishTime", "DESC");
 
+    // isRead 过滤：0 未读，1 已读，其他值则不过滤
+    if (isRead === "0" || isRead === "1") {
+      qb.andWhere("un.isRead = :isRead", { isRead: Number(isRead) });
+    }
+
     const [rows, total] = await qb
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+      .skip((page - 1) * size)
+      .take(size)
       .getManyAndCount();
 
     return { list: rows, total };

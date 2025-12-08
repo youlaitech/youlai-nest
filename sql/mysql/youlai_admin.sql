@@ -1,18 +1,18 @@
 
-# YouLai_Boot 数据库(MySQL 5.7 ~ MySQL 8.x)
+# youlai_admin 数据库(MySQL 5.7 ~ MySQL 8.x)
 # Copyright (c) 2021-present, youlai.tech
 
 
 -- ----------------------------
--- 1. 创建数据库
+-- 1. 创建数据库（示例库名：youlai_admin）
 -- ----------------------------
-CREATE DATABASE IF NOT EXISTS youlai_boot CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS youlai_admin CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;
 
 
 -- ----------------------------
--- 2. 创建表 && 数据初始化
+-- 2. 创建表 && 数据初始化（下方示例均在 youlai_admin 库中）
 -- ----------------------------
-use youlai_boot;
+use youlai_admin;
 
 SET NAMES utf8mb4;  # 设置字符集
 SET FOREIGN_KEY_CHECKS = 0; # 关闭外键检查，加快导入速度

@@ -204,7 +204,7 @@ export class MenuService {
 
     menus.forEach((menu) => {
       map[menu.id] = {
-        value: menu.id,
+        value: menu.id.toString(),
         label: menu.name,
         children: [],
       };
@@ -241,7 +241,7 @@ export class MenuService {
             hidden: menu.visible === 0,
             keepAlive: menu.keepAlive === 1,
             alwaysShow: menu.alwaysShow === 1,
-            params: menu.params ? JSON.parse(menu.params) : {},
+            params: this.parseMenuParams(menu.params),
           },
           children: this.buildRoutes(menus, menu.id),
         };
@@ -255,5 +255,24 @@ export class MenuService {
     });
 
     return routes;
+  }
+
+  private parseMenuParams(raw: any): Record<string, any> {
+    if (!raw) return {};
+
+    if (typeof raw === "object") {
+      return raw as Record<string, any>;
+    }
+
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed === "object" && parsed !== null ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    return {};
   }
 }

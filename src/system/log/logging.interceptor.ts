@@ -30,10 +30,10 @@ export class LoggingInterceptor implements NestInterceptor {
           const log = new SysLog();
           log.module = "SYSTEM";
           log.requestMethod = req.method;
+          // 仅记录 query 和 params，避免把整个 body 写入日志
           log.requestParams = this.safeStringify({
             query: req.query,
             params: req.params,
-            body: req.body,
           });
           log.responseContent = this.safeStringify(data);
           const url: string = req.originalUrl || req.url;
@@ -46,7 +46,8 @@ export class LoggingInterceptor implements NestInterceptor {
           log.province = null;
           log.city = null;
           log.executionTime = duration;
-          log.browser = userAgent;
+          // 防止超出 sys_log.browser 的字段长度（varchar(100)）
+          log.browser = userAgent ? userAgent.slice(0, 100) : null;
           log.browserVersion = null;
           log.os = null;
           log.createBy = req.user?.userId ?? null;

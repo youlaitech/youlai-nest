@@ -149,7 +149,7 @@ export class DeptService {
     depts.forEach((dept) => {
       map[dept.id] = {
         label: dept.name,
-        value: dept.id,
+        value: dept.id.toString(),
         children: [],
       };
     });
