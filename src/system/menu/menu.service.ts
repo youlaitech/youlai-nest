@@ -18,7 +18,6 @@ export class MenuService {
 
   async findAll() {
     return await this.menuRepository.find({
-      where: { type: Not(3) },
       order: { sort: "ASC" },
     });
   }
@@ -35,7 +34,7 @@ export class MenuService {
    */
   async findALLButtons(): Promise<string[]> {
     const buttons = await this.menuRepository.find({
-      where: { type: 4, visible: 1 },
+      where: { type: "B", visible: 1 },
       select: ["perm"],
     });
 
@@ -46,7 +45,7 @@ export class MenuService {
 
   async findButtons(menuIds: string[]) {
     const permslist = await this.menuRepository.find({
-      where: { id: In(menuIds.map(Number)), type: 4 },
+      where: { id: In(menuIds.map(Number)), type: "B" },
       order: { sort: "ASC" },
     });
     return permslist.map((item) => item.perm).filter(Boolean);
@@ -59,7 +58,7 @@ export class MenuService {
     if (!menuIds?.length) return [];
 
     const menus = await this.menuRepository.find({
-      where: { id: In(menuIds.map(Number)), type: 4 },
+      where: { id: In(menuIds.map(Number)), type: "B" },
       select: ["perm"],
     });
 
@@ -75,7 +74,7 @@ export class MenuService {
     // 超级管理员返回所有菜单
     if (userId === "1") {
       const menuList = await this.menuRepository.find({
-        where: { type: In([1, 2]), visible: 1 },
+        where: { type: In(["C", "M"]), visible: 1 },
         order: { sort: "ASC" },
       });
       return this.buildRoutes(menuList);
@@ -88,7 +87,7 @@ export class MenuService {
     }
 
     const menuList = await this.menuRepository.find({
-      where: { id: In(menuIds), type: In([1, 2]), visible: 1 },
+      where: { id: In(menuIds), type: In(["C", "M"]), visible: 1 },
       order: { sort: "ASC" },
     });
     return this.buildRoutes(menuList);

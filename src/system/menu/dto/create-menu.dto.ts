@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, MaxLength } from "class-validator";
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class CreateMenuDto {
   // 菜单名称
@@ -15,8 +15,10 @@ export class CreateMenuDto {
   @IsOptional()
   parentId?: string | number;
 
-  // 菜单类型（M目录 C菜单 F按钮）
-  type: number;
+  // 菜单类型（C-目录 M-菜单 B-按钮）
+  @IsString()
+  @IsIn(["C", "M", "B"])
+  type: string;
 
   // 图标
   @IsOptional()

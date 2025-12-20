@@ -20,6 +20,7 @@ import { OssModule } from "./shared/oss/oss.module"; // 对象存储模块
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
 import { WebsocketModule } from "./platform/websocket/websocket.module";
+import { CodegenModule } from "./platform/codegen/codegen.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 
@@ -97,6 +98,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     DictModule,
     SystemConfigModule,
     WebsocketModule,
+    CodegenModule,
     LogModule,
     NoticeModule,
   ],

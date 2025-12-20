@@ -23,7 +23,7 @@
 
 基于 node18 + nest.js + Ts + MySQL + Redis + Vue3 + Element-Plus 构建的前后端分离单体权限管理系统，适合想做全栈的前端或者后端同学，持续优化更新中。
 
-默认提供 MySQL 初始化脚本 `sql/mysql/youlai_boot.sql`，会创建示例数据库 `youlai_admin` 并初始化基础表结构与数据。
+默认提供 MySQL 初始化脚本 `sql/mysql/youlai_admin.sql`，会创建示例数据库 `youlai_admin` 并初始化基础表结构与数据。
 
 #### Software Architecture
 

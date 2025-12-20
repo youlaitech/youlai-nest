@@ -14,8 +14,8 @@ export class SysMenu {
   @Column({ length: 64, comment: "菜单名称" })
   name: string;
 
-  @Column({ comment: "菜单类型（1-菜单 2-目录 3-外链 4-按钮）" })
-  type: number;
+  @Column({ type: "char", length: 1, comment: "菜单类型（C-目录 M-菜单 B-按钮）" })
+  type: string;
 
   @Column({
     name: "route_name",

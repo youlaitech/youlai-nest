@@ -2,7 +2,7 @@
 export interface MenuItem {
   parentId: string;
   name: string;
-  type: number;
+  type: string;
   routeName: string | null;
   routePath: string;
   component: string | null;

@@ -13,16 +13,4 @@ export class LogController {
   async getLogPage(@Query() query: LogPageQueryDto) {
     return await this.logService.getLogPage(query);
   }
-
-  @ApiOperation({ summary: "获取访问趋势" })
-  @Get("visit-trend")
-  async getVisitTrend(@Query("startDate") startDate: string, @Query("endDate") endDate: string) {
-    return await this.logService.getVisitTrend(startDate, endDate);
-  }
-
-  @ApiOperation({ summary: "获取访问统计" })
-  @Get("visit-stats")
-  async getVisitStats() {
-    return await this.logService.getVisitStats();
-  }
 }
