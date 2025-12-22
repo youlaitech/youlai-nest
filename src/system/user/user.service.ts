@@ -11,7 +11,7 @@ import { DEFAULT_PASSWORD } from "src/common/constants";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Like } from "typeorm";
 import { ConfigService } from "@nestjs/config";
-import { RedisCacheService } from "src/shared/cache/redis_cache.service";
+import { RedisService } from "src/shared/redis/redis.service";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import * as bcrypt from "bcrypt";
@@ -29,7 +29,7 @@ export class UserService {
     @InjectRepository(SysUserRole)
     private userRoleRepository: Repository<SysUserRole>,
     private readonly configService: ConfigService,
-    private readonly redisCacheService: RedisCacheService
+    private readonly redisCacheService: RedisService
   ) {}
 
   /**

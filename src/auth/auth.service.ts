@@ -10,7 +10,7 @@ import { LoginResultDto } from "./dto/login-result.dto";
 import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as bcrypt from "bcrypt";
-import { RedisCacheService } from "src/shared/cache/redis_cache.service";
+import { RedisService } from "src/shared/redis/redis.service";
 
 /**
  * 认证服务
@@ -22,7 +22,7 @@ export class AuthService {
     private readonly config: ConfigType<typeof jwtConfig>,
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
-    private readonly redisCacheService: RedisCacheService,
+    private readonly redisCacheService: RedisService,
     private readonly configService: ConfigService
   ) {}
 

@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Observable } from "rxjs";
-import { RedisCacheService } from "src/shared/cache/redis_cache.service";
+import { RedisService } from "src/shared/redis/redis.service";
 import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 
@@ -13,7 +13,7 @@ import { ErrorCode } from "src/common/enums/error-code.enum";
  */
 @Injectable()
 export class RedisTokenAuthGuard implements CanActivate {
-  constructor(private readonly redisCacheService: RedisCacheService) {}
+  constructor(private readonly redisCacheService: RedisService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

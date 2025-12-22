@@ -12,10 +12,10 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import * as winston from "winston";
 import "winston-daily-rotate-file";
 import { WinstonModule } from "nest-winston";
-import { RedisModule } from "@liaoliaots/nestjs-redis";
+import { RedisModule as LiaoliaRedisModule } from "@liaoliaots/nestjs-redis";
 
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
-import { RedisCacheModule } from "./shared/cache/redis_cache.module";
+import { RedisSharedModule } from "./shared/redis/redis.module";
 import { OssModule } from "./shared/oss/oss.module"; // 对象存储模块
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
@@ -56,7 +56,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
       }),
       inject: [ConfigService],
     }),
-    RedisModule.forRootAsync({
+    LiaoliaRedisModule.forRootAsync({
       useFactory: async (config: ConfigService) => {
         return {
           config: [
@@ -93,7 +93,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
       ],
     }),
     AuthModule,
-    RedisCacheModule,
+    RedisSharedModule,
     OssModule,
     DictModule,
     SystemConfigModule,

@@ -44,6 +44,22 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
+  // Ensure Swagger tag groups appear in a deterministic, human-friendly order.
+  // If tags use numeric prefixes like "01.认证接口", this will sort by that leading number.
+  if (document.tags && Array.isArray(document.tags)) {
+    document.tags.sort((a, b) => {
+      const parse = (t: { name: string }) => {
+        const m = /^\\s*(\\d+)\\s*\\.\\s*(.*)$/.exec(t.name);
+        if (m) return { num: parseInt(m[1], 10), rest: m[2].trim().toLowerCase() };
+        // no numeric prefix -> place after numbered groups, sort by name
+        return { num: Number.POSITIVE_INFINITY, rest: t.name.trim().toLowerCase() };
+      };
+      const A = parse(a);
+      const B = parse(b);
+      if (A.num !== B.num) return A.num - B.num;
+      return A.rest.localeCompare(B.rest);
+    });
+  }
   SwaggerModule.setup("api-docs", app, document);
 
   // Session 配置

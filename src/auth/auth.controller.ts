@@ -19,7 +19,7 @@ import { Public } from "../common/decorators/public.decorator";
 import { ToolsService } from "../common/utils/service/tools.service";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
-import { RedisCacheService } from "../shared/cache/redis_cache.service";
+import { RedisService } from "../shared/redis/redis.service";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import { FileInterceptor } from "@nestjs/platform-express";
 
@@ -29,8 +29,8 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly toolsService: ToolsService,
-    @Inject(forwardRef(() => RedisCacheService))
-    private readonly RedisService: RedisCacheService
+    @Inject(forwardRef(() => RedisService))
+    private readonly RedisService: RedisService
   ) {}
 
   @ApiOperation({ summary: "登录接口" })

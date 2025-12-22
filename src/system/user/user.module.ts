@@ -7,7 +7,7 @@ import { SysUserRole } from "./entities/sys-user-role.entity";
 import { RoleModule } from "../role/role.module";
 import { DeptModule } from "../dept/dept.module";
 import { MenuModule } from "../menu/menu.module";
-import { RedisCacheModule } from "src/shared/cache/redis_cache.module";
+import { RedisSharedModule } from "src/shared/redis/redis.module";
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { RedisCacheModule } from "src/shared/cache/redis_cache.module";
     forwardRef(() => RoleModule),
     forwardRef(() => DeptModule),
     forwardRef(() => MenuModule),
-    RedisCacheModule,
+    RedisSharedModule,
   ],
   controllers: [UserController],
   providers: [UserService],

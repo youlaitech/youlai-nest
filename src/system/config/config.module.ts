@@ -3,9 +3,10 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigController } from "./config.controller";
 import { ConfigService } from "./config.service";
 import { SysConfig } from "./entities/sys-config.entity";
+import { RedisSharedModule } from "src/shared/redis/redis.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SysConfig])],
+  imports: [TypeOrmModule.forFeature([SysConfig]), RedisSharedModule],
   controllers: [ConfigController],
   providers: [ConfigService],
   exports: [ConfigService],
