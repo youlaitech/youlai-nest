@@ -536,17 +536,17 @@ export class CodegenService {
 }
 
 function resolveBootTemplatePath(templatePath: string) {
-  // 运行时从仓库中的 youlai-boot 读取模板，确保与 Java 版一致
-  // 注意：process.cwd() 以 youlai-nest 目录启动时为基准
-  return path.resolve(
-    process.cwd(),
-    "..",
-    "youlai-boot",
-    "src",
-    "main",
-    "resources",
-    "templates",
-    templatePath
+  // Use the local repo templates directory only. Templates should be placed at:
+  //   <project-root>/src/platform/codegen/templates/<templatePath>
+  const p = path.resolve(process.cwd(), "src", "platform", "codegen", "templates", templatePath);
+
+  if (fs.existsSync(p)) {
+    return p;
+  }
+
+  throw new Error(
+    `Codegen template not found: '${templatePath}'. Expected location:\n  - ${p}\n\n` +
+      `Please place templates under 'src/platform/codegen/templates'.`
   );
 }
 

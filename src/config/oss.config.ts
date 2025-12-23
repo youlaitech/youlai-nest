@@ -1,7 +1,7 @@
 import { registerAs } from "@nestjs/config";
 
 // OSS 对象存储配置
-// 对齐 youlai-boot：支持 aliyun、minio、local 三种类型，通过 OSS_TYPE 切换
+// 支持 aliyun、minio、local 三种类型，通过 OSS_TYPE 切换
 
 export default registerAs("oss", () => ({
   // oss 类型：aliyun|minio|local
