@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, Optional } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Like } from "typeorm";
 import { SysConfig } from "./entities/sys-config.entity";
@@ -11,7 +11,8 @@ export class ConfigService {
   constructor(
     @InjectRepository(SysConfig)
     private configRepository: Repository<SysConfig>,
-    private redisService: RedisService
+    @Optional()
+    private redisService?: RedisService
   ) {}
 
   /**

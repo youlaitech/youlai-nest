@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigService } from "@nestjs/config";
-import { RedisCacheService } from "src/shared/cache/redis_cache.service";
+import { RedisService } from "src/shared/redis/redis.service";
 
 /**
  * JWT 认证策略
@@ -15,7 +15,7 @@ import { RedisCacheService } from "src/shared/cache/redis_cache.service";
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly redisCacheService: RedisCacheService
+    private readonly redisCacheService: RedisService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
