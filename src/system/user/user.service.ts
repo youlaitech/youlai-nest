@@ -4,7 +4,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { RoleService } from "../role/role.service";
 import { DeptService } from "../dept/dept.service";
-import { UserAuthCredentials } from "./interfaces/user-auth-credentials.interface";
+import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
 import { DEFAULT_PASSWORD } from "src/common/constants";
@@ -80,7 +80,7 @@ export class UserService {
   /**
    * 获取用户认证凭证信息
    */
-  async getAuthCredentialsByUsername(username: string): Promise<UserAuthCredentials> {
+  async getAuthCredentialsByUsername(username: string): Promise<UserAuthInfo> {
     const user = await this.userRepository.findOne({
       where: { username, isDeleted: 0 },
       relations: ["roles"],
