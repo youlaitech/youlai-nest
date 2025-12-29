@@ -39,9 +39,9 @@ export class AuthController {
   @UseInterceptors(FileInterceptor(""))
   @Post("login")
   async login(@Body() loginDto: LoginRequestDto) {
-    const { captchaCode, captchaKey } = loginDto;
+    const { captchaCode, captchaId } = loginDto;
 
-    const cacheCaptchaCode = await this.RedisService.get(captchaKey);
+    const cacheCaptchaCode = await this.RedisService.get(captchaId);
 
     if (!cacheCaptchaCode) {
       throw new BusinessException(ErrorCode.VERIFY_CODE_EXPIRED);
@@ -75,11 +75,11 @@ export class AuthController {
   @Get("captcha")
   async getCode() {
     const svgCaptcha = await this.toolsService.captche();
-    const captchaKey = uuidv4();
-    await this.RedisService.set(captchaKey, svgCaptcha.captcha.text, 75);
+    const captchaId = uuidv4();
+    await this.RedisService.set(captchaId, svgCaptcha.captcha.text, 75);
     return {
       captchaBase64: svgCaptcha.base64,
-      captchaKey,
+      captchaId,
     };
   }
 }

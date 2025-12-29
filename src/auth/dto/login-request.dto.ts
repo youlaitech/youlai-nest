@@ -33,11 +33,11 @@ export class LoginRequestDto {
   captchaCode: string;
 
   @IsNotEmpty({
-    message: "验证码key为空",
+    message: "验证码ID为空",
   })
   @ApiProperty({
     example: "998899",
-    description: "验证码key",
+    description: "验证码ID",
   })
-  captchaKey: string;
+  captchaId: string;
 }
