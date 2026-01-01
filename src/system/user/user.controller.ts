@@ -17,6 +17,7 @@ import {
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { UserPageQueryDto } from "./dto/user-page-query.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -33,30 +34,33 @@ export class UserController {
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger
   ) {}
 
+  /**
+   * 获取用户分页列表
+   *
+   * @SetMetadata("resource", "sys_user") - 设置资源权限标识，用于权限控制
+   * 该装饰器标识此接口访问的是用户资源，需要相应的权限才能访问
+   */
   @ApiOperation({ summary: "用户分页列表" })
   @Get("page")
   @SetMetadata("resource", "sys_user")
-  async getUserPage(
-    @Query("pageNum") pageNum: number,
-    @Query("pageSize") pageSize: number,
-    @Query("deptId") deptId?: number,
-    @Query("keywords") keywords?: string,
-    @Query("status") status?: number,
-    @Query("startTime") startTime?: string,
-    @Query("endTime") endTime?: string
-  ) {
-    this.logger.info("Fetching user list", {
+  async getUserPage(@Query() queryParams: UserPageQueryDto) {
+    this.logger.info("获取用户分页列表", {
       context: "UserController",
-      metadata: { page: pageNum, pageSize: pageSize },
+      metadata: {
+        pageNum: queryParams.pageNum,
+        pageSize: queryParams.pageSize,
+        keywords: queryParams.keywords
+      },
     });
+
     return await this.userService.getUserPage(
-      pageNum,
-      pageSize,
-      deptId,
-      keywords,
-      status,
-      startTime,
-      endTime
+      queryParams.pageNum,
+      queryParams.pageSize,
+      queryParams.deptId,
+      queryParams.keywords,
+      queryParams.status,
+      queryParams.startTime,
+      queryParams.endTime
     );
   }
 
