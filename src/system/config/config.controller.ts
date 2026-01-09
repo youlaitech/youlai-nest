@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { ConfigService } from "./config.service";
-import { ConfigPageQueryDto } from "./dto/config-page-query.dto";
+import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
@@ -11,8 +11,8 @@ export class ConfigController {
   constructor(private readonly configService: ConfigService) {}
 
   @ApiOperation({ summary: "系统配置分页列表" })
-  @Get("page")
-  async getConfigPage(@Query() query: ConfigPageQueryDto) {
+  @Get()
+  async page(@Query() query: ConfigQueryDto) {
     return await this.configService.getConfigPage(query);
   }
 

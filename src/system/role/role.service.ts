@@ -23,19 +23,32 @@ export class RoleService {
    * 角色分页列表
    */
   async getRolePage(pageNum: number, pageSize: number, keywords?: string) {
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
+
+    const reservedCodes = ["ROOT", "ADMIN"];
     const queryBuilder = this.roleRepository.createQueryBuilder("role");
     queryBuilder.where("role.isDeleted = :isDeleted", { isDeleted: 0 });
+    // 排除系统内置角色（例如：超级管理员/系统管理员）不在列表中展示
+    queryBuilder.andWhere("role.code NOT IN (:...reservedCodes)", { reservedCodes });
 
     if (keywords) {
       queryBuilder.andWhere("role.name LIKE :keywords", { keywords: `%${keywords}%` });
     }
 
     queryBuilder.orderBy("role.sort", "ASC");
-    queryBuilder.skip((pageNum - 1) * pageSize);
-    queryBuilder.take(pageSize);
+    queryBuilder.skip((pageNumSafe - 1) * pageSizeSafe);
+    queryBuilder.take(pageSizeSafe);
 
     const [list, total] = await queryBuilder.getManyAndCount();
-    return { list, total };
+    return {
+      data: list,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
+    };
   }
 
   /**
@@ -91,10 +104,13 @@ export class RoleService {
    * 角色下拉列表
    */
   async getRoleOptions() {
-    const roles = await this.roleRepository.find({
-      where: { isDeleted: 0 },
-      order: { sort: "ASC" },
-    });
+    const reservedCodes = ["ROOT", "ADMIN"];
+    const roles = await this.roleRepository
+      .createQueryBuilder("role")
+      .where("role.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("role.code NOT IN (:...reservedCodes)", { reservedCodes })
+      .orderBy("role.sort", "ASC")
+      .getMany();
 
     return roles
       .filter(({ name }) => !!name?.trim())

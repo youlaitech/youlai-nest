@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { SysNotice } from "./entities/sys-notice.entity";
 import { SysUserNotice } from "./entities/sys-user-notice.entity";
-import { NoticePageQueryDto } from "./dto/notice-page-query.dto";
+import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
 import { WebsocketGateway } from "src/platform/websocket/websocket.gateway";
@@ -20,7 +20,7 @@ export class NoticeService {
     private readonly websocketGateway: WebsocketGateway
   ) {}
 
-  async getNoticePage(query: NoticePageQueryDto) {
+  async getNoticePage(query: NoticeQueryDto) {
     const { pageNum, pageSize, keywords, type, level, publishStatus } = query;
 
     // 在 Service 层自行处理分页参数，避免对外部请求做过强约束
@@ -53,7 +53,14 @@ export class NoticeService {
       .take(size)
       .getManyAndCount();
 
-    return { list, total };
+    return {
+      data: list,
+      page: {
+        pageNum: page,
+        pageSize: size,
+        total,
+      },
+    };
   }
 
   async saveNotice(form: CreateNoticeDto & { createBy: number }) {
@@ -182,7 +189,7 @@ export class NoticeService {
     return true;
   }
 
-  async getMyNoticePage(userId: number, query: NoticePageQueryDto) {
+  async getMyNoticePage(userId: number, query: NoticeQueryDto) {
     const { pageNum, pageSize, isRead } = query;
 
     const page = Number(pageNum) > 0 ? Number(pageNum) : 1;
@@ -206,6 +213,13 @@ export class NoticeService {
       .take(size)
       .getManyAndCount();
 
-    return { list: rows, total };
+    return {
+      data: rows,
+      page: {
+        pageNum: page,
+        pageSize: size,
+        total,
+      },
+    };
   }
 }

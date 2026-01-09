@@ -3,20 +3,16 @@
 ## 🎉 正在参加 Gitee 2025 最受欢迎开源软件评选
 
 <a href="https://gitee.com/activity/2025opensource?ident=I6VXEH" target="_blank">
-  <img src="https://img.shields.io/badge/🗳️_立即投票-支持本项目-ff6b35?style=for-the-badge&logo=gitee" alt="投票" height="50"/>
+  <img src="https://img.shields.io/badge/VUE3--ELEMENT--ADMIN-点击投票支持-f97316?style=for-the-badge&logo=gitee&logoColor=white&labelColor=111827" alt="投票" height="50"/>
 </a>
 
 <p>
-  <strong>一票就够，不用每天投 🙏 您的支持是我们持续更新的最大动力！</strong>
-</p>
-
-<p>
-  <a href="https://gitee.com/activity/2025opensource?ident=I6VXEH" target="_blank">
-    <strong>👉 点击徽章或这里投票 👈</strong>
-  </a>
+  <strong>📢 投票最后1天！恳请助力一票 🙏 无需重复投，您的支持是我们前行的最大动力！</strong>
 </p>
 
 </div>
+
+![](https://foruda.gitee.com/images/1708618984641188532/a7cca095_716974.png "rainbow.png")
 
 <div align="center">
    <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
@@ -69,8 +65,6 @@
 | 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                             |
 
 ## 🚀 项目启动
-
-📚 完整流程参考: [项目启动](https://www.youlai.tech/youlai-nest/1.%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8/)
 
 1. **数据库初始化（MySQL）**
 

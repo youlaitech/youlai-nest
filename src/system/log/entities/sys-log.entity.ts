@@ -64,7 +64,4 @@ export class SysLog {
 
   @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date | null;
-
-  @Column({ name: "is_deleted", type: "tinyint", default: () => "0", comment: "逻辑删除标识" })
-  isDeleted: number;
 }

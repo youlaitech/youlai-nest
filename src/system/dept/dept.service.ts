@@ -4,6 +4,7 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SysDept } from "./entities/sys-dept.entity";
+import { In } from "typeorm";
 
 /**
  * 部门服务
@@ -44,6 +45,16 @@ export class DeptService {
       order: { sort: "ASC" },
     });
     return this.buildOptionsTree(depts);
+  }
+
+  /**
+   * 根据 ID 列表查询部门
+   */
+  async findByIds(ids: number[]): Promise<SysDept[]> {
+    if (!ids || ids.length === 0) return [];
+    return await this.deptRepository.find({
+      where: { id: In(ids) },
+    });
   }
 
   /**

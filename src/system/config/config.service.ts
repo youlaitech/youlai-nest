@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Optional } from "@n
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Like } from "typeorm";
 import { SysConfig } from "./entities/sys-config.entity";
-import { ConfigPageQueryDto } from "./dto/config-page-query.dto";
+import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
 import { RedisService } from "src/shared/redis/redis.service";
 
@@ -18,29 +18,33 @@ export class ConfigService {
   /**
    * 系统配置分页列表
    */
-  async getConfigPage(query: ConfigPageQueryDto) {
-    const { configName, configKey, pageNum, pageSize } = query;
+  async getConfigPage(query: ConfigQueryDto) {
+    const { keywords, pageNum, pageSize } = query;
 
-    const whereConditions: any = { isDeleted: 0 };
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
-    if (configName) {
-      whereConditions.configName = Like(`%${configName}%`);
+    const qb = this.configRepository.createQueryBuilder("config");
+    qb.where("config.isDeleted = :isDeleted", { isDeleted: 0 });
+
+    if (keywords) {
+      qb.andWhere("(config.configName LIKE :kw OR config.configKey LIKE :kw)", { kw: `%${keywords}%` });
     }
 
-    if (configKey) {
-      whereConditions.configKey = Like(`%${configKey}%`);
-    }
+    qb.orderBy("config.createTime", "DESC");
 
-    const [list, total] = await this.configRepository.findAndCount({
-      where: whereConditions,
-      order: { createTime: "DESC" },
-      skip: (pageNum - 1) * pageSize,
-      take: pageSize,
-    });
+    const [list, total] = await qb
+      .skip((pageNumSafe - 1) * pageSizeSafe)
+      .take(pageSizeSafe)
+      .getManyAndCount();
 
     return {
-      list,
-      total,
+      data: list,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
     };
   }
 

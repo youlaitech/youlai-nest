@@ -9,6 +9,9 @@ import * as Minio from "minio";
 import * as $OpenApi from "@alicloud/openapi-client";
 import ocr_api20210707, * as $ocr_api20210707 from "@alicloud/ocr-api20210707";
 import Util, * as $Util from "@alicloud/tea-util";
+import { v4 as uuidv4 } from "uuid";
+import * as fs from "fs";
+import * as path from "path";
 
 @Injectable()
 export class OssService {
@@ -263,6 +266,106 @@ export class OssService {
       status: "Ok",
       file,
     };
+  }
+
+  async uploadFile(file: any): Promise<{ name: string; url: string }> {
+    const originalName: string = file?.originalname || file?.originalName || "file";
+    const ext = path.extname(originalName);
+    const dateFolder = dayjs().format("YYYYMMDD");
+    const objectName = `${dateFolder}/${uuidv4()}${ext}`;
+
+    const getFileContent = async () => {
+      if (file?.buffer) {
+        return file.buffer as Buffer;
+      }
+      if (file?.path) {
+        return (await fs.promises.readFile(file.path)) as Buffer;
+      }
+      return null;
+    };
+
+    // aliyun
+    if (this.ossType === "aliyun") {
+      const content = (await getFileContent()) ?? file;
+      const result = await this.aliClient.put(objectName, content);
+      const endpoint = this.ossConf.aliyun.endpoint;
+      const bucket = this.ossConf.aliyun.bucketName;
+      const url = result?.url || `https://${bucket}.${endpoint}/${objectName}`;
+      return { name: originalName, url };
+    }
+
+    // minio
+    if (this.ossType === "minio" && this.minioClient && this.minioBucket) {
+      const content = await getFileContent();
+      if (!content) {
+        throw new Error("file buffer is empty");
+      }
+
+      await this.minioClient.putObject(this.minioBucket, objectName, content, content.length, {
+        "Content-Type": file?.mimetype || "application/octet-stream",
+      });
+
+      const customDomain = (this.ossConf.minio.customDomain || "").trim();
+      if (customDomain) {
+        const base = customDomain.replace(/\/+$/, "");
+        return {
+          name: originalName,
+          url: `${base}/${this.minioBucket}/${objectName}`,
+        };
+      }
+
+      const presigned = await this.minioClient.presignedGetObject(
+        this.minioBucket,
+        objectName,
+        24 * 60 * 60
+      );
+      const cleanUrl = presigned.includes("?")
+        ? presigned.substring(0, presigned.indexOf("?"))
+        : presigned;
+      return { name: originalName, url: cleanUrl };
+    }
+
+    // local
+    const storageRoot = this.ossConf.local.storagePath;
+    const fullPath = path.join(storageRoot, objectName);
+    await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+    const content = await getFileContent();
+    if (!content) {
+      throw new Error("file buffer is empty");
+    }
+    await fs.promises.writeFile(fullPath, content);
+    return { name: originalName, url: `/${objectName}` };
+  }
+
+  async deleteFile(filePath?: string): Promise<boolean> {
+    if (!filePath) return false;
+
+    // aliyun
+    if (this.ossType === "aliyun") {
+      const endpoint = this.ossConf.aliyun.endpoint;
+      const bucket = this.ossConf.aliyun.bucketName;
+      const host = `https://${bucket}.${endpoint}`;
+
+      const key = filePath.startsWith(host)
+        ? filePath.substring(host.length + 1)
+        : filePath.startsWith("http")
+          ? new URL(filePath).pathname.replace(/^\/+/, "")
+          : filePath.replace(/^\/+/, "");
+
+      await this.aliClient.delete(key);
+      return true;
+    }
+
+    // local
+    try {
+      const storageRoot = this.ossConf.local.storagePath;
+      const rel = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+      const fullPath = path.isAbsolute(filePath) ? filePath : path.join(storageRoot, rel);
+      await fs.promises.unlink(fullPath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async ORC(url: string, type: string) {

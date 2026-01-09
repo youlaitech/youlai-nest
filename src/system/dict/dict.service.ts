@@ -25,6 +25,9 @@ export class DictService {
    * 字典分页列表
    */
   async getDictPage(pageNum: number, pageSize: number, keywords: string) {
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
+
     const queryBuilder = this.dictRepository.createQueryBuilder("dict");
     queryBuilder.where("dict.isDeleted = :isDeleted", { isDeleted: 0 });
 
@@ -36,12 +39,32 @@ export class DictService {
 
     const [dicts, total] = await queryBuilder
       .select(["dict.id", "dict.name", "dict.dictCode", "dict.status"])
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+      .skip((pageNumSafe - 1) * pageSizeSafe)
+      .take(pageSizeSafe)
       .orderBy("dict.createTime", "DESC")
       .getManyAndCount();
 
-    return { list: dicts, total };
+    return {
+      data: dicts,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
+    };
+  }
+
+  async getDictOptions() {
+    const dicts = await this.dictRepository.find({
+      where: { status: 0, isDeleted: 0 },
+      order: { createTime: "DESC" },
+      select: ["dictCode", "name"],
+    });
+
+    return dicts.map((d) => ({
+      label: d.name,
+      value: d.dictCode,
+    }));
   }
 
   /**
@@ -132,6 +155,9 @@ export class DictService {
    * 字典数据分页列表
    */
   async getDictItemPage(pageNum: number, pageSize: number, dictCode: string, keywords?: string) {
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
+
     const queryBuilder = this.dictItemRepository.createQueryBuilder("item");
     queryBuilder.where("item.dictCode = :dictCode", { dictCode });
 
@@ -152,11 +178,18 @@ export class DictService {
         "item.tagType",
       ])
       .orderBy("item.sort", "ASC")
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+      .skip((pageNumSafe - 1) * pageSizeSafe)
+      .take(pageSizeSafe)
       .getManyAndCount();
 
-    return { list: items, total };
+    return {
+      data: items,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
+    };
   }
 
   /**

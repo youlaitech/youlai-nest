@@ -73,8 +73,9 @@ export class MenuService {
   async getRoutes(userId: string): Promise<Route[]> {
     // 超级管理员返回所有菜单
     if (userId === "1") {
+      // include hidden routes (visible = 0) as well so frontend routing still works
       const menuList = await this.menuRepository.find({
-        where: { type: In(["C", "M"]), visible: 1 },
+        where: { type: In(["C", "M"]) },
         order: { sort: "ASC" },
       });
       return this.buildRoutes(menuList);
@@ -86,8 +87,9 @@ export class MenuService {
       return [];
     }
 
+    // include hidden routes (visible = 0) so users can access routes even if menu is hidden from sidebar
     const menuList = await this.menuRepository.find({
-      where: { id: In(menuIds), type: In(["C", "M"]), visible: 1 },
+      where: { id: In(menuIds), type: In(["C", "M"]) },
       order: { sort: "ASC" },
     });
     return this.buildRoutes(menuList);

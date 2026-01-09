@@ -52,7 +52,6 @@ export class LoggingInterceptor implements NestInterceptor {
           log.os = null;
           log.createBy = req.user?.userId ?? null;
           log.createTime = new Date();
-          log.isDeleted = 0;
 
           await this.logRepository.save(log);
         } catch (e) {

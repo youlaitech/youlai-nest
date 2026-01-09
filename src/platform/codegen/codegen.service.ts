@@ -8,7 +8,7 @@ import * as Velocity from "velocityjs";
 
 import type { CodegenPreviewVo } from "./dto/codegen-preview.vo";
 import type { GenConfigFormDto, FieldConfigDto } from "./dto/gen-config-form.dto";
-import type { TablePageQueryDto } from "./dto/table-page-query.dto";
+import type { TableQueryDto } from "./dto/table-query.dto";
 
 type TemplateName =
   | "API"
@@ -101,13 +101,17 @@ export class CodegenService {
     },
   };
 
-  async getTablePage(query: TablePageQueryDto) {
+  async getTablePage(query: TableQueryDto) {
     const { pageNum, pageSize, keywords } = query;
-    const offset = (pageNum - 1) * pageSize;
+
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
+    const offset = (pageNumSafe - 1) * pageSizeSafe;
 
     const params: any[] = [];
     let where = "t.TABLE_SCHEMA = DATABASE()";
-    where += " AND t.TABLE_NAME NOT IN ('gen_config','gen_field_config')";
+    // exclude codegen metadata tables
+    where += " AND t.TABLE_NAME NOT IN ('gen_table','gen_table_column')";
     if (keywords) {
       where += " AND t.TABLE_NAME LIKE ?";
       params.push(`%${keywords}%`);
@@ -122,7 +126,7 @@ export class CodegenService {
         DATE_FORMAT(t.CREATE_TIME, '%Y-%m-%d %H:%i:%s') AS createTime,
         IF(c.id IS NULL, 0, 1) AS isConfigured
       FROM information_schema.TABLES t
-      LEFT JOIN gen_config c
+      LEFT JOIN gen_table c
         ON c.table_name = t.TABLE_NAME AND c.is_deleted = b'0'
       WHERE ${where}
       ORDER BY t.CREATE_TIME DESC
@@ -136,18 +140,25 @@ export class CodegenService {
     `;
 
     const [list, totalRows] = await Promise.all([
-      this.dataSource.query(listSql, [...params, pageSize, offset]),
+      this.dataSource.query(listSql, [...params, pageSizeSafe, offset]),
       this.dataSource.query(totalSql, params),
     ]);
 
     const total = Number(totalRows?.[0]?.total || 0);
-    return { list, total };
+    return {
+      data: list,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
+    };
   }
 
   async getGenConfig(tableName: string): Promise<GenConfigFormDto> {
     const configRows = await this.dataSource.query(
       `SELECT id, table_name, module_name, package_name, business_name, entity_name, author, parent_menu_id
-       FROM gen_config
+       FROM gen_table
        WHERE table_name = ? AND is_deleted = b'0'
        LIMIT 1`,
       [tableName]
@@ -172,9 +183,9 @@ export class CodegenService {
           max_length AS maxLength,
           field_sort AS fieldSort,
           dict_type AS dictType
-        FROM gen_field_config
-        WHERE config_id = ?
-        ORDER BY field_sort ASC`,
+        FROM gen_table_column
+        WHERE table_id = ?
+        ORDER BY ordinal_position ASC`,
         [config.id]
       );
 
@@ -267,7 +278,7 @@ export class CodegenService {
     const now = new Date();
     const cfgRows = await this.dataSource.query(
       `SELECT id
-       FROM gen_config
+       FROM gen_table
        WHERE table_name = ?
        LIMIT 1`,
       [tableName]
@@ -284,7 +295,7 @@ export class CodegenService {
     if (cfgRows?.[0]?.id) {
       configId = Number(cfgRows[0].id);
       await this.dataSource.query(
-        `UPDATE gen_config
+        `UPDATE gen_table
          SET module_name = ?,
              package_name = ?,
              business_name = ?,
@@ -298,7 +309,7 @@ export class CodegenService {
       );
     } else {
       const insertResult: any = await this.dataSource.query(
-        `INSERT INTO gen_config(
+        `INSERT INTO gen_table(
             table_name, module_name, package_name, business_name, entity_name, author, parent_menu_id,
             create_time, update_time, is_deleted
          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, b'0')`,
@@ -319,7 +330,7 @@ export class CodegenService {
     }
 
     // 先清理旧字段配置，再写入新配置
-    await this.dataSource.query(`DELETE FROM gen_field_config WHERE config_id = ?`, [configId]);
+    await this.dataSource.query(`DELETE FROM gen_table_column WHERE table_id = ?`, [configId]);
 
     const fieldConfigs = body.fieldConfigs || [];
     for (let i = 0; i < fieldConfigs.length; i++) {
@@ -328,30 +339,18 @@ export class CodegenService {
       const javaType = f.fieldType || getJavaTypeByColumnType(columnType);
 
       await this.dataSource.query(
-        `INSERT INTO gen_field_config(
-            config_id, column_name, column_type, column_length,
-            field_name, field_type, field_sort, field_comment,
-            max_length, is_required, is_show_in_list, is_show_in_form, is_show_in_query,
-            query_type, form_type, dict_type,
-            create_time, update_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO gen_table_column(
+            table_id, column_name, column_type, column_comment, is_nullable,
+            character_maximum_length, ordinal_position, create_time, update_time
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           configId,
           f.columnName || null,
           columnType || null,
-          f.maxLength ?? null,
-          f.fieldName || (f.columnName ? toCamelCase(String(f.columnName)) : null),
-          javaType,
-          f.fieldSort ?? i + 1,
           f.fieldComment || null,
+          f.isRequired ? "NO" : "YES",
           f.maxLength ?? null,
-          f.isRequired ?? 0,
-          f.isShowInList ?? 0,
-          f.isShowInForm ?? 0,
-          f.isShowInQuery ?? 0,
-          f.queryType ?? 1,
-          f.formType ?? 1,
-          f.dictType || null,
+          f.fieldSort ?? i + 1,
           now,
           now,
         ]
@@ -364,7 +363,7 @@ export class CodegenService {
   async deleteGenConfig(tableName: string) {
     const cfgRows = await this.dataSource.query(
       `SELECT id
-       FROM gen_config
+       FROM gen_table
        WHERE table_name = ? AND is_deleted = b'0'
        LIMIT 1`,
       [tableName]
@@ -374,9 +373,9 @@ export class CodegenService {
       return true;
     }
 
-    await this.dataSource.query(`DELETE FROM gen_field_config WHERE config_id = ?`, [configId]);
+    await this.dataSource.query(`DELETE FROM gen_table_column WHERE table_id = ?`, [configId]);
     await this.dataSource.query(
-      `UPDATE gen_config
+      `UPDATE gen_table
        SET is_deleted = b'1', update_time = ?
        WHERE id = ?`,
       [new Date(), configId]

@@ -1,16 +1,8 @@
 import { IsOptional, IsString } from "class-validator";
 
-export class NoticePageQueryDto {
-  // 页码（前端以字符串形式传递，这里不做数值约束，在 Service 中自行 Number() 转换）
-  @IsOptional()
-  @IsString()
-  pageNum?: string;
+import { BaseQueryDto } from "src/common/dto/base-query.dto";
 
-  // 每页条数（同上，不在 DTO 层做强约束）
-  @IsOptional()
-  @IsString()
-  pageSize?: string;
-
+export class NoticeQueryDto extends BaseQueryDto {
   // 关键字
   @IsOptional()
   @IsString()

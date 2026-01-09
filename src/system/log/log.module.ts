@@ -5,9 +5,10 @@ import { LogService } from "./log.service";
 import { LogController } from "./log.controller";
 import { SysLog } from "./entities/sys-log.entity";
 import { LoggingInterceptor } from "./logging.interceptor";
+import { SysUser } from "../user/entities/sys-user.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SysLog])],
+  imports: [TypeOrmModule.forFeature([SysLog, SysUser])],
   controllers: [LogController],
   providers: [
     LogService,
@@ -16,5 +17,6 @@ import { LoggingInterceptor } from "./logging.interceptor";
       useClass: LoggingInterceptor,
     },
   ],
+  exports: [LogService],
 })
 export class LogModule {}

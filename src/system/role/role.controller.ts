@@ -3,6 +3,7 @@ import { RoleService } from "./role.service";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { RoleQueryDto } from "./dto/role-query.dto";
 
 @ApiTags("03.角色接口")
 @Controller("roles")
@@ -10,13 +11,9 @@ export class RoleController {
   constructor(private readonly rolesService: RoleService) {}
 
   @ApiOperation({ summary: "角色分页列表" })
-  @Get("page")
-  async getRolePage(
-    @Query("pageNum") pageNum: number,
-    @Query("pageSize") pageSize: number,
-    @Query("keywords") keywords: string
-  ) {
-    return await this.rolesService.getRolePage(pageNum, pageSize, keywords);
+  @Get()
+  async getRolePage(@Query() query: RoleQueryDto) {
+    return await this.rolesService.getRolePage(query.pageNum, query.pageSize, query.keywords);
   }
 
   @ApiOperation({ summary: "角色下拉列表" })

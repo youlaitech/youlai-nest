@@ -23,8 +23,8 @@ export default registerAs("typeorm", () => ({
   // 数据库密码
   password: process.env.MYSQL_PASSWORD || "root",
 
-  // 数据库名称，建议与 Java 版保持一致：youlai_boot
-  database: process.env.MYSQL_DB || "youlai_boot",
+  // 数据库名称，建议与 Java 版保持一致：youlai_admin
+  database: process.env.MYSQL_DB || "youlai_admin",
 
   // 自动加载通过 TypeOrmModule.forFeature 注册的实体
   autoLoadEntities: true,

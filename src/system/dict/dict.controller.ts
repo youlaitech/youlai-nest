@@ -18,6 +18,8 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { IsCreateBy, IsUpdateBy } from "../../common/decorators/public.decorator";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
 import { UpdateDictItemDto } from "./dto/update-dict-item.dto";
+import { DictQueryDto } from "./dto/dict-query.dto";
+import { DictItemQueryDto } from "./dto/dict-item-query.dto";
 
 @ApiTags("06.字典接口")
 @Controller("dicts")
@@ -28,13 +30,15 @@ export class DictController {
   // 字典相关接口
   //---------------------------------------------------
   @ApiOperation({ summary: "字典分页列表" })
-  @Get("page")
-  async getDictPage(
-    @Query("pageNum") pageNum: number = 1,
-    @Query("pageSize") pageSize: number = 10,
-    @Query("keywords") keywords?: string
-  ) {
-    return await this.dictService.getDictPage(pageNum, pageSize, keywords);
+  @Get()
+  async getDictPage(@Query() query: DictQueryDto) {
+    return await this.dictService.getDictPage(query.pageNum, query.pageSize, query.keywords);
+  }
+
+  @ApiOperation({ summary: "字典下拉列表" })
+  @Get("options")
+  async getDictOptions() {
+    return await this.dictService.getDictOptions();
   }
 
   @ApiOperation({ summary: "创建字典" })
@@ -78,18 +82,18 @@ export class DictController {
   // 字典项相关接口
   //---------------------------------------------------
   @ApiOperation({ summary: "字典项分页列表" })
-  @Get(":dictCode/items/page")
-  async getDictItemPage(
-    @Query("pageNum") pageNum: number = 1,
-    @Query("pageSize") pageSize: number = 10,
-    @Param("dictCode") dictCode: string,
-    @Query("keywords") keywords?: string
-  ) {
-    return await this.dictService.getDictItemPage(pageNum, pageSize, dictCode, keywords);
+  @Get(":dictCode/items")
+  async getDictItemPage(@Param("dictCode") dictCode: string, @Query() query: DictItemQueryDto) {
+    return await this.dictService.getDictItemPage(
+      query.pageNum,
+      query.pageSize,
+      dictCode,
+      query.keywords
+    );
   }
 
   @ApiOperation({ summary: "字典项列表" })
-  @Get(":dictCode/items")
+  @Get(":dictCode/items/options")
   async getDictItems(@Param("dictCode") dictCode: string) {
     return await this.dictService.getDictItems(dictCode);
   }

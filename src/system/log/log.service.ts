@@ -2,24 +2,28 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SysLog } from "./entities/sys-log.entity";
-import { LogPageQueryDto } from "./dto/log-page-query.dto";
+import { LogQueryDto } from "./dto/log-query.dto";
 import { LogPageVo } from "./dto/log-page.vo";
 import { VisitTrendDto } from "./dto/visit-trend.dto";
 import { VisitStatsDto } from "./dto/visit-stats.dto";
+import { SysUser } from "../user/entities/sys-user.entity";
 
 @Injectable()
 export class LogService {
   constructor(
     @InjectRepository(SysLog)
-    private readonly logRepository: Repository<SysLog>
+    private readonly logRepository: Repository<SysLog>,
+    @InjectRepository(SysUser)
+    private readonly userRepository: Repository<SysUser>
   ) {}
 
-  async getLogPage(query: LogPageQueryDto) {
+  async getLogPage(query: LogQueryDto) {
     const { pageNum, pageSize, keywords, createTime } = query;
 
-    const qb = this.logRepository
-      .createQueryBuilder("log")
-      .where("log.is_deleted = :isDeleted", { isDeleted: 0 });
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
+
+    const qb = this.logRepository.createQueryBuilder("log");
 
     if (keywords) {
       qb.andWhere(
@@ -38,9 +42,22 @@ export class LogService {
     qb.orderBy("log.create_time", "DESC");
 
     const [records, total] = await qb
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+      .skip((pageNumSafe - 1) * pageSizeSafe)
+      .take(pageSizeSafe)
       .getManyAndCount();
+
+    const userIds = Array.from(
+      new Set(records.map((r) => r.createBy).filter((v) => v !== null && v !== undefined))
+    );
+    const users = userIds.length
+      ? await this.userRepository
+          .createQueryBuilder("user")
+          .select(["user.id", "user.nickname"])
+          .where("user.id IN (:...ids)", { ids: userIds })
+          .getMany()
+      : [];
+    const userMap = new Map<number, string>();
+    users.forEach((u) => userMap.set(u.id, u.nickname));
 
     const list: LogPageVo[] = records.map((item) => ({
       id: item.id,
@@ -54,13 +71,24 @@ export class LogService {
       os: item.os,
       executionTime: item.executionTime,
       createBy: item.createBy,
-      createTime: item.createTime,
-      operator: null,
+      // format createTime to 'YYYY-MM-DD HH:mm:ss' for consistent display
+      createTime: item.createTime
+        ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(
+            item.createTime.getDate()
+          ).padStart(2, "0")} ${String(item.createTime.getHours()).padStart(2, "0")}:${String(
+            item.createTime.getMinutes()
+          ).padStart(2, "0")}:${String(item.createTime.getSeconds()).padStart(2, "0")}`
+        : null,
+      operator: item.createBy ? (userMap.get(item.createBy) ?? null) : null,
     }));
 
     return {
-      list,
-      total,
+      data: list,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
     };
   }
 

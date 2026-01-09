@@ -44,6 +44,9 @@ export class UserService {
     startTime?: string,
     endTime?: string
   ) {
+    const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
+    const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
+
     const queryBuilder = this.userRepository.createQueryBuilder("user");
     queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
 
@@ -70,11 +73,104 @@ export class UserService {
     }
 
     const [list, total] = await queryBuilder
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+      .skip((pageNumSafe - 1) * pageSizeSafe)
+      .take(pageSizeSafe)
       .getManyAndCount();
+    // fetch dept names for users
+    const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean)));
+    const depts = await this.deptService.findByIds(deptIds);
+    const deptMap = new Map<number, string>();
+    depts.forEach((d) => deptMap.set(d.id, d.name));
 
-    return { list, total };
+    const data = list.map((u) => ({
+      id: u.id,
+      username: u.username,
+      nickname: u.nickname,
+      gender: u.gender,
+      mobile: u.mobile,
+      status: u.status,
+      email: u.email || "",
+      deptId: u.deptId,
+      deptName: u.deptId ? deptMap.get(u.deptId) || null : null,
+      createTime: u.createTime
+        ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
+            u.createTime.getDate()
+          ).padStart(2, "0")} ${String(u.createTime.getHours()).padStart(2, "0")}:${String(
+            u.createTime.getMinutes()
+          ).padStart(2, "0")}:${String(u.createTime.getSeconds()).padStart(2, "0")}`
+        : null,
+    }));
+
+    return {
+      data,
+      page: {
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
+        total,
+      },
+    };
+  }
+
+  /**
+   * 列出用于导出的用户数据（不分页）
+   */
+  async listExportUsers(
+    deptId?: number,
+    keywords?: string,
+    status?: number,
+    startTime?: string,
+    endTime?: string
+  ) {
+    const queryBuilder = this.userRepository.createQueryBuilder("user");
+    queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
+
+    if (keywords) {
+      queryBuilder.andWhere(
+        "(user.username LIKE :keywords OR user.nickname LIKE :keywords OR user.mobile LIKE :keywords)",
+        { keywords: `%${keywords}%` }
+      );
+    }
+
+    if (deptId) {
+      queryBuilder.andWhere("user.deptId = :deptId", { deptId });
+    }
+
+    if (status !== undefined && status !== null) {
+      queryBuilder.andWhere("user.status = :status", { status });
+    }
+
+    if (startTime && endTime) {
+      queryBuilder.andWhere("user.createTime BETWEEN :startTime AND :endTime", {
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+      });
+    }
+
+    const list = await queryBuilder.orderBy("user.createTime", "DESC").getMany();
+
+    const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean)));
+    const depts = await this.deptService.findByIds(deptIds);
+    const deptMap = new Map<number, string>();
+    depts.forEach((d) => deptMap.set(d.id, d.name));
+
+    return list.map((u) => ({
+      id: u.id,
+      username: u.username,
+      nickname: u.nickname,
+      gender: u.gender,
+      mobile: u.mobile,
+      status: u.status,
+      email: u.email || "",
+      deptId: u.deptId,
+      deptName: u.deptId ? deptMap.get(u.deptId) || null : null,
+      createTime: u.createTime
+        ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
+            u.createTime.getDate()
+          ).padStart(2, "0")} ${String(u.createTime.getHours()).padStart(2, "0")}:${String(
+            u.createTime.getMinutes()
+          ).padStart(2, "0")}:${String(u.createTime.getSeconds()).padStart(2, "0")}`
+        : null,
+    }));
   }
 
   /**
@@ -170,6 +266,34 @@ export class UserService {
     } catch (error) {
       console.log(error, "error");
     }
+  }
+
+  /**
+   * 更新当前用户个人信息（个人中心）
+   */
+  async updateProfile(
+    currentUserInfo: CurrentUserInfo,
+    data: Partial<CurrentUserDto>
+  ): Promise<boolean> {
+    const userId = Number(currentUserInfo.userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+
+    const updateData: Partial<SysUser> = {
+      nickname: data.nickname,
+      mobile: data.mobile,
+      email: data.email,
+      avatar: data.avatar,
+      updateTime: new Date(),
+    };
+
+    // remove undefined keys
+    Object.keys(updateData).forEach((k) => updateData[k] === undefined && delete updateData[k]);
+
+    const result = await this.userRepository.update(userId, updateData);
+    return result.affected > 0;
   }
 
   /**
@@ -337,6 +461,22 @@ export class UserService {
   async findByUsername(username: string): Promise<SysUser> {
     console.log(username, "根据用户名查询用户");
     return await this.userRepository.findOne({ where: { username } });
+  }
+
+  async findByMobile(mobile: string): Promise<SysUser> {
+    if (!mobile) return null;
+    return await this.userRepository.findOne({
+      where: { mobile, isDeleted: 0 },
+      relations: ["roles"],
+    });
+  }
+
+  async findByOpenid(openid: string): Promise<SysUser> {
+    if (!openid) return null;
+    return await this.userRepository.findOne({
+      where: { openid, isDeleted: 0 },
+      relations: ["roles"],
+    });
   }
 
   /**

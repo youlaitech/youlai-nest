@@ -13,7 +13,7 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { CodegenService } from "./codegen.service";
 import type { GenConfigFormDto } from "./dto/gen-config-form.dto";
-import { TablePageQueryDto } from "./dto/table-page-query.dto";
+import { TableQueryDto } from "./dto/table-query.dto";
 
 @ApiTags("11.代码生成")
 @Controller("codegen")
@@ -21,8 +21,8 @@ export class CodegenController {
   constructor(private readonly codegenService: CodegenService) {}
 
   @ApiOperation({ summary: "获取数据表分页列表" })
-  @Get("table/page")
-  async getTablePage(@Query() query: TablePageQueryDto) {
+  @Get("table")
+  async getTablePage(@Query() query: TableQueryDto) {
     return await this.codegenService.getTablePage(query);
   }
 

@@ -25,14 +25,15 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // 全局拦截器
-  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
+  // Pass ConfigService to ResponseInterceptor so date formatting is configurable
+  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector), configService));
 
   // 全局验证管道
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false,
     })
   );
 

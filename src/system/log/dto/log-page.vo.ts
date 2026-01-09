@@ -35,7 +35,7 @@ export class LogPageVo {
   createBy: number | null;
 
   @ApiProperty({ description: "创建时间", example: "2025-01-01 12:00:00" })
-  createTime: Date | null;
+  createTime: string | null;
 
   @ApiProperty({ description: "操作人" })
   operator: string | null;

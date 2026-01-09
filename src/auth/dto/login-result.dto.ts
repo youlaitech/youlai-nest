@@ -8,14 +8,11 @@ export class LoginResultDto {
   accessToken: string;
 
   @ApiProperty({ description: "刷新令牌" })
-  refreshToken?: string;
+  refreshToken: string;
 
   @ApiProperty({ description: "令牌过期时间(秒)" })
   expiresIn: number;
 
   @ApiProperty({ description: "令牌类型" })
   tokenType: string;
-
-  @ApiProperty({ description: "用户信息" })
-  userInfo: any;
 }

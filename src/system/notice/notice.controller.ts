@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { NoticeService } from "./notice.service";
-import { NoticePageQueryDto } from "./dto/notice-page-query.dto";
+import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
@@ -11,8 +11,8 @@ export class NoticeController {
   constructor(private readonly noticeService: NoticeService) {}
 
   @ApiOperation({ summary: "通知公告分页列表" })
-  @Get("page")
-  async getNoticePage(@Query() query: NoticePageQueryDto) {
+  @Get()
+  async getNoticePage(@Query() query: NoticeQueryDto) {
     return await this.noticeService.getNoticePage(query);
   }
 
@@ -82,7 +82,7 @@ export class NoticeController {
   @Get("my")
   async getMyNoticePage(
     @CurrentUser("userId") currentUserId: number,
-    @Query() query: NoticePageQueryDto
+    @Query() query: NoticeQueryDto
   ) {
     return await this.noticeService.getMyNoticePage(currentUserId, query);
   }
