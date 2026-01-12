@@ -41,6 +41,7 @@ export class AuthController {
   async login(@Body() loginDto: LoginRequestDto) {
     const { captchaCode, captchaId } = loginDto;
 
+    // 图形验证码：captcha:image:{captchaId} -> text（短 TTL）
     const cacheCaptchaCode = await this.RedisService.get(`captcha:image:${captchaId}`);
 
     if (!cacheCaptchaCode) {
@@ -96,6 +97,7 @@ export class AuthController {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring("Bearer ".length);
+      // JWT 模式：加入黑名单；redis-token 模式：清理 Redis 中的 token 映射
       await this.authService.blacklistToken(token);
     }
 
@@ -111,6 +113,7 @@ export class AuthController {
   async getCode() {
     const svgCaptcha = await this.toolsService.captche();
     const captchaId = uuidv4();
+    // 与 /auth/login 配套使用，默认 120s 过期
     await this.RedisService.set(`captcha:image:${captchaId}`, svgCaptcha.captcha.text, 120);
     return {
       captchaBase64: svgCaptcha.base64,

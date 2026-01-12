@@ -73,7 +73,7 @@ export class MenuService {
   async getRoutes(userId: string): Promise<Route[]> {
     // 超级管理员返回所有菜单
     if (userId === "1") {
-      // include hidden routes (visible = 0) as well so frontend routing still works
+      // 后端路由用于前端注册，不仅决定侧边栏显示；因此这里会包含 visible=0 的隐藏菜单
       const menuList = await this.menuRepository.find({
         where: { type: In(["C", "M"]) },
         order: { sort: "ASC" },
@@ -87,7 +87,7 @@ export class MenuService {
       return [];
     }
 
-    // include hidden routes (visible = 0) so users can access routes even if menu is hidden from sidebar
+    // 同上：保持路由完整，避免“能访问但未注册路由”的问题
     const menuList = await this.menuRepository.find({
       where: { id: In(menuIds), type: In(["C", "M"]) },
       order: { sort: "ASC" },

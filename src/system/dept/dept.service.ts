@@ -57,6 +57,13 @@ export class DeptService {
     });
   }
 
+  async findByCode(code: string): Promise<SysDept | null> {
+    if (!code?.trim()) return null;
+    return await this.deptRepository.findOne({
+      where: { code: code.trim(), isDeleted: 0 },
+    });
+  }
+
   /**
    * 创建部门
    */

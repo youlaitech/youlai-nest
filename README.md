@@ -1,20 +1,4 @@
 <div align="center">
-
-## 🎉 正在参加 Gitee 2025 最受欢迎开源软件评选
-
-<a href="https://gitee.com/activity/2025opensource?ident=I6VXEH" target="_blank">
-  <img src="https://img.shields.io/badge/VUE3--ELEMENT--ADMIN-点击投票支持-f97316?style=for-the-badge&logo=gitee&logoColor=white&labelColor=111827" alt="投票" height="50"/>
-</a>
-
-<p>
-  <strong>📢 投票最后1天！恳请助力一票 🙏 无需重复投，您的支持是我们前行的最大动力！</strong>
-</p>
-
-</div>
-
-![](https://foruda.gitee.com/images/1708618984641188532/a7cca095_716974.png "rainbow.png")
-
-<div align="center">
    <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
    <h2><a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
      youlai-nest
@@ -37,7 +21,7 @@
 
 **在线预览**: [https://vue.youlai.tech](https://vue.youlai.tech)
 
-基于 node18、nest.js、MySQL、JWT、Redis、阿里云oss、Vue 3、Element-Plus 构建的前后端分离单体权限管理系统。
+基于 Node.js（>= 20）、NestJS、MySQL、JWT、Redis、阿里云oss、Vue 3、Element-Plus 构建的前后端分离单体权限管理系统。
 
 - **🚀 开发框架**: 使用 nest.js 和 Vue 3，以及 Element-Plus 等主流技术栈，实时更新。
 
@@ -65,6 +49,12 @@
 | 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                             |
 
 ## 🚀 项目启动
+
+### 推荐运行环境
+
+- **Node.js**：>= 20 LTS（推荐 20.17+ 或 22.x）
+- **pnpm**：>= 9.x
+- **npm（如果使用）**：>= 10（当前依赖已是 npm 11）
 
 1. **数据库初始化（MySQL）**
 

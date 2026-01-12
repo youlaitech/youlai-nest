@@ -2,11 +2,12 @@ import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, In } from "typeorm";
+import { Repository, In, Brackets } from "typeorm";
 import { SysRole } from "./entities/sys-role.entity";
 import { SysRoleMenu } from "./entities/sys-role-menu.entity";
 import { MenuService } from "../menu/menu.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
+import { SysUserRole } from "../user/entities/sys-user-role.entity";
 
 @Injectable()
 export class RoleService {
@@ -15,9 +16,73 @@ export class RoleService {
     private roleRepository: Repository<SysRole>,
     @InjectRepository(SysRoleMenu)
     private roleMenuRepository: Repository<SysRoleMenu>,
+    @InjectRepository(SysUserRole)
+    private userRoleRepository: Repository<SysUserRole>,
     @Inject(forwardRef(() => MenuService))
     private readonly menuService: MenuService
   ) {}
+
+  async findRoleIdsByCodes(roleCodes: string[]): Promise<number[]> {
+    const codes = (roleCodes || [])
+      .map((c) => (c ?? "").trim())
+      .filter(Boolean);
+    if (!codes.length) return [];
+
+    const roles = await this.roleRepository.find({
+      where: { code: In(codes), isDeleted: 0 },
+      select: ["id"],
+    });
+
+    return roles.map((r) => r.id);
+  }
+
+  async saveRole(roleForm: Partial<CreateRoleDto> & Partial<UpdateRoleDto> & { id?: number }) {
+    const roleId = roleForm.id ? Number(roleForm.id) : undefined;
+
+    let oldRole: SysRole | null = null;
+    if (roleId) {
+      oldRole = await this.roleRepository.findOne({ where: { id: roleId, isDeleted: 0 } });
+      if (!oldRole) {
+        throw new BusinessException("角色不存在");
+      }
+    }
+
+    const roleCode = (roleForm as any).code;
+    const roleName = (roleForm as any).name;
+
+    const dupQuery = this.roleRepository
+      .createQueryBuilder("role")
+      .where("role.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where("role.code = :code", { code: roleCode }).orWhere("role.name = :name", {
+            name: roleName,
+          });
+        })
+      );
+
+    if (roleId) {
+      dupQuery.andWhere("role.id != :roleId", { roleId });
+    }
+
+    const dupCount = await dupQuery.getCount();
+    if (dupCount > 0) {
+      throw new BusinessException("角色名称或角色编码已存在，请修改后重试！");
+    }
+
+    const now = new Date();
+    const entity = this.roleRepository.create({
+      ...(oldRole ?? {}),
+      ...(roleForm as any),
+      id: roleId,
+      isDeleted: 0,
+      createTime: oldRole?.createTime ?? now,
+      updateTime: now,
+    });
+
+    await this.roleRepository.save(entity);
+    return true;
+  }
 
   /**
    * 角色分页列表
@@ -26,6 +91,7 @@ export class RoleService {
     const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
+    // 系统内置角色不允许在业务列表里维护（避免误操作）
     const reservedCodes = ["ROOT", "ADMIN"];
     const queryBuilder = this.roleRepository.createQueryBuilder("role");
     queryBuilder.where("role.isDeleted = :isDeleted", { isDeleted: 0 });
@@ -33,10 +99,19 @@ export class RoleService {
     queryBuilder.andWhere("role.code NOT IN (:...reservedCodes)", { reservedCodes });
 
     if (keywords) {
-      queryBuilder.andWhere("role.name LIKE :keywords", { keywords: `%${keywords}%` });
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where("role.name LIKE :keywords", { keywords: `%${keywords}%` }).orWhere(
+            "role.code LIKE :keywords",
+            { keywords: `%${keywords}%` }
+          );
+        })
+      );
     }
 
     queryBuilder.orderBy("role.sort", "ASC");
+    queryBuilder.addOrderBy("role.createTime", "DESC");
+    queryBuilder.addOrderBy("role.updateTime", "DESC");
     queryBuilder.skip((pageNumSafe - 1) * pageSizeSafe);
     queryBuilder.take(pageSizeSafe);
 
@@ -63,6 +138,10 @@ export class RoleService {
       .getMany();
 
     return [...new Set(roleMenus.map((rm) => rm.menuId))];
+  }
+
+  async getRoleMenuIds(roleId: number): Promise<number[]> {
+    return await this.getMenuIdsByRoleIds([Number(roleId)]);
   }
 
   /**
@@ -152,6 +231,20 @@ export class RoleService {
     return await this.roleRepository.update(id, updateRoleDto);
   }
 
+  async updateRoleStatus(roleId: number, status: number): Promise<boolean> {
+    const role = await this.roleRepository.findOne({
+      where: { id: roleId, isDeleted: 0 },
+      select: ["id"],
+    });
+
+    if (!role) {
+      throw new BusinessException("角色不存在");
+    }
+
+    const result = await this.roleRepository.update(roleId, { status: Number(status) });
+    return (result.affected ?? 0) > 0;
+  }
+
   /**
    * 更新角色菜单
    */
@@ -159,7 +252,7 @@ export class RoleService {
     // 先删除原有的关联
     await this.roleMenuRepository.delete({ roleId });
 
-    // 创建新的关联
+    // 直接重建关联表（sys_role_menu）
     const roleMenus = menuIds.map((menuId) => ({
       roleId,
       menuId,
@@ -173,6 +266,33 @@ export class RoleService {
    */
   async remove(id: number) {
     return await this.roleRepository.update(id, { isDeleted: 1 });
+  }
+
+  async deleteRoles(ids: string) {
+    if (!ids?.trim()) {
+      throw new BusinessException("删除的角色ID不能为空");
+    }
+
+    const roleIds = ids
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .map((v) => Number(v));
+
+    for (const roleId of roleIds) {
+      const role = await this.roleRepository.findOne({ where: { id: roleId, isDeleted: 0 } });
+      if (!role) {
+        throw new BusinessException("角色不存在");
+      }
+
+      const assignedCount = await this.userRoleRepository.count({ where: { roleId } });
+      if (assignedCount > 0) {
+        throw new BusinessException(`角色【${role.name}】已分配用户，请先解除关联后删除`);
+      }
+
+      await this.roleMenuRepository.delete({ roleId });
+      await this.roleRepository.update(roleId, { isDeleted: 1 });
+    }
   }
 
   /**

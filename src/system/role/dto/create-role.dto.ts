@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsArray } from "class-validator";
+import { IsString, IsNumber, IsOptional } from "class-validator";
 
 export class CreateRoleDto {
   @IsString()
@@ -17,8 +17,4 @@ export class CreateRoleDto {
   @IsOptional()
   @IsNumber()
   readonly dataScope?: number | null;
-
-  @IsArray()
-  @IsOptional()
-  readonly menus?: number[];
 }

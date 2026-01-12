@@ -7,12 +7,12 @@ import {
   Delete,
   Query,
   Put,
-  UseGuards,
-  UseInterceptors,
   SetMetadata,
   Req,
   Res,
-  Logger,
+  Patch,
+  UploadedFile,
+  UseInterceptors,
   Inject,
 } from "@nestjs/common";
 import type { Response } from "express";
@@ -23,8 +23,11 @@ import { UserQueryDto } from "./dto/user-query.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { CurrentUserDto } from "./dto/current-user.dto";
-import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { PasswordChangeDto } from "./dto/password-change.dto";
+import { MobileUpdateDto } from "./dto/mobile-update.dto";
+import { EmailUpdateDto } from "./dto/email-update.dto";
+import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
 
@@ -95,19 +98,13 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "获取用户表单数据" })
-  @Get(":id/form")
-  async getUserForm(@Param("id") id: number) {
-    return await this.userService.getUserFormData(id);
-  }
-
-  @ApiOperation({ summary: "获取用户表单数据" })
-  @Get(":id/form/data")
-  async getUserFormData(@Param("id") id: string) {
-    return await this.userService.getUserFormData(+id);
+  @Get(":userId(\\d+)/form")
+  async getUserForm(@Param("userId") userId: number) {
+    return await this.userService.getUserFormData(userId);
   }
 
   @ApiOperation({ summary: "修改用户" })
-  @Put(":id")
+  @Put(":id(\\d+)")
   async update(
     @CurrentUser("userId") currentUserId: number,
     @Param("id") id: number,
@@ -139,6 +136,39 @@ export class UserController {
     };
   }
 
+  @ApiOperation({ summary: "修改用户状态" })
+  @Patch(":userId(\\d+)/status")
+  async updateUserStatus(@Param("userId") userId: number, @Query("status") status: number) {
+    const success = await this.userService.updateUserStatus(userId, status);
+    return { success };
+  }
+
+  @ApiOperation({ summary: "用户导入模板下载" })
+  @Get("template")
+  @SetMetadata("skipResponseTransform", true)
+  async downloadTemplate(@Res() res: Response) {
+    const headers = ["用户名", "昵称", "性别", "手机号码", "邮箱", "角色", "部门"];
+    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "用户导入模板");
+
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const fileName = "用户导入模板.xlsx";
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
+    res.send(buffer);
+  }
+
+  @ApiOperation({ summary: "导入用户" })
+  @Post("import")
+  @UseInterceptors(FileInterceptor("file"))
+  async importUsers(@UploadedFile() file: Express.Multer.File) {
+    if (!file?.buffer) {
+      throw new BusinessException("导入文件不能为空");
+    }
+    return await this.userService.importUsersFromBuffer(file.buffer);
+  }
+
   @ApiOperation({ summary: "导出用户" })
   @Get("export")
   @SetMetadata("skipResponseTransform", true)
@@ -151,25 +181,76 @@ export class UserController {
       queryParams.endTime
     );
 
-    // Build CSV content
-    const headers = ["用户名", "昵称", "性别", "部门", "手机号码", "邮箱", "状态", "创建时间"];
+    const headers = ["用户名", "用户昵称", "部门", "性别", "手机号码", "邮箱", "创建时间"];
     const rows = exportList.map((u) => [
       u.username ?? "",
       u.nickname ?? "",
-      u.gender ?? "",
       u.deptName ?? "",
+      u.gender ?? "",
       u.mobile ?? "",
       u.email ?? "",
-      typeof u.status !== "undefined" ? String(u.status) : "",
       u.createTime ?? "",
     ]);
 
-    const csvLines = [headers.join(","), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))];
-    const csvContent = "\uFEFF" + csvLines.join("\r\n");
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "用户列表");
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 
-    const fileName = "用户列表.csv";
+    const fileName = "用户列表.xlsx";
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.send(Buffer.from(csvContent, "utf8"));
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
+  }
+
+  @ApiOperation({ summary: "重置指定用户密码" })
+  @Put(":userId(\\d+)/password/reset")
+  async resetUserPassword(@Param("userId") userId: number, @Query("password") password: string) {
+    const success = await this.userService.resetUserPassword(userId, password);
+    return { success };
+  }
+
+  @ApiOperation({ summary: "当前用户修改密码" })
+  @Put("password")
+  async changeCurrentUserPassword(
+    @CurrentUser("userId") currentUserId: number,
+    @Body() data: PasswordChangeDto
+  ) {
+    const success = await this.userService.changeCurrentUserPassword(currentUserId, data);
+    return { success };
+  }
+
+  @ApiOperation({ summary: "发送短信验证码（绑定或更换手机号）" })
+  @Post("mobile/code")
+  async sendMobileCode(@Query("mobile") mobile: string) {
+    const success = await this.userService.sendMobileCode(mobile);
+    return { success };
+  }
+
+  @ApiOperation({ summary: "绑定或更换手机号" })
+  @Put("mobile")
+  async bindOrChangeMobile(@CurrentUser("userId") currentUserId: number, @Body() data: MobileUpdateDto) {
+    const success = await this.userService.bindOrChangeMobile(currentUserId, data);
+    return { success };
+  }
+
+  @ApiOperation({ summary: "发送邮箱验证码（绑定或更换邮箱）" })
+  @Post("email/code")
+  async sendEmailCode(@Query("email") email: string) {
+    await this.userService.sendEmailCode(email);
+    return { success: true };
+  }
+
+  @ApiOperation({ summary: "绑定或更换邮箱" })
+  @Put("email")
+  async bindOrChangeEmail(@CurrentUser("userId") currentUserId: number, @Body() data: EmailUpdateDto) {
+    const success = await this.userService.bindOrChangeEmail(currentUserId, data);
+    return { success };
+  }
+
+  @ApiOperation({ summary: "获取用户下拉选项" })
+  @Get("options")
+  async listUserOptions() {
+    return await this.userService.listUserOptions();
   }
 }

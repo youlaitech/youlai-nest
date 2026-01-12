@@ -75,7 +75,8 @@ async function bootstrap() {
     })
   );
 
-  const port = configService.get("SERVER_PORT", 3000);
+  // 端口统一通过环境变量 SERVER_PORT 配置（默认 8000）
+  const port = configService.get("SERVER_PORT", 8000);
   await app.listen(port);
   console.log(`应用已启动: http://localhost:${port}`);
   console.log(`接口文档: http://localhost:${port}/api-docs`);

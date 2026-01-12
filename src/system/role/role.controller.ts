@@ -24,10 +24,9 @@ export class RoleController {
 
   @ApiOperation({ summary: "新增角色" })
   @Post()
-  create(@Req() request, @Body() createRoleDto: CreateRoleDto) {
-    return this.rolesService.create({
-      ...createRoleDto,
-    });
+  async create(@Req() request, @Body() createRoleDto: CreateRoleDto) {
+    await this.rolesService.saveRole({ ...createRoleDto });
+    return { success: true };
   }
 
   @ApiOperation({ summary: "角色表单数据" })
@@ -38,22 +37,29 @@ export class RoleController {
 
   @ApiOperation({ summary: "修改角色" })
   @Put(":id")
-  async updateRole(@Param("id") id: number, @Body() updateRoleDto: UpdateRoleDto) {}
+  async updateRole(@Param("id") id: number, @Body() updateRoleDto: UpdateRoleDto) {
+    await this.rolesService.saveRole({ id: Number(id), ...updateRoleDto });
+    return { success: true };
+  }
+
+  @ApiOperation({ summary: "修改角色状态" })
+  @Put(":roleId/status")
+  async updateRoleStatus(@Param("roleId") roleId: number, @Query("status") status: number) {
+    const success = await this.rolesService.updateRoleStatus(roleId, status);
+    return { success };
+  }
 
   @ApiOperation({ summary: "删除角色" })
   @Delete(":ids")
-  async deleteDepartments(@Param("ids") ids: string) {
-    const idArray = ids.split(",").map((id) => Number(id));
-    for (const id of idArray) {
-      await this.rolesService.remove(id);
-    }
+  async deleteRoles(@Param("ids") ids: string) {
+    await this.rolesService.deleteRoles(ids);
+    return { success: true };
   }
 
   @ApiOperation({ summary: "获取角色权限" })
   @Get(":id/menuIds")
   async findMenuIds(@Param("id") roleId: number) {
-    const roleMenus = await this.rolesService.getMenuIdsByRoleIds([roleId]);
-    return roleMenus;
+    return await this.rolesService.getRoleMenuIds(roleId);
   }
 
   @ApiOperation({ summary: "角色分配权限" })

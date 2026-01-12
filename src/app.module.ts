@@ -16,7 +16,6 @@ import { RedisModule as LiaoliaRedisModule } from "@liaoliaots/nestjs-redis";
 
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
 import { RedisSharedModule } from "./shared/redis/redis.module";
-import { OssModule } from "./shared/oss/oss.module"; // 对象存储模块
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
 import { WebsocketModule } from "./platform/websocket/websocket.module";
@@ -96,7 +95,6 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     }),
     AuthModule,
     RedisSharedModule,
-    OssModule,
     DictModule,
     SystemConfigModule,
     WebsocketModule,

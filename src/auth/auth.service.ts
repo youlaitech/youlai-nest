@@ -29,11 +29,13 @@ export class AuthService {
   ) {}
 
   private async issueTokens(user: any): Promise<LoginResultDto> {
+    // SESSION_TYPE=jwt：令牌自包含；SESSION_TYPE=redis-token：令牌只做索引，用户会话存 Redis
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
 
     // JWT
     if (sessionType === "jwt") {
       const userId = user.id;
+      // 用于按用户维度统一让历史 Token 失效（例如：重置密码、禁用账号后）
       const versionKey = `auth:user:security_version:${userId}`;
       const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
       const securityVersion = currentVersionRaw ?? 0;
@@ -88,6 +90,7 @@ export class AuthService {
       roles: user.roles,
     };
 
+    // access/refresh 双 token + userId 反向索引，方便注销/踢下线时快速定位并清理
     await this.redisCacheService.set(`auth:token:access:${accessToken}`, onlineUser, accessTtl);
     await this.redisCacheService.set(`auth:token:refresh:${refreshToken}`, onlineUser, refreshTtl);
     await this.redisCacheService.set(`auth:user:access:${userId}`, accessToken, accessTtl);

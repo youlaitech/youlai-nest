@@ -10,7 +10,8 @@ services:
       - redis-container
     restart: always
     ports:
-      - 9090:9090
+      # 对外端口（宿主机:容器），与 .env 中 SERVER_PORT 保持一致
+      - 8000:8000
     # ports:
     #   - 3005:3005
     networks:

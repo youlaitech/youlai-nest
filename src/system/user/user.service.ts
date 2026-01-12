@@ -9,13 +9,18 @@ import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
 import { DEFAULT_PASSWORD } from "src/common/constants";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Like } from "typeorm";
+import { Repository, Like, In } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { RedisService } from "src/shared/redis/redis.service";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import * as bcrypt from "bcrypt";
 import { UserFormDto } from "./dto/user-form.dto";
+import type { PasswordChangeDto } from "./dto/password-change.dto";
+import type { MobileUpdateDto } from "./dto/mobile-update.dto";
+import type { EmailUpdateDto } from "./dto/email-update.dto";
+import { ErrorCode } from "src/common/enums/error-code.enum";
+import * as XLSX from "xlsx";
 
 @Injectable()
 export class UserService {
@@ -48,6 +53,7 @@ export class UserService {
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
     const queryBuilder = this.userRepository.createQueryBuilder("user");
+    // 统一使用逻辑删除标识过滤
     queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
 
     if (keywords) {
@@ -76,7 +82,7 @@ export class UserService {
       .skip((pageNumSafe - 1) * pageSizeSafe)
       .take(pageSizeSafe)
       .getManyAndCount();
-    // fetch dept names for users
+    // 部门名称单独回填（避免分页查询里做复杂 join，便于后续扩展字段）
     const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean)));
     const depts = await this.deptService.findByIds(deptIds);
     const deptMap = new Map<number, string>();
@@ -322,6 +328,236 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
+  async updateUserStatus(userId: number, status: number): Promise<boolean> {
+    const result = await this.userRepository.update(
+      { id: Number(userId), isDeleted: 0 },
+      { status: Number(status) }
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async resetUserPassword(userId: number, password: string): Promise<boolean> {
+    if (!password?.trim()) {
+      throw new BusinessException("密码不能为空");
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const result = await this.userRepository.update(
+      { id: Number(userId), isDeleted: 0 },
+      { password: hashed }
+    );
+
+    const ok = (result.affected ?? 0) > 0;
+    if (ok) {
+      await this.invalidateUserSessions(Number(userId));
+    }
+    return ok;
+  }
+
+  async changeCurrentUserPassword(userId: number, data: PasswordChangeDto): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: Number(userId), isDeleted: 0 },
+      select: ["id", "password"],
+    });
+
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+
+    const { oldPassword, newPassword, confirmPassword } = data;
+    if (!(await bcrypt.compare(oldPassword, user.password))) {
+      throw new BusinessException("原密码错误");
+    }
+
+    if (await bcrypt.compare(newPassword, user.password)) {
+      throw new BusinessException("新密码不能与原密码相同");
+    }
+
+    if (newPassword !== confirmPassword) {
+      throw new BusinessException("新密码和确认密码不一致");
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    const result = await this.userRepository.update(user.id, { password: hashed });
+    const ok = (result.affected ?? 0) > 0;
+    if (ok) {
+      await this.invalidateUserSessions(user.id);
+    }
+    return ok;
+  }
+
+  async sendMobileCode(mobile: string): Promise<boolean> {
+    if (!mobile?.trim()) {
+      throw new BusinessException("手机号不能为空");
+    }
+    const code = "1234";
+    const redisKey = `captcha:mobile:${mobile.trim()}`;
+    await this.redisCacheService.set(redisKey, code, 60 * 5);
+    return true;
+  }
+
+  async bindOrChangeMobile(userId: number, data: MobileUpdateDto): Promise<boolean> {
+    const mobile = data.mobile?.trim();
+    const code = data.code?.trim();
+    const redisKey = `captcha:mobile:${mobile}`;
+    const cached = await this.redisCacheService.get<string>(redisKey);
+
+    if (!cached) {
+      throw new BusinessException("验证码已过期");
+    }
+    if (cached !== code) {
+      throw new BusinessException("验证码错误");
+    }
+
+    await this.redisCacheService.del(redisKey);
+    const result = await this.userRepository.update(
+      { id: Number(userId), isDeleted: 0 },
+      { mobile }
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async sendEmailCode(email: string): Promise<void> {
+    if (!email?.trim()) {
+      throw new BusinessException("邮箱不能为空");
+    }
+    const code = "1234";
+    const redisKey = `captcha:email:${email.trim()}`;
+    await this.redisCacheService.set(redisKey, code, 60 * 5);
+  }
+
+  async bindOrChangeEmail(userId: number, data: EmailUpdateDto): Promise<boolean> {
+    const email = data.email?.trim();
+    const code = data.code?.trim();
+    const redisKey = `captcha:email:${email}`;
+    const cached = await this.redisCacheService.get<string>(redisKey);
+
+    if (!cached) {
+      throw new BusinessException("验证码已过期");
+    }
+    if (cached !== code) {
+      throw new BusinessException("验证码错误");
+    }
+
+    await this.redisCacheService.del(redisKey);
+    const result = await this.userRepository.update(
+      { id: Number(userId), isDeleted: 0 },
+      { email }
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async listUserOptions() {
+    const users = await this.userRepository.find({
+      where: { status: 1, isDeleted: 0 },
+      select: ["id", "nickname", "username"],
+      order: { id: "ASC" },
+    });
+
+    return users.map((u) => ({
+      label: u.nickname?.trim() || u.username,
+      value: u.id.toString(),
+    }));
+  }
+
+  async importUsersFromBuffer(buffer: Buffer) {
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames?.[0];
+    const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
+    if (!sheet) {
+      throw new BusinessException("导入文件为空");
+    }
+
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
+    const excelResult = {
+      code: ErrorCode.SUCCESS.code,
+      validCount: 0,
+      invalidCount: 0,
+      messageList: [] as string[],
+    };
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] || {};
+      const line = i + 2;
+
+      const username = String(row["用户名"] ?? "").trim();
+      const nickname = String(row["昵称"] ?? "").trim();
+      const genderLabel = String(row["性别"] ?? "").trim();
+      const mobile = String(row["手机号码"] ?? "").trim();
+      const email = String(row["邮箱"] ?? "").trim();
+      const roleCodesRaw = String(row["角色"] ?? "").trim();
+      const deptCode = String(row["部门"] ?? "").trim();
+
+      if (!username || !nickname) {
+        excelResult.invalidCount++;
+        excelResult.messageList.push(`第${line}行：用户名或昵称不能为空`);
+        continue;
+      }
+
+      const exist = await this.userRepository.findOne({
+        where: { username, isDeleted: 0 },
+        select: ["id"],
+      });
+      if (exist) {
+        excelResult.invalidCount++;
+        excelResult.messageList.push(`第${line}行：用户名已存在`);
+        continue;
+      }
+
+      const roleCodes = roleCodesRaw
+        ? roleCodesRaw
+            .split(/[,，]/)
+            .map((c) => c.trim())
+            .filter(Boolean)
+        : [];
+
+      const roleIds = await this.roleService.findRoleIdsByCodes(roleCodes);
+      if (!roleIds.length) {
+        excelResult.invalidCount++;
+        excelResult.messageList.push(`第${line}行：角色不存在或为空`);
+        continue;
+      }
+
+      let deptId: number | undefined;
+      if (deptCode) {
+        const dept = await this.deptService.findByCode(deptCode);
+        if (!dept) {
+          excelResult.invalidCount++;
+          excelResult.messageList.push(`第${line}行：部门不存在`);
+          continue;
+        }
+        deptId = dept.id;
+      }
+
+      const gender = (() => {
+        if (!genderLabel) return 0;
+        if (genderLabel === "男" || genderLabel === "1") return 1;
+        if (genderLabel === "女" || genderLabel === "2") return 2;
+        return 0;
+      })();
+
+      const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+      const user = this.userRepository.create({
+        username,
+        nickname,
+        gender,
+        mobile: mobile || null,
+        email: email || null,
+        deptId: deptId as any,
+        status: 1,
+        password: hashedPassword,
+        isDeleted: 0,
+        createTime: new Date(),
+      });
+
+      const saved = await this.userRepository.save(user);
+      await this.userRoleRepository.save(roleIds.map((rid) => ({ userId: saved.id, roleId: rid })));
+      excelResult.validCount++;
+    }
+
+    return excelResult;
+  }
+
   /**
    * 失效指定用户的所有会话（对齐 Java 的 invalidateUserSessions）
    * - JWT 模式：递增用户安全版本号 auth:user:security_version:{userId}
@@ -379,13 +615,15 @@ export class UserService {
       throw new BusinessException("请选择角色");
     }
 
-    // 校验用户是否存在，排除自己后还存在相同的用户名
-    const existingUser = await this.userRepository.findOne({
-      where: { username, id: Number(userId), isDeleted: 0 },
-    });
-
-    if (existingUser && existingUser.id !== userId) {
-      throw new BusinessException("用户名已存在");
+    // 检查用户名是否已存在（排除当前用户）
+    if (username) {
+      const existingUser = await this.userRepository.findOne({
+        where: { username, isDeleted: 0 },
+        select: ["id"],
+      });
+      if (existingUser && existingUser.id !== Number(userId)) {
+        throw new BusinessException("用户名已存在");
+      }
     }
 
     // 更新用户信息

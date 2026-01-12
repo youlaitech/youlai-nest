@@ -2,9 +2,15 @@
   "name": "youlai-nest",
   "version": "1.0.0",
   "description": "",
-  "author": "",
+  "author": "youlai",
   "private": true,
   "license": "MIT",
+  "packageManager": "pnpm@9.15.2",
+  "engines": {
+    "node": ">=20.17.0",
+    "pnpm": ">=9.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "start:dev": "nest start",
     "start:prod": "node dist/main",
@@ -63,6 +69,7 @@
     "velocityjs": "^2.0.6",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",
+    "xlsx": "^0.18.5",
     "xmcommon": "^1.1.0"
   },
   "devDependencies": {
