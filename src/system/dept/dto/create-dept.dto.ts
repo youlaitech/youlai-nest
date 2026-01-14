@@ -11,9 +11,11 @@ export class CreateDeptDto {
   code: string; // 部门编号
 
   @IsOptional()
-  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
-  @IsNumber()
-  parentId?: number; // 父节点id
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  parentId?: string; // 父节点id
 
   @IsOptional()
   @IsString()
@@ -31,12 +33,18 @@ export class CreateDeptDto {
   status?: number; // 状态 (1-正常 0-禁用)
 
   @IsOptional()
-  @IsNumber()
-  createBy?: number; // 创建人ID
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  createBy?: string; // 创建人ID
 
   @IsOptional()
-  @IsNumber()
-  updateBy?: number; // 修改人ID
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  updateBy?: string; // 修改人ID
 
   createTime?: Date; // 创建时间
 }

@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 @Entity("sys_log")
 export class SysLog {
   @PrimaryGeneratedColumn({ type: "bigint" })
-  id: number;
+  id: string;
 
   @Column({ type: "varchar", length: 50, comment: "日志模块" })
   module: string;
@@ -42,7 +42,7 @@ export class SysLog {
   city: string | null;
 
   @Column({ name: "execution_time", type: "bigint", nullable: true, comment: "执行时间(ms)" })
-  executionTime: number | null;
+  executionTime: string | null;
 
   @Column({ type: "varchar", length: 100, nullable: true, comment: "浏览器" })
   browser: string | null;
@@ -60,7 +60,7 @@ export class SysLog {
   os: string | null;
 
   @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
-  createBy: number | null;
+  createBy: string | null;
 
   @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date | null;

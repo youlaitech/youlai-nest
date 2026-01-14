@@ -2,11 +2,11 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("sys_menu")
 export class SysMenu {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
 
-  @Column({ name: "parent_id", comment: "父菜单ID" })
-  parentId: number;
+  @Column({ name: "parent_id", type: "bigint", comment: "父菜单ID" })
+  parentId: string;
 
   @Column({ name: "tree_path", length: 255, nullable: true, comment: "父节点ID路径" })
   treePath: string;

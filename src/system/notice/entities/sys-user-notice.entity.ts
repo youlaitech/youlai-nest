@@ -2,14 +2,14 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("sys_user_notice")
 export class SysUserNotice {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
 
-  @Column({ name: "notice_id", comment: "公共通知id" })
-  noticeId: number;
+  @Column({ name: "notice_id", type: "bigint", comment: "公共通知id" })
+  noticeId: string;
 
-  @Column({ name: "user_id", comment: "用户id" })
-  userId: number;
+  @Column({ name: "user_id", type: "bigint", comment: "用户id" })
+  userId: string;
 
   @Column({ name: "is_read", type: "tinyint", default: 0, comment: "读取状态（0: 未读, 1: 已读）" })
   isRead: number;

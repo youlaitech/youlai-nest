@@ -22,10 +22,8 @@ export class RoleService {
     private readonly menuService: MenuService
   ) {}
 
-  async findRoleIdsByCodes(roleCodes: string[]): Promise<number[]> {
-    const codes = (roleCodes || [])
-      .map((c) => (c ?? "").trim())
-      .filter(Boolean);
+  async findRoleIdsByCodes(roleCodes: string[]): Promise<string[]> {
+    const codes = (roleCodes || []).map((c) => (c ?? "").trim()).filter(Boolean);
     if (!codes.length) return [];
 
     const roles = await this.roleRepository.find({
@@ -36,8 +34,10 @@ export class RoleService {
     return roles.map((r) => r.id);
   }
 
-  async saveRole(roleForm: Partial<CreateRoleDto> & Partial<UpdateRoleDto> & { id?: number }) {
-    const roleId = roleForm.id ? Number(roleForm.id) : undefined;
+  async saveRole(
+    roleForm: Partial<CreateRoleDto> & Partial<UpdateRoleDto> & { id?: string | number }
+  ) {
+    const roleId = roleForm.id == null ? undefined : roleForm.id.toString();
 
     let oldRole: SysRole | null = null;
     if (roleId) {
@@ -92,7 +92,7 @@ export class RoleService {
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
     // 系统内置角色不允许在业务列表里维护（避免误操作）
-    const reservedCodes = ["ROOT", "ADMIN"];
+    const reservedCodes = ["ROOT"];
     const queryBuilder = this.roleRepository.createQueryBuilder("role");
     queryBuilder.where("role.isDeleted = :isDeleted", { isDeleted: 0 });
     // 排除系统内置角色（例如：超级管理员/系统管理员）不在列表中展示
@@ -129,19 +129,20 @@ export class RoleService {
   /**
    * 根据角色查询菜单
    */
-  async getMenuIdsByRoleIds(roleIds: number[]): Promise<number[]> {
+  async getMenuIdsByRoleIds(roleIds: (string | number)[]): Promise<string[]> {
     if (!roleIds?.length) return [];
+    const ids = roleIds.map((id) => id.toString());
 
     const roleMenus = await this.roleMenuRepository
       .createQueryBuilder("roleMenu")
-      .where("roleMenu.roleId IN (:...roleIds)", { roleIds })
+      .where("roleMenu.roleId IN (:...roleIds)", { roleIds: ids })
       .getMany();
 
     return [...new Set(roleMenus.map((rm) => rm.menuId))];
   }
 
-  async getRoleMenuIds(roleId: number): Promise<number[]> {
-    return await this.getMenuIdsByRoleIds([Number(roleId)]);
+  async getRoleMenuIds(roleId: string | number): Promise<string[]> {
+    return await this.getMenuIdsByRoleIds([roleId.toString()]);
   }
 
   /**
@@ -183,7 +184,7 @@ export class RoleService {
    * 角色下拉列表
    */
   async getRoleOptions() {
-    const reservedCodes = ["ROOT", "ADMIN"];
+    const reservedCodes = ["ROOT"];
     const roles = await this.roleRepository
       .createQueryBuilder("role")
       .where("role.isDeleted = :isDeleted", { isDeleted: 0 })
@@ -218,22 +219,23 @@ export class RoleService {
   /**
    * 根据 ID 查询角色
    */
-  async getRoleForm(id: number) {
+  async getRoleForm(id: string | number) {
     return await this.roleRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: id.toString(), isDeleted: 0 },
     });
   }
 
   /**
    * 更新角色
    */
-  async update(id: number, updateRoleDto: UpdateRoleDto) {
-    return await this.roleRepository.update(id, updateRoleDto);
+  async update(id: string | number, updateRoleDto: UpdateRoleDto) {
+    return await this.roleRepository.update(id.toString(), updateRoleDto);
   }
 
-  async updateRoleStatus(roleId: number, status: number): Promise<boolean> {
+  async updateRoleStatus(roleId: string | number, status: number): Promise<boolean> {
+    const roleIdStr = roleId.toString();
     const role = await this.roleRepository.findOne({
-      where: { id: roleId, isDeleted: 0 },
+      where: { id: roleIdStr, isDeleted: 0 },
       select: ["id"],
     });
 
@@ -241,21 +243,22 @@ export class RoleService {
       throw new BusinessException("角色不存在");
     }
 
-    const result = await this.roleRepository.update(roleId, { status: Number(status) });
+    const result = await this.roleRepository.update(roleIdStr, { status: Number(status) });
     return (result.affected ?? 0) > 0;
   }
 
   /**
    * 更新角色菜单
    */
-  async updateMenus(roleId: number, menuIds: number[]) {
+  async updateMenus(roleId: string | number, menuIds: (string | number)[]) {
+    const roleIdStr = roleId.toString();
     // 先删除原有的关联
-    await this.roleMenuRepository.delete({ roleId });
+    await this.roleMenuRepository.delete({ roleId: roleIdStr });
 
     // 直接重建关联表（sys_role_menu）
     const roleMenus = menuIds.map((menuId) => ({
-      roleId,
-      menuId,
+      roleId: roleIdStr,
+      menuId: menuId.toString(),
     }));
 
     return await this.roleMenuRepository.save(roleMenus);
@@ -264,8 +267,8 @@ export class RoleService {
   /**
    * 删除角色
    */
-  async remove(id: number) {
-    return await this.roleRepository.update(id, { isDeleted: 1 });
+  async remove(id: string | number) {
+    return await this.roleRepository.update(id.toString(), { isDeleted: 1 });
   }
 
   async deleteRoles(ids: string) {
@@ -277,7 +280,7 @@ export class RoleService {
       .split(",")
       .map((v) => v.trim())
       .filter(Boolean)
-      .map((v) => Number(v));
+      .map((v) => v);
 
     for (const roleId of roleIds) {
       const role = await this.roleRepository.findOne({ where: { id: roleId, isDeleted: 0 } });
@@ -298,9 +301,10 @@ export class RoleService {
   /**
    * 查询角色信息
    */
-  async findRolesByIds(roleIds: number[]): Promise<SysRole[]> {
+  async findRolesByIds(roleIds: (string | number)[]): Promise<SysRole[]> {
+    const ids = roleIds.map((id) => id.toString());
     return await this.roleRepository.find({
-      where: { id: In(roleIds), isDeleted: 0 },
+      where: { id: In(ids), isDeleted: 0 },
       select: ["code", "dataScope"],
     });
   }

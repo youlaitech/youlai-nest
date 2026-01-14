@@ -2,8 +2,8 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("sys_dict")
 export class SysDict {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
 
   @Column({ name: "dict_code", length: 50, nullable: true, comment: "类型编码" })
   dictCode: string;
@@ -20,14 +20,14 @@ export class SysDict {
   @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;
 
-  @Column({ name: "create_by", nullable: true, comment: "创建人ID" })
-  createBy: number;
+  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
+  createBy?: string | null;
 
   @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;
 
-  @Column({ name: "update_by", nullable: true, comment: "修改人ID" })
-  updateBy: number;
+  @Column({ name: "update_by", type: "bigint", nullable: true, comment: "修改人ID" })
+  updateBy?: string | null;
 
   @Column({
     name: "is_deleted",

@@ -22,9 +22,10 @@ export class MenuService {
     });
   }
 
-  async find(menuIds: number[]) {
+  async find(menuIds: (number | string)[]) {
+    const ids = menuIds.map((id) => id.toString());
     return await this.menuRepository.find({
-      where: { id: In(menuIds) },
+      where: { id: In(ids) },
       order: { sort: "ASC" },
     });
   }
@@ -45,7 +46,7 @@ export class MenuService {
 
   async findButtons(menuIds: string[]) {
     const permslist = await this.menuRepository.find({
-      where: { id: In(menuIds.map(Number)), type: "B" },
+      where: { id: In(menuIds.map((id) => id.toString())), type: "B" },
       order: { sort: "ASC" },
     });
     return permslist.map((item) => item.perm).filter(Boolean);
@@ -58,7 +59,7 @@ export class MenuService {
     if (!menuIds?.length) return [];
 
     const menus = await this.menuRepository.find({
-      where: { id: In(menuIds.map(Number)), type: "B" },
+      where: { id: In(menuIds.map((id) => id.toString())), type: "B" },
       select: ["perm"],
     });
 
@@ -82,14 +83,14 @@ export class MenuService {
     }
 
     // 其他用户返回其角色对应的菜单
-    const menuIds = await this.userService.getUserMenuIds(Number(userId));
+    const menuIds = await this.userService.getUserMenuIds(userId);
     if (!menuIds || menuIds.length === 0) {
       return [];
     }
 
     // 同上：保持路由完整，避免“能访问但未注册路由”的问题
     const menuList = await this.menuRepository.find({
-      where: { id: In(menuIds), type: In(["C", "M"]) },
+      where: { id: In(menuIds.map((id) => id.toString())), type: In(["C", "M"]) },
       order: { sort: "ASC" },
     });
     return this.buildRoutes(menuList);
@@ -128,7 +129,7 @@ export class MenuService {
   async create(createMenuDto: CreateMenuDto) {
     const menu = this.menuRepository.create({
       ...createMenuDto,
-      parentId: createMenuDto.parentId ? Number(createMenuDto.parentId) : 0,
+      parentId: createMenuDto.parentId ? createMenuDto.parentId.toString() : "0",
       createTime: new Date(),
     });
     await this.menuRepository.save(menu);
@@ -138,42 +139,43 @@ export class MenuService {
   /**
    * 获取菜单表单
    */
-  async getMenuForm(id: number) {
+  async getMenuForm(id: string | number) {
     return await this.menuRepository.findOne({
-      where: { id },
+      where: { id: id.toString() },
     });
   }
 
   /**
    * 更新菜单
    */
-  async update(id: number, updateMenuDto: UpdateMenuDto) {
-    const menu = await this.menuRepository.findOne({ where: { id } });
+  async update(id: string | number, updateMenuDto: UpdateMenuDto) {
+    const idStr = id.toString();
+    const menu = await this.menuRepository.findOne({ where: { id: idStr } });
     if (!menu) {
       return null;
     }
 
     const updatedMenu = {
       ...updateMenuDto,
-      parentId: updateMenuDto.parentId ? Number(updateMenuDto.parentId) : 0,
+      parentId: updateMenuDto.parentId ? updateMenuDto.parentId.toString() : "0",
       updateTime: new Date(),
     };
 
-    return await this.menuRepository.update(id, updatedMenu);
+    return await this.menuRepository.update(idStr, updatedMenu as any);
   }
 
   /**
    * 删除菜单
    */
-  async deleteMenu(id: number) {
-    return await this.menuRepository.delete(id);
+  async deleteMenu(id: string | number) {
+    return await this.menuRepository.delete(id.toString());
   }
 
   /**
    * 菜单树形数据处理
    */
   private buildMenuTree(menuList: SysMenu[]): any[] {
-    const map: { [key: number]: any } = {};
+    const map: { [key: string]: any } = {};
     const roots: any[] = [];
 
     menuList.forEach((menu) => {
@@ -184,7 +186,7 @@ export class MenuService {
     });
 
     menuList.forEach((menu) => {
-      if (!menu.parentId || menu.parentId === 0) {
+      if (!menu.parentId || menu.parentId === "0") {
         roots.push(map[menu.id]);
       } else {
         if (map[menu.parentId]) {
@@ -200,19 +202,19 @@ export class MenuService {
    * 构建菜单选项树
    */
   private buildOptionsTree(menus: SysMenu[]): any[] {
-    const map: { [key: number]: any } = {};
+    const map: { [key: string]: any } = {};
     const roots: any[] = [];
 
     menus.forEach((menu) => {
       map[menu.id] = {
-        value: menu.id.toString(),
+        value: menu.id,
         label: menu.name,
         children: [],
       };
     });
 
     menus.forEach((menu) => {
-      if (!menu.parentId || menu.parentId === 0) {
+      if (!menu.parentId || menu.parentId === "0") {
         roots.push(map[menu.id]);
       } else {
         if (map[menu.parentId]) {
@@ -227,7 +229,7 @@ export class MenuService {
   /**
    * 构建前端路由
    */
-  private buildRoutes(menus: SysMenu[], parentId: number = 0): Route[] {
+  private buildRoutes(menus: SysMenu[], parentId: string = "0"): Route[] {
     const routes: Route[] = [];
 
     menus.forEach((menu) => {

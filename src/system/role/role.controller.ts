@@ -31,20 +31,20 @@ export class RoleController {
 
   @ApiOperation({ summary: "角色表单数据" })
   @Get(":id/form")
-  async getRoleForm(@Param("id") id: number) {
+  async getRoleForm(@Param("id") id: string) {
     return await this.rolesService.getRoleForm(id);
   }
 
   @ApiOperation({ summary: "修改角色" })
   @Put(":id")
-  async updateRole(@Param("id") id: number, @Body() updateRoleDto: UpdateRoleDto) {
-    await this.rolesService.saveRole({ id: Number(id), ...updateRoleDto });
+  async updateRole(@Param("id") id: string, @Body() updateRoleDto: UpdateRoleDto) {
+    await this.rolesService.saveRole({ ...updateRoleDto, id });
     return { success: true };
   }
 
   @ApiOperation({ summary: "修改角色状态" })
   @Put(":roleId/status")
-  async updateRoleStatus(@Param("roleId") roleId: number, @Query("status") status: number) {
+  async updateRoleStatus(@Param("roleId") roleId: string, @Query("status") status: number) {
     const success = await this.rolesService.updateRoleStatus(roleId, status);
     return { success };
   }
@@ -58,13 +58,13 @@ export class RoleController {
 
   @ApiOperation({ summary: "获取角色权限" })
   @Get(":id/menuIds")
-  async findMenuIds(@Param("id") roleId: number) {
+  async findMenuIds(@Param("id") roleId: string) {
     return await this.rolesService.getRoleMenuIds(roleId);
   }
 
   @ApiOperation({ summary: "角色分配权限" })
   @Put(":id/menus")
-  async updateMenus(@Param("id") id: number, @Body() menuIds: number[]): Promise<any> {
+  async updateMenus(@Param("id") id: string, @Body() menuIds: (string | number)[]): Promise<any> {
     return await this.rolesService.updateMenus(id, menuIds);
   }
 }

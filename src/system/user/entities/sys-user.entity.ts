@@ -3,8 +3,8 @@ import { SysRole } from "../../role/entities/sys-role.entity";
 
 @Entity("sys_user")
 export class SysUser {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
 
   @Column({ length: 64, comment: "用户名" })
   username: string;
@@ -18,8 +18,8 @@ export class SysUser {
   @Column({ length: 100, comment: "密码" })
   password: string;
 
-  @Column({ name: "dept_id", nullable: true, comment: "部门ID" })
-  deptId: number;
+  @Column({ name: "dept_id", type: "bigint", nullable: true, comment: "部门ID" })
+  deptId?: string | null;
 
   @Column({ length: 255, nullable: true, comment: "用户头像" })
   avatar: string;
@@ -36,14 +36,14 @@ export class SysUser {
   @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;
 
-  @Column({ name: "create_by", nullable: true, comment: "创建人ID" })
-  createBy: number;
+  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
+  createBy?: string | null;
 
   @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;
 
-  @Column({ name: "update_by", nullable: true, comment: "修改人ID" })
-  updateBy: number;
+  @Column({ name: "update_by", type: "bigint", nullable: true, comment: "修改人ID" })
+  updateBy?: string | null;
 
   @Column({
     name: "is_deleted",

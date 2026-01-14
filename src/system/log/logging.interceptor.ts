@@ -45,7 +45,7 @@ export class LoggingInterceptor implements NestInterceptor {
           log.ip = realIp || req.ip || req.connection?.remoteAddress || null;
           log.province = null;
           log.city = null;
-          log.executionTime = duration;
+          log.executionTime = duration.toString();
           // 防止超出 sys_log.browser 的字段长度（varchar(100)）
           log.browser = userAgent ? userAgent.slice(0, 100) : null;
           log.browserVersion = null;

@@ -22,13 +22,13 @@ export class ConfigController {
     @CurrentUser("userId") currentUserId: number,
     @Body() formData: CreateConfigDto
   ) {
-    await this.configService.saveConfig({ ...formData, createBy: currentUserId });
+    await this.configService.saveConfig({ ...formData, createBy: currentUserId.toString() });
     return { success: true };
   }
 
   @ApiOperation({ summary: "获取系统配置表单数据" })
   @Get(":id/form")
-  async getConfigForm(@Param("id") id: number) {
+  async getConfigForm(@Param("id") id: string) {
     return await this.configService.getConfigFormData(id);
   }
 
@@ -42,17 +42,17 @@ export class ConfigController {
   @ApiOperation({ summary: "修改系统配置" })
   @Put(":id")
   async updateConfig(
-    @Param("id") id: number,
+    @Param("id") id: string,
     @CurrentUser("userId") currentUserId: number,
     @Body() formData: UpdateConfigDto
   ) {
-    await this.configService.updateConfig(id, { ...formData, updateBy: currentUserId });
+    await this.configService.updateConfig(id, { ...formData, updateBy: currentUserId.toString() });
     return { success: true };
   }
 
   @ApiOperation({ summary: "删除系统配置" })
   @Delete(":id")
-  async deleteConfig(@Param("id") id: number) {
+  async deleteConfig(@Param("id") id: string) {
     await this.configService.deleteConfig(id);
     return { success: true };
   }

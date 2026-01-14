@@ -2,8 +2,8 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("sys_role")
 export class SysRole {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
 
   @Column({ length: 64, comment: "角色名称" })
   name: string;
@@ -24,14 +24,14 @@ export class SysRole {
   })
   dataScope: number;
 
-  @Column({ name: "create_by", nullable: true, comment: "创建人 ID" })
-  createBy: number;
+  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人 ID" })
+  createBy?: string | null;
 
   @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;
 
-  @Column({ name: "update_by", nullable: true, comment: "更新人ID" })
-  updateBy: number;
+  @Column({ name: "update_by", type: "bigint", nullable: true, comment: "更新人ID" })
+  updateBy?: string | null;
 
   @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;

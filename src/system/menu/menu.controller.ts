@@ -42,19 +42,19 @@ export class MenuController {
   @ApiOperation({ summary: "获取菜单表单数据" })
   @Get(":id/form")
   async getMenuForm(@Param("id") id: string): Promise<any> {
-    return await this.menuService.getMenuForm(Number(id));
+    return await this.menuService.getMenuForm(id);
   }
 
   @ApiOperation({ summary: "修改菜单" })
   @Put(":id")
   updateMenu(@Param("id") id: string, @Body() updateMenuDto: UpdateMenuDto): any {
-    return this.menuService.update(Number(id), updateMenuDto);
+    return this.menuService.update(id, updateMenuDto);
   }
 
   @ApiOperation({ summary: "修改菜单显示状态" })
   @Patch(":id")
   async update(@Param("id") id: string, @Query("visible") visible: number) {
-    return await this.menuService.update(Number(id), {
+    return await this.menuService.update(id, {
       visible: visible,
     });
   }
@@ -62,6 +62,6 @@ export class MenuController {
   @ApiOperation({ summary: "删除菜单" })
   @Delete(":id")
   deleteMenu(@Param("id") id: string) {
-    return this.menuService.deleteMenu(Number(id));
+    return this.menuService.deleteMenu(id);
   }
 }

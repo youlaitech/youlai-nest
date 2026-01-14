@@ -93,9 +93,9 @@ export class DictService {
   /**
    * 获取字典表单
    */
-  async getDictForm(id: number) {
+  async getDictForm(id: string | number) {
     const dict = await this.dictRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: id.toString(), isDeleted: 0 },
     });
 
     if (!dict) {
@@ -113,34 +113,39 @@ export class DictService {
   /**
    * 更新字典
    */
-  async updateDict(id: number, updateDictDto: UpdateDictDto) {
+  async updateDict(id: string | number, updateDictDto: UpdateDictDto) {
+    const idStr = id.toString();
     const dict = await this.dictRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: idStr, isDeleted: 0 },
     });
 
     if (!dict) {
       throw new BusinessException("字典不存在");
     }
 
-    await this.dictRepository.update(id, updateDictDto);
+    await this.dictRepository.update(idStr, {
+      ...(updateDictDto as any),
+      updateBy: updateDictDto.updateBy == null ? undefined : updateDictDto.updateBy.toString(),
+    });
     return true;
   }
 
   /**
    * 删除字典
    */
-  async deleteDict(id: number, updateBy: number) {
+  async deleteDict(id: string | number, updateBy: string | number) {
+    const idStr = id.toString();
     const dict = await this.dictRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: idStr, isDeleted: 0 },
     });
 
     if (!dict) {
       throw new BusinessException("字典不存在");
     }
 
-    await this.dictRepository.update(id, {
+    await this.dictRepository.update(idStr, {
       isDeleted: 1,
-      updateBy,
+      updateBy: updateBy.toString() as any,
       updateTime: new Date(),
     });
 
@@ -259,9 +264,9 @@ export class DictService {
   /**
    * 字典项表单数据
    */
-  async getDictItemForm(id: number) {
+  async getDictItemForm(id: string | number) {
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id },
+      where: { id: id.toString() },
     });
 
     if (!dictItem) {
@@ -281,9 +286,10 @@ export class DictService {
   /**
    * 更新字典项
    */
-  async updateDictItem(id: number, updateData: UpdateDictItemDto) {
+  async updateDictItem(id: string | number, updateData: UpdateDictItemDto) {
+    const idStr = id.toString();
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id },
+      where: { id: idStr },
     });
 
     if (!dictItem) {
@@ -296,7 +302,7 @@ export class DictService {
         where: {
           dictCode: dictItem.dictCode,
           value: updateData.value,
-          id: Not(id),
+          id: Not(idStr),
         },
       });
 
@@ -305,23 +311,26 @@ export class DictService {
       }
     }
 
-    await this.dictItemRepository.update(id, updateData);
+    await this.dictItemRepository.update(idStr, {
+      ...(updateData as any),
+      updateBy: updateData.updateBy == null ? undefined : updateData.updateBy.toString(),
+    });
     return true;
   }
 
   /**
    * 删除字典项
    */
-  async deleteDictItems(id: number) {
+  async deleteDictItems(id: string | number) {
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id },
+      where: { id: id.toString() },
     });
 
     if (!dictItem) {
       throw new BusinessException("字典项不存在");
     }
 
-    await this.dictItemRepository.delete(id);
+    await this.dictItemRepository.delete(id.toString());
     return true;
   }
 }

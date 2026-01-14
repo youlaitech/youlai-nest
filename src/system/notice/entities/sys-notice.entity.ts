@@ -2,8 +2,8 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("sys_notice")
 export class SysNotice {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
 
   @Column({ length: 50, nullable: true, comment: "通知标题" })
   title: string;
@@ -28,8 +28,8 @@ export class SysNotice {
   })
   targetUserIds: string;
 
-  @Column({ name: "publisher_id", nullable: true, comment: "发布人ID" })
-  publisherId: number;
+  @Column({ name: "publisher_id", type: "bigint", nullable: true, comment: "发布人ID" })
+  publisherId?: string | null;
 
   @Column({
     name: "publish_status",
@@ -45,14 +45,14 @@ export class SysNotice {
   @Column({ name: "revoke_time", type: "datetime", nullable: true, comment: "撤回时间" })
   revokeTime: Date;
 
-  @Column({ name: "create_by", comment: "创建人ID" })
-  createBy: number;
+  @Column({ name: "create_by", type: "bigint", comment: "创建人ID" })
+  createBy: string;
 
   @Column({ name: "create_time", type: "datetime", comment: "创建时间" })
   createTime: Date;
 
-  @Column({ name: "update_by", nullable: true, comment: "更新人ID" })
-  updateBy: number;
+  @Column({ name: "update_by", type: "bigint", nullable: true, comment: "更新人ID" })
+  updateBy?: string | null;
 
   @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;

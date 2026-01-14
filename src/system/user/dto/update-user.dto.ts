@@ -5,8 +5,11 @@ import { Transform } from "class-transformer";
 export class UpdateUserDto {
   @ApiProperty({ description: "ID" })
   @IsOptional()
-  @IsNumber()
-  id?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  id?: string;
 
   @ApiProperty({ description: "用户名" })
   @IsOptional()
@@ -31,9 +34,11 @@ export class UpdateUserDto {
 
   @ApiProperty({ description: "部门ID" })
   @IsOptional()
-  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
-  @IsNumber()
-  deptId?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  deptId?: string;
 
   @ApiProperty({ description: "头像" })
   @IsOptional()
@@ -59,7 +64,13 @@ export class UpdateUserDto {
   @ApiProperty({ description: "角色ID集合" })
   @IsOptional()
   @IsArray()
-  roleIds?: number[];
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (Array.isArray(value)) return value.map((v) => String(v));
+    return [String(value)];
+  })
+  @IsString({ each: true })
+  roleIds?: string[];
 
   @ApiProperty({ description: "角色列表" })
   @IsOptional()
@@ -72,8 +83,11 @@ export class UpdateUserDto {
 
   @ApiProperty({ description: "创建人ID" })
   @IsOptional()
-  @IsNumber()
-  createBy?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  createBy?: string;
 
   @ApiProperty({ description: "更新时间" })
   @IsOptional()
@@ -81,8 +95,11 @@ export class UpdateUserDto {
 
   @ApiProperty({ description: "更新人ID" })
   @IsOptional()
-  @IsNumber()
-  updateBy?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  updateBy?: string;
 
   @ApiProperty({ description: "是否删除" })
   @IsOptional()

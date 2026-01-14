@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 
 export class CreateConfigDto {
   @ApiProperty({ description: "配置名称", required: true })
@@ -26,7 +27,12 @@ export class CreateConfigDto {
   @MaxLength(500, { message: "备注长度不能超过500个字符" })
   remark?: string;
 
-  createBy?: number;
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  createBy?: string;
 }
 
 export class UpdateConfigDto {
@@ -54,5 +60,10 @@ export class UpdateConfigDto {
   @MaxLength(500, { message: "备注长度不能超过500个字符" })
   remark?: string;
 
-  updateBy?: number;
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  updateBy?: string;
 }

@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsString, IsNumber } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class UpdateDictDto {
   @ApiProperty({ description: "字典编码" })
@@ -23,7 +24,10 @@ export class UpdateDictDto {
   remark?: string;
 
   @ApiProperty({ description: "更新人ID" })
-  @IsNumber()
   @IsOptional()
-  updateBy?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  updateBy?: string;
 }

@@ -100,5 +100,3 @@ export function transformDatesInObject<T>(obj: T, opts?: DateFormatOptions): T {
 
   return obj;
 }
-
-

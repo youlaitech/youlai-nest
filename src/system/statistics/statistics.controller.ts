@@ -9,10 +9,7 @@ export class StatisticsController {
 
   @ApiOperation({ summary: "访问趋势统计" })
   @Get("visits/trend")
-  async getVisitTrend(
-    @Query("startDate") startDate: string,
-    @Query("endDate") endDate: string
-  ) {
+  async getVisitTrend(@Query("startDate") startDate: string, @Query("endDate") endDate: string) {
     return await this.logService.getVisitTrend(startDate, endDate);
   }
 

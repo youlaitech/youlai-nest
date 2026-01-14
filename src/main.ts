@@ -1,13 +1,24 @@
 import { NestFactory, Reflector } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { NestInterceptor, ValidationPipe } from "@nestjs/common";
+import { NestInterceptor, ValidationPipe, HttpStatus } from "@nestjs/common";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
 import { ConfigService } from "@nestjs/config";
 import * as session from "express-session";
-import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import type { ValidationError } from "class-validator";
+import { BusinessException } from "./common/exceptions/business.exception";
+import { ErrorCode } from "./common/enums/error-code.enum";
 
 async function bootstrap() {
+  // Ensure BigInt is always JSON-serializable (and matches Java Long/BigInteger -> string strategy)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof (BigInt.prototype as any).toJSON !== "function") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (BigInt.prototype as any).toJSON = function () {
+      return this.toString();
+    };
+  }
+
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
@@ -21,9 +32,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 全局过滤器
-  app.useGlobalFilters(new HttpExceptionFilter());
-
   // 全局拦截器
   // Pass ConfigService to ResponseInterceptor so date formatting is configurable
   app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector), configService));
@@ -32,15 +40,42 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
       whitelist: true,
       forbidNonWhitelisted: false,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const collect = (es: ValidationError[]): string[] => {
+          const out: string[] = [];
+          for (const e of es) {
+            if (e.constraints) {
+              out.push(...Object.values(e.constraints));
+            }
+            if (e.children && e.children.length > 0) {
+              out.push(...collect(e.children));
+            }
+          }
+          return out;
+        };
+
+        const messages = collect(errors)
+          .map((m) => String(m).trim())
+          .filter(Boolean);
+        const msg = messages[0] || ErrorCode.USER_REQUEST_PARAMETER_ERROR.msg;
+        return new BusinessException({
+          code: ErrorCode.USER_REQUEST_PARAMETER_ERROR.code,
+          msg,
+          httpStatus: HttpStatus.BAD_REQUEST,
+        });
+      },
     })
   );
 
   // Swagger 配置
   const config = new DocumentBuilder()
-    .setTitle("有来技术")
-    .setDescription("有来技术接口文档")
+    .setTitle("youlai-nest")
+    .setDescription(`youlai 全家桶（Node/Nest）权限管理后台接口文档`)
     .setVersion("1.0")
     .addBearerAuth()
     .build();

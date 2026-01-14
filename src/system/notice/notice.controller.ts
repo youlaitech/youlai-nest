@@ -28,20 +28,20 @@ export class NoticeController {
 
   @ApiOperation({ summary: "获取通知公告表单数据" })
   @Get(":id/form")
-  async getNoticeForm(@Param("id") id: number) {
+  async getNoticeForm(@Param("id") id: string) {
     return await this.noticeService.getNoticeFormData(id);
   }
 
   @ApiOperation({ summary: "阅读获取通知公告详情" })
   @Get(":id/detail")
-  async getNoticeDetail(@Param("id") id: number) {
+  async getNoticeDetail(@Param("id") id: string) {
     return await this.noticeService.getNoticeDetail(id);
   }
 
   @ApiOperation({ summary: "修改通知公告" })
   @Put(":id")
   async updateNotice(
-    @Param("id") id: number,
+    @Param("id") id: string,
     @CurrentUser("userId") currentUserId: number,
     @Body() formData: UpdateNoticeDto
   ) {
@@ -51,14 +51,14 @@ export class NoticeController {
 
   @ApiOperation({ summary: "发布通知公告" })
   @Put(":id/publish")
-  async publishNotice(@Param("id") id: number, @CurrentUser("userId") currentUserId: number) {
+  async publishNotice(@Param("id") id: string, @CurrentUser("userId") currentUserId: number) {
     await this.noticeService.publishNotice(id, currentUserId);
     return { success: true };
   }
 
   @ApiOperation({ summary: "撤回通知公告" })
   @Put(":id/revoke")
-  async revokeNotice(@Param("id") id: number) {
+  async revokeNotice(@Param("id") id: string) {
     await this.noticeService.revokeNotice(id);
     return { success: true };
   }
@@ -66,7 +66,10 @@ export class NoticeController {
   @ApiOperation({ summary: "删除通知公告" })
   @Delete(":ids")
   async deleteNotices(@Param("ids") ids: string) {
-    const idArray = ids.split(",").map((v) => Number(v));
+    const idArray = ids
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
     await this.noticeService.deleteNotices(idArray);
     return { success: true };
   }

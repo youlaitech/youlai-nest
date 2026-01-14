@@ -24,9 +24,11 @@ export class CreateUserDto {
 
   @ApiProperty({ description: "部门ID", required: false })
   @IsOptional()
-  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
-  @IsNumber()
-  deptId?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  deptId?: string;
 
   @ApiProperty({ description: "部门名称", required: false })
   @IsString()
@@ -60,7 +62,13 @@ export class CreateUserDto {
   @ApiProperty({ description: "角色ID集合", required: false })
   @IsOptional()
   @IsArray()
-  roleIds?: number[];
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (Array.isArray(value)) return value.map((v) => String(v));
+    return [String(value)];
+  })
+  @IsString({ each: true })
+  roleIds?: string[];
 
   @ApiProperty({ description: "密码盐", required: false })
   @IsOptional()
@@ -73,10 +81,16 @@ export class CreateUserDto {
   perms?: string[];
 
   @IsOptional()
-  @IsNumber()
-  createBy?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  createBy?: string;
 
   @IsOptional()
-  @IsNumber()
-  updateBy?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  updateBy?: string;
 }

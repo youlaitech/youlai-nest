@@ -9,7 +9,7 @@ import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
 import { DEFAULT_PASSWORD } from "src/common/constants";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Like, In } from "typeorm";
+import { Repository, Like, In, Not } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { RedisService } from "src/shared/redis/redis.service";
 import { SysUser } from "./entities/sys-user.entity";
@@ -19,6 +19,7 @@ import { UserFormDto } from "./dto/user-form.dto";
 import type { PasswordChangeDto } from "./dto/password-change.dto";
 import type { MobileUpdateDto } from "./dto/mobile-update.dto";
 import type { EmailUpdateDto } from "./dto/email-update.dto";
+import type { UserProfileDto } from "./dto/user-profile.dto";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as XLSX from "xlsx";
 
@@ -43,7 +44,7 @@ export class UserService {
   async getUserPage(
     pageNum: number,
     pageSize: number,
-    deptId?: number,
+    deptId?: string | number,
     keywords?: string,
     status?: number,
     startTime?: string,
@@ -55,6 +56,17 @@ export class UserService {
     const queryBuilder = this.userRepository.createQueryBuilder("user");
     // 统一使用逻辑删除标识过滤
     queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
+    // root 用户（ROOT 角色）不在用户列表中展示
+    queryBuilder.andWhere(
+      `NOT EXISTS (
+        SELECT 1
+        FROM sys_user_role sur
+          INNER JOIN sys_role r ON sur.role_id = r.id
+        WHERE sur.user_id = user.id
+          AND r.code = :rootCode
+      )`,
+      { rootCode: "ROOT" }
+    );
 
     if (keywords) {
       queryBuilder.andWhere(
@@ -63,8 +75,14 @@ export class UserService {
       );
     }
 
-    if (deptId) {
-      queryBuilder.andWhere("user.deptId = :deptId", { deptId });
+    if (
+      deptId !== undefined &&
+      deptId !== null &&
+      deptId !== "" &&
+      deptId !== 0 &&
+      deptId !== "0"
+    ) {
+      queryBuilder.andWhere("user.deptId = :deptId", { deptId: deptId.toString() });
     }
 
     if (status !== undefined && status !== null) {
@@ -83,29 +101,32 @@ export class UserService {
       .take(pageSizeSafe)
       .getManyAndCount();
     // 部门名称单独回填（避免分页查询里做复杂 join，便于后续扩展字段）
-    const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean)));
+    const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean))) as string[];
     const depts = await this.deptService.findByIds(deptIds);
-    const deptMap = new Map<number, string>();
+    const deptMap = new Map<string, string>();
     depts.forEach((d) => deptMap.set(d.id, d.name));
 
-    const data = list.map((u) => ({
-      id: u.id,
-      username: u.username,
-      nickname: u.nickname,
-      gender: u.gender,
-      mobile: u.mobile,
-      status: u.status,
-      email: u.email || "",
-      deptId: u.deptId,
-      deptName: u.deptId ? deptMap.get(u.deptId) || null : null,
-      createTime: u.createTime
-        ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
-            u.createTime.getDate()
-          ).padStart(2, "0")} ${String(u.createTime.getHours()).padStart(2, "0")}:${String(
-            u.createTime.getMinutes()
-          ).padStart(2, "0")}:${String(u.createTime.getSeconds()).padStart(2, "0")}`
-        : null,
-    }));
+    const data = list.map((u) => {
+      const deptIdStr = u.deptId == null ? null : u.deptId.toString();
+      return {
+        id: u.id,
+        username: u.username,
+        nickname: u.nickname,
+        gender: u.gender,
+        mobile: u.mobile,
+        status: u.status,
+        email: u.email || "",
+        deptId: deptIdStr,
+        deptName: deptIdStr ? deptMap.get(deptIdStr) || null : null,
+        createTime: u.createTime
+          ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
+              u.createTime.getDate()
+            ).padStart(2, "0")} ${String(u.createTime.getHours()).padStart(2, "0")}:${String(
+              u.createTime.getMinutes()
+            ).padStart(2, "0")}:${String(u.createTime.getSeconds()).padStart(2, "0")}`
+          : null,
+      };
+    });
 
     return {
       data,
@@ -121,7 +142,7 @@ export class UserService {
    * 列出用于导出的用户数据（不分页）
    */
   async listExportUsers(
-    deptId?: number,
+    deptId?: string | number,
     keywords?: string,
     status?: number,
     startTime?: string,
@@ -129,6 +150,17 @@ export class UserService {
   ) {
     const queryBuilder = this.userRepository.createQueryBuilder("user");
     queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
+    // root 用户（ROOT 角色）不在导出列表中展示
+    queryBuilder.andWhere(
+      `NOT EXISTS (
+        SELECT 1
+        FROM sys_user_role sur
+          INNER JOIN sys_role r ON sur.role_id = r.id
+        WHERE sur.user_id = user.id
+          AND r.code = :rootCode
+      )`,
+      { rootCode: "ROOT" }
+    );
 
     if (keywords) {
       queryBuilder.andWhere(
@@ -137,8 +169,14 @@ export class UserService {
       );
     }
 
-    if (deptId) {
-      queryBuilder.andWhere("user.deptId = :deptId", { deptId });
+    if (
+      deptId !== undefined &&
+      deptId !== null &&
+      deptId !== "" &&
+      deptId !== 0 &&
+      deptId !== "0"
+    ) {
+      queryBuilder.andWhere("user.deptId = :deptId", { deptId: deptId.toString() });
     }
 
     if (status !== undefined && status !== null) {
@@ -154,29 +192,32 @@ export class UserService {
 
     const list = await queryBuilder.orderBy("user.createTime", "DESC").getMany();
 
-    const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean)));
+    const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean))) as string[];
     const depts = await this.deptService.findByIds(deptIds);
-    const deptMap = new Map<number, string>();
+    const deptMap = new Map<string, string>();
     depts.forEach((d) => deptMap.set(d.id, d.name));
 
-    return list.map((u) => ({
-      id: u.id,
-      username: u.username,
-      nickname: u.nickname,
-      gender: u.gender,
-      mobile: u.mobile,
-      status: u.status,
-      email: u.email || "",
-      deptId: u.deptId,
-      deptName: u.deptId ? deptMap.get(u.deptId) || null : null,
-      createTime: u.createTime
-        ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
-            u.createTime.getDate()
-          ).padStart(2, "0")} ${String(u.createTime.getHours()).padStart(2, "0")}:${String(
-            u.createTime.getMinutes()
-          ).padStart(2, "0")}:${String(u.createTime.getSeconds()).padStart(2, "0")}`
-        : null,
-    }));
+    return list.map((u) => {
+      const deptIdStr = u.deptId == null ? null : u.deptId.toString();
+      return {
+        id: u.id,
+        username: u.username,
+        nickname: u.nickname,
+        gender: u.gender,
+        mobile: u.mobile,
+        status: u.status,
+        email: u.email || "",
+        deptId: deptIdStr,
+        deptName: deptIdStr ? deptMap.get(deptIdStr) || null : null,
+        createTime: u.createTime
+          ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
+              u.createTime.getDate()
+            ).padStart(2, "0")} ${String(u.createTime.getHours()).padStart(2, "0")}:${String(
+              u.createTime.getMinutes()
+            ).padStart(2, "0")}:${String(u.createTime.getSeconds()).padStart(2, "0")}`
+          : null,
+      };
+    });
   }
 
   /**
@@ -213,11 +254,14 @@ export class UserService {
    */
   async findMe(currentUserInfo: CurrentUserInfo): Promise<CurrentUserDto> {
     try {
-      const userId = currentUserInfo.userId;
+      const userId = currentUserInfo?.userId;
+      if (!userId) {
+        throw new BusinessException(ErrorCode.ACCESS_TOKEN_INVALID);
+      }
 
       // 1. 获取用户基本信息
       const user = await this.userRepository.findOne({
-        where: { id: Number(userId), isDeleted: 0 },
+        where: { id: userId.toString(), isDeleted: 0 },
         select: ["id", "username", "nickname", "mobile", "email", "avatar"],
       });
 
@@ -227,10 +271,9 @@ export class UserService {
 
       // 2. 获取用户角色
       const userRoles = await this.userRoleRepository.find({
-        where: { userId: Number(userId) },
+        where: { userId: userId.toString() },
       });
 
-      console.log(userRoles, "userRoles");
       if (!userRoles?.length) {
         return {
           userId: user.id.toString(),
@@ -246,9 +289,8 @@ export class UserService {
 
       // 3. 获取角色信息
       const roles = await this.roleService.findRolesByIds(userRoles.map((ur) => ur.roleId));
-      console.log(roles, "roles");
       const roleCodes = roles.map((role) => role.code);
-      console.log(roleCodes, "roleCodes");
+
       // 4. 获取权限列表
       let perms: string[] = [];
       if (roleCodes.includes("ROOT")) {
@@ -270,18 +312,15 @@ export class UserService {
         perms: perms,
       };
     } catch (error) {
-      console.log(error, "error");
+      throw error;
     }
   }
 
   /**
    * 更新当前用户个人信息（个人中心）
    */
-  async updateProfile(
-    currentUserInfo: CurrentUserInfo,
-    data: Partial<CurrentUserDto>
-  ): Promise<boolean> {
-    const userId = Number(currentUserInfo.userId);
+  async updateProfile(currentUserInfo: CurrentUserInfo, data: UserProfileDto): Promise<boolean> {
+    const userId = currentUserInfo.userId?.toString();
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new BusinessException("用户不存在");
@@ -289,16 +328,20 @@ export class UserService {
 
     const updateData: Partial<SysUser> = {
       nickname: data.nickname,
-      mobile: data.mobile,
-      email: data.email,
       avatar: data.avatar,
-      updateTime: new Date(),
+      gender: data.gender,
     };
 
     // remove undefined keys
     Object.keys(updateData).forEach((k) => updateData[k] === undefined && delete updateData[k]);
 
-    const result = await this.userRepository.update(userId, updateData);
+    if (Object.keys(updateData).length === 0) {
+      throw new BusinessException("请至少修改一项");
+    }
+
+    updateData.updateTime = new Date();
+
+    const result = await this.userRepository.update(userId, updateData as any);
     return result.affected > 0;
   }
 
@@ -321,6 +364,9 @@ export class UserService {
 
     const user = this.userRepository.create({
       ...createUserDto,
+      deptId: createUserDto.deptId == null ? null : createUserDto.deptId.toString(),
+      createBy: createUserDto.createBy == null ? null : createUserDto.createBy.toString(),
+      updateBy: createUserDto.updateBy == null ? null : createUserDto.updateBy.toString(),
       password: hashedPassword,
     });
 
@@ -328,35 +374,38 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  async updateUserStatus(userId: number, status: number): Promise<boolean> {
+  async updateUserStatus(userId: string | number, status: number): Promise<boolean> {
     const result = await this.userRepository.update(
-      { id: Number(userId), isDeleted: 0 },
+      { id: userId.toString(), isDeleted: 0 },
       { status: Number(status) }
     );
     return (result.affected ?? 0) > 0;
   }
 
-  async resetUserPassword(userId: number, password: string): Promise<boolean> {
+  async resetUserPassword(userId: string | number, password: string): Promise<boolean> {
     if (!password?.trim()) {
       throw new BusinessException("密码不能为空");
     }
 
     const hashed = await bcrypt.hash(password, 10);
     const result = await this.userRepository.update(
-      { id: Number(userId), isDeleted: 0 },
+      { id: userId.toString(), isDeleted: 0 },
       { password: hashed }
     );
 
     const ok = (result.affected ?? 0) > 0;
     if (ok) {
-      await this.invalidateUserSessions(Number(userId));
+      await this.invalidateUserSessions(userId.toString());
     }
     return ok;
   }
 
-  async changeCurrentUserPassword(userId: number, data: PasswordChangeDto): Promise<boolean> {
+  async changeCurrentUserPassword(
+    userId: string | number,
+    data: PasswordChangeDto
+  ): Promise<boolean> {
     const user = await this.userRepository.findOne({
-      where: { id: Number(userId), isDeleted: 0 },
+      where: { id: userId.toString(), isDeleted: 0 },
       select: ["id", "password"],
     });
 
@@ -396,9 +445,30 @@ export class UserService {
     return true;
   }
 
-  async bindOrChangeMobile(userId: number, data: MobileUpdateDto): Promise<boolean> {
+  async bindOrChangeMobile(userId: string | number, data: MobileUpdateDto): Promise<boolean> {
     const mobile = data.mobile?.trim();
     const code = data.code?.trim();
+    const password = data.password;
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId.toString(), isDeleted: 0 },
+      select: ["id", "password", "mobile"],
+    });
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+    if (!(await bcrypt.compare(password, user.password))) {
+      throw new BusinessException("当前密码错误");
+    }
+
+    const exist = await this.userRepository.findOne({
+      where: { mobile, isDeleted: 0, id: Not(userId.toString()) },
+      select: ["id"],
+    });
+    if (exist) {
+      throw new BusinessException("手机号已被其他账号绑定");
+    }
+
     const redisKey = `captcha:mobile:${mobile}`;
     const cached = await this.redisCacheService.get<string>(redisKey);
 
@@ -411,7 +481,7 @@ export class UserService {
 
     await this.redisCacheService.del(redisKey);
     const result = await this.userRepository.update(
-      { id: Number(userId), isDeleted: 0 },
+      { id: userId.toString(), isDeleted: 0 },
       { mobile }
     );
     return (result.affected ?? 0) > 0;
@@ -426,9 +496,30 @@ export class UserService {
     await this.redisCacheService.set(redisKey, code, 60 * 5);
   }
 
-  async bindOrChangeEmail(userId: number, data: EmailUpdateDto): Promise<boolean> {
+  async bindOrChangeEmail(userId: string | number, data: EmailUpdateDto): Promise<boolean> {
     const email = data.email?.trim();
     const code = data.code?.trim();
+    const password = data.password;
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId.toString(), isDeleted: 0 },
+      select: ["id", "password", "email"],
+    });
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+    if (!(await bcrypt.compare(password, user.password))) {
+      throw new BusinessException("当前密码错误");
+    }
+
+    const exist = await this.userRepository.findOne({
+      where: { email, isDeleted: 0, id: Not(userId.toString()) },
+      select: ["id"],
+    });
+    if (exist) {
+      throw new BusinessException("邮箱已被其他账号绑定");
+    }
+
     const redisKey = `captcha:email:${email}`;
     const cached = await this.redisCacheService.get<string>(redisKey);
 
@@ -441,8 +532,52 @@ export class UserService {
 
     await this.redisCacheService.del(redisKey);
     const result = await this.userRepository.update(
-      { id: Number(userId), isDeleted: 0 },
+      { id: userId.toString(), isDeleted: 0 },
       { email }
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async unbindMobile(userId: string | number, password: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId.toString(), isDeleted: 0 },
+      select: ["id", "password", "mobile"],
+    });
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+    if (!user.mobile?.trim()) {
+      throw new BusinessException("当前账号未绑定手机号");
+    }
+    if (!(await bcrypt.compare(password, user.password))) {
+      throw new BusinessException("当前密码错误");
+    }
+
+    const result = await this.userRepository.update(
+      { id: userId.toString(), isDeleted: 0 },
+      { mobile: null as any }
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async unbindEmail(userId: string | number, password: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId.toString(), isDeleted: 0 },
+      select: ["id", "password", "email"],
+    });
+    if (!user) {
+      throw new BusinessException("用户不存在");
+    }
+    if (!user.email?.trim()) {
+      throw new BusinessException("当前账号未绑定邮箱");
+    }
+    if (!(await bcrypt.compare(password, user.password))) {
+      throw new BusinessException("当前密码错误");
+    }
+
+    const result = await this.userRepository.update(
+      { id: userId.toString(), isDeleted: 0 },
+      { email: null as any }
     );
     return (result.affected ?? 0) > 0;
   }
@@ -518,7 +653,7 @@ export class UserService {
         continue;
       }
 
-      let deptId: number | undefined;
+      let deptId: string | undefined;
       if (deptCode) {
         const dept = await this.deptService.findByCode(deptCode);
         if (!dept) {
@@ -543,7 +678,7 @@ export class UserService {
         gender,
         mobile: mobile || null,
         email: email || null,
-        deptId: deptId as any,
+        deptId: deptId ?? null,
         status: 1,
         password: hashedPassword,
         isDeleted: 0,
@@ -563,21 +698,22 @@ export class UserService {
    * - JWT 模式：递增用户安全版本号 auth:user:security_version:{userId}
    * - redis-token 模式：删除该用户的 access/refresh 映射
    */
-  private async invalidateUserSessions(userId: number): Promise<void> {
-    if (!userId) return;
+  private async invalidateUserSessions(userId: string | number): Promise<void> {
+    const userIdStr = userId?.toString();
+    if (!userIdStr) return;
 
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
 
     // 1. JWT 模式：提升安全版本号，旧 JWT 全部失效
-    const versionKey = `auth:user:security_version:${userId}`;
+    const versionKey = `auth:user:security_version:${userIdStr}`;
     const currentVersion = await this.redisCacheService.get<number>(versionKey);
     const nextVersion = (currentVersion ?? 0) + 1;
     await this.redisCacheService.set(versionKey, nextVersion);
 
     // 2. redis-token 模式：清理 access/refresh 映射
     if (sessionType === "redis-token") {
-      const accessKey = `auth:user:access:${userId}`;
-      const refreshKey = `auth:user:refresh:${userId}`;
+      const accessKey = `auth:user:access:${userIdStr}`;
+      const refreshKey = `auth:user:refresh:${userIdStr}`;
 
       const accessToken = await this.redisCacheService.get<string>(accessKey);
       const refreshToken = await this.redisCacheService.get<string>(refreshKey);
@@ -597,9 +733,9 @@ export class UserService {
   /**
    * 获取用户表单数据
    */
-  async getUserForm(userId: number): Promise<SysUser> {
+  async getUserForm(userId: string | number): Promise<SysUser> {
     return await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId.toString() },
       relations: ["roles"],
     });
   }
@@ -607,7 +743,8 @@ export class UserService {
   /**
    * 更新用户
    */
-  async update(userId: number, updateUserDto: UpdateUserDto) {
+  async update(userId: string | number, updateUserDto: UpdateUserDto) {
+    const userIdStr = userId.toString();
     const { username, deptId, roleIds, password, status } = updateUserDto;
 
     // 校验角色是否为空
@@ -621,13 +758,13 @@ export class UserService {
         where: { username, isDeleted: 0 },
         select: ["id"],
       });
-      if (existingUser && existingUser.id !== Number(userId)) {
+      if (existingUser && existingUser.id !== userIdStr) {
         throw new BusinessException("用户名已存在");
       }
     }
 
     // 更新用户信息
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findOne({ where: { id: userIdStr } });
     if (!user) {
       throw new BusinessException("用户不存在");
     }
@@ -640,14 +777,17 @@ export class UserService {
 
     Object.assign(user, {
       ...updateUserDto,
+      deptId: deptId == null ? null : deptId.toString(),
+      updateBy:
+        (updateUserDto as any).updateBy == null ? null : String((updateUserDto as any).updateBy),
       password: hashedPassword || user.password, // 如果没有新密码，保留原密码
     });
 
     // 更新用户-角色关联
-    await this.userRoleRepository.delete({ userId });
+    await this.userRoleRepository.delete({ userId: userIdStr });
     const userRoles = roleIds.map((roleId) => ({
-      userId,
-      roleId,
+      userId: userIdStr,
+      roleId: roleId.toString(),
     }));
     await this.userRoleRepository.save(userRoles);
 
@@ -657,9 +797,10 @@ export class UserService {
   /**
    * 获取用户菜单ID列表
    */
-  async getUserMenuIds(userId: number): Promise<number[]> {
+  async getUserMenuIds(userId: string | number): Promise<string[]> {
+    const userIdStr = userId.toString();
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userIdStr },
       relations: ["roles"],
     });
 
@@ -674,8 +815,8 @@ export class UserService {
   /**
    * 删除用户
    */
-  async deleteUser(id: number): Promise<boolean> {
-    const result = await this.userRepository.update(id, { isDeleted: 1 });
+  async deleteUser(id: string | number): Promise<boolean> {
+    const result = await this.userRepository.update(id.toString(), { isDeleted: 1 });
     return result.affected > 0;
   }
 
@@ -689,8 +830,8 @@ export class UserService {
   /**
    * 根据ID查询用户
    */
-  async findOne(id: number): Promise<SysUser> {
-    return await this.userRepository.findOne({ where: { id } });
+  async findOne(id: string | number): Promise<SysUser> {
+    return await this.userRepository.findOne({ where: { id: id.toString() } });
   }
 
   /**
@@ -698,7 +839,10 @@ export class UserService {
    */
   async findByUsername(username: string): Promise<SysUser> {
     console.log(username, "根据用户名查询用户");
-    return await this.userRepository.findOne({ where: { username } });
+    return await this.userRepository.findOne({
+      where: { username, isDeleted: 0 },
+      relations: ["roles"],
+    });
   }
 
   async findByMobile(mobile: string): Promise<SysUser> {
@@ -720,22 +864,23 @@ export class UserService {
   /**
    * 删除用户
    */
-  async remove(id: number): Promise<void> {
-    await this.userRepository.delete(id);
+  async remove(id: string | number): Promise<void> {
+    await this.userRepository.delete(id.toString());
   }
 
-  async getUserFormData(id: number): Promise<UserFormDto> {
+  async getUserFormData(id: string | number): Promise<UserFormDto> {
+    const idStr = id.toString();
     const user = await this.userRepository.findOne({
-      where: { id },
+      where: { id: idStr },
     });
 
     if (!user) {
-      throw new NotFoundException(`未找到 ID 为 ${id} 的用户`);
+      throw new NotFoundException(`未找到 ID 为 ${idStr} 的用户`);
     }
 
     // 获取用户角色
     const userRoles = await this.userRoleRepository.find({
-      where: { userId: id },
+      where: { userId: idStr },
     });
 
     // 转换为表单所需的格式

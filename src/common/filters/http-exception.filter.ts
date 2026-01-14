@@ -9,6 +9,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
+    const normalizeMsg = (value: unknown): string => {
+      if (Array.isArray(value)) {
+        const items = value
+          .map((v) => (v == null ? "" : String(v)).trim())
+          .filter((v) => v.length > 0);
+        if (items.length > 0) return items.join("；");
+        return ErrorCode.SYSTEM_ERROR.msg;
+      }
+      if (typeof value === "string") return value;
+      if (value == null) return ErrorCode.SYSTEM_ERROR.msg;
+      return String(value);
+    };
+
     const buildResponseBody = (code: string, msg: string) => {
       return {
         code,
@@ -58,10 +71,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
           );
       }
 
-      const msg =
+      const msgRaw =
         typeof exceptionResponse === "object"
-          ? (exceptionResponse as any).message || ErrorCode.SYSTEM_ERROR.msg
-          : (exceptionResponse as any) || ErrorCode.SYSTEM_ERROR.msg;
+          ? ((exceptionResponse as any).message ?? ErrorCode.SYSTEM_ERROR.msg)
+          : ((exceptionResponse as any) ?? ErrorCode.SYSTEM_ERROR.msg);
+      const msg = normalizeMsg(msgRaw);
+
+      if (status === HttpStatus.BAD_REQUEST || status === HttpStatus.UNPROCESSABLE_ENTITY) {
+        return response
+          .status(status)
+          .json(buildResponseBody(ErrorCode.USER_REQUEST_PARAMETER_ERROR.code, msg));
+      }
 
       return response
         .status(status || HttpStatus.BAD_REQUEST)

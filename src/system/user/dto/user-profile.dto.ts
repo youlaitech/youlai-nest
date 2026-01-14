@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, IsInt } from "class-validator";
 
 export class UserProfileDto {
   @ApiProperty({ description: "昵称", required: false })
@@ -7,21 +7,13 @@ export class UserProfileDto {
   @IsString()
   nickname?: string;
 
-  @ApiProperty({ description: "手机号", required: false })
-  @IsOptional()
-  @IsString()
-  mobile?: string;
-
-  @ApiProperty({ description: "邮箱", required: false })
-  @IsOptional()
-  @IsString()
-  email?: string;
-
   @ApiProperty({ description: "头像地址", required: false })
   @IsOptional()
   @IsString()
   avatar?: string;
+
+  @ApiProperty({ description: "性别(1-男 2-女 0-保密)", required: false })
+  @IsOptional()
+  @IsInt()
+  gender?: number;
 }
-
-
-

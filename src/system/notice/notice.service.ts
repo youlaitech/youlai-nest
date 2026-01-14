@@ -63,11 +63,11 @@ export class NoticeService {
     };
   }
 
-  async saveNotice(form: CreateNoticeDto & { createBy: number }) {
+  async saveNotice(form: CreateNoticeDto & { createBy: string | number }) {
     const now = new Date();
     const notice = this.noticeRepository.create({
       ...form,
-      createBy: form.createBy,
+      createBy: form.createBy.toString(),
       createTime: now,
       isDeleted: 0,
       publishStatus: 0,
@@ -76,25 +76,27 @@ export class NoticeService {
     return true;
   }
 
-  async getNoticeFormData(id: number): Promise<CreateNoticeDto & { id: number }> {
-    const notice = await this.noticeRepository.findOne({ where: { id, isDeleted: 0 } });
+  async getNoticeFormData(id: string | number): Promise<(CreateNoticeDto & { id: string }) | null> {
+    const idStr = id.toString();
+    const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) return null;
     const { title, content, type, level, targetType, targetUserIds } = notice;
-    return { id, title, content, type, level, targetType, targetUserIds };
+    return { id: idStr, title, content, type, level, targetType, targetUserIds };
   }
 
-  async getNoticeDetail(id: number) {
-    return await this.noticeRepository.findOne({ where: { id, isDeleted: 0 } });
+  async getNoticeDetail(id: string | number) {
+    return await this.noticeRepository.findOne({ where: { id: id.toString(), isDeleted: 0 } });
   }
 
-  async updateNotice(id: number, form: UpdateNoticeDto & { updateBy: number }) {
-    const notice = await this.noticeRepository.findOne({ where: { id, isDeleted: 0 } });
+  async updateNotice(id: string | number, form: UpdateNoticeDto & { updateBy: string | number }) {
+    const idStr = id.toString();
+    const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) {
       return false;
     }
 
     Object.assign(notice, form, {
-      updateBy: form.updateBy,
+      updateBy: form.updateBy.toString(),
       updateTime: new Date(),
     });
 
@@ -102,20 +104,21 @@ export class NoticeService {
     return true;
   }
 
-  async publishNotice(id: number, publisherId: number) {
-    const notice = await this.noticeRepository.findOne({ where: { id, isDeleted: 0 } });
+  async publishNotice(id: string | number, publisherId: string | number) {
+    const idStr = id.toString();
+    const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) return false;
 
     // 更新通知发布状态
     notice.publishStatus = 1;
-    notice.publisherId = publisherId;
+    notice.publisherId = publisherId.toString();
     notice.publishTime = new Date();
     notice.updateTime = new Date();
     await this.noticeRepository.save(notice);
 
     // 根据 targetType 分发到用户
     const now = new Date();
-    let targetUserIds: number[] = [];
+    let targetUserIds: string[] = [];
 
     if (notice.targetType === 1) {
       // 全体用户：选择所有有效且未删除的用户
@@ -125,8 +128,8 @@ export class NoticeService {
       // 指定用户：解析 targetUserIds 字符串
       targetUserIds = notice.targetUserIds
         .split(",")
-        .map((id) => Number(id.trim()))
-        .filter((id) => !Number.isNaN(id));
+        .map((v) => v.trim())
+        .filter(Boolean);
       if (targetUserIds.length) {
         const users = await this.userRepository.find({
           where: { id: In(targetUserIds), isDeleted: 0 },
@@ -162,8 +165,10 @@ export class NoticeService {
     return true;
   }
 
-  async revokeNotice(id: number) {
-    const notice = await this.noticeRepository.findOne({ where: { id, isDeleted: 0 } });
+  async revokeNotice(id: string | number) {
+    const notice = await this.noticeRepository.findOne({
+      where: { id: id.toString(), isDeleted: 0 },
+    });
     if (!notice) return false;
 
     notice.publishStatus = -1;
@@ -173,23 +178,24 @@ export class NoticeService {
     return true;
   }
 
-  async deleteNotices(ids: number[]) {
-    await this.noticeRepository.update(ids, { isDeleted: 1 });
+  async deleteNotices(ids: (string | number)[]) {
+    const idStrs = (ids || []).map((v) => v.toString());
+    await this.noticeRepository.update(idStrs, { isDeleted: 1 });
     return true;
   }
 
-  async readAll(userId: number) {
+  async readAll(userId: string | number) {
     const now = new Date();
     await this.userNoticeRepository
       .createQueryBuilder()
       .update(SysUserNotice)
       .set({ isRead: 1, readTime: now })
-      .where("userId = :userId", { userId })
+      .where("userId = :userId", { userId: userId.toString() })
       .execute();
     return true;
   }
 
-  async getMyNoticePage(userId: number, query: NoticeQueryDto) {
+  async getMyNoticePage(userId: string | number, query: NoticeQueryDto) {
     const { pageNum, pageSize, isRead } = query;
 
     const page = Number(pageNum) > 0 ? Number(pageNum) : 1;
@@ -198,7 +204,7 @@ export class NoticeService {
     const qb = this.userNoticeRepository
       .createQueryBuilder("un")
       .innerJoinAndSelect(SysNotice, "n", "un.noticeId = n.id")
-      .where("un.userId = :userId", { userId })
+      .where("un.userId = :userId", { userId: userId.toString() })
       .andWhere("un.isDeleted = 0")
       .andWhere("n.isDeleted = 0")
       .orderBy("n.publishTime", "DESC");

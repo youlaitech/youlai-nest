@@ -15,9 +15,11 @@ export class UpdateDeptDto {
 
   @ApiProperty({ description: "父节点id", required: false })
   @IsOptional()
-  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
-  @IsNumber()
-  parentId?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  parentId?: string;
 
   @ApiProperty({ description: "显示顺序", required: false })
   @IsOptional()
@@ -34,6 +36,9 @@ export class UpdateDeptDto {
 
   @ApiProperty({ description: "修改人ID", required: false })
   @IsOptional()
-  @IsNumber()
-  updateBy?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  updateBy?: string;
 }

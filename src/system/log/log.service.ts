@@ -56,7 +56,7 @@ export class LogService {
           .where("user.id IN (:...ids)", { ids: userIds })
           .getMany()
       : [];
-    const userMap = new Map<number, string>();
+    const userMap = new Map<string, string>();
     users.forEach((u) => userMap.set(u.id, u.nickname));
 
     const list: LogPageVo[] = records.map((item) => ({
@@ -71,7 +71,7 @@ export class LogService {
       os: item.os,
       executionTime: item.executionTime,
       createBy: item.createBy,
-      // format createTime to 'YYYY-MM-DD HH:mm:ss' for consistent display
+      // 时间统一成字符串
       createTime: item.createTime
         ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(
             item.createTime.getDate()

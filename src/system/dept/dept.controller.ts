@@ -10,8 +10,6 @@ import {
   HttpException,
   HttpStatus,
   SetMetadata,
-  UsePipes,
-  ValidationPipe,
 } from "@nestjs/common";
 import { DeptService } from "./dept.service";
 import { CreateDeptDto } from "./dto/create-dept.dto";
@@ -43,13 +41,13 @@ export class DeptController {
   async create(@CurrentUser("userId") currentUserId: number, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
       ...createDeptDto,
-      createBy: currentUserId,
+      createBy: currentUserId.toString(),
     });
   }
 
   @ApiOperation({ summary: "获取部门表单" })
   @Get(":id/form")
-  async getDeptForm(@Param("id") id: number) {
+  async getDeptForm(@Param("id") id: string) {
     const dept = await this.deptService.getDeptForm(id);
     if (!dept) {
       throw new HttpException("部门不存在", HttpStatus.NOT_FOUND);
@@ -61,21 +59,25 @@ export class DeptController {
   @Put(":id")
   async update(
     @CurrentUser("userId") currentUserId: number,
-    @Param("id") id: number,
+    @Param("id") id: string,
     @Body() requestBody: any
   ) {
-    // 只提取需要的字段
     const updateDeptDto: UpdateDeptDto = {
       name: requestBody.name,
       code: requestBody.code,
-      parentId: Number(requestBody.parentId),
+      parentId:
+        requestBody.parentId === undefined ||
+        requestBody.parentId === null ||
+        requestBody.parentId === ""
+          ? undefined
+          : String(requestBody.parentId),
       sort: Number(requestBody.sort),
       status: Number(requestBody.status),
     };
 
     const result = await this.deptService.updateDept(id, {
       ...updateDeptDto,
-      updateBy: currentUserId,
+      updateBy: currentUserId.toString(),
     });
 
     if (!result) {
@@ -87,7 +89,10 @@ export class DeptController {
   @ApiOperation({ summary: "删除部门" })
   @Delete(":ids")
   async deleteDepartments(@Param("ids") ids: string) {
-    const idArray = ids.split(",").map((id) => Number(id));
+    const idArray = ids
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
 
     for (const id of idArray) {
       const success = await this.deptService.deleteDept(id);

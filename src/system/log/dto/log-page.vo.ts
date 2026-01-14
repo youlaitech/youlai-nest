@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export class LogPageVo {
   @ApiProperty({ description: "主键" })
-  id: number;
+  id: string;
 
   @ApiProperty({ description: "日志模块" })
   module: string;
@@ -29,10 +29,10 @@ export class LogPageVo {
   os: string | null;
 
   @ApiProperty({ description: "执行时间(毫秒)" })
-  executionTime: number | null;
+  executionTime: string | null;
 
   @ApiProperty({ description: "创建人ID" })
-  createBy: number | null;
+  createBy: string | null;
 
   @ApiProperty({ description: "创建时间", example: "2025-01-01 12:00:00" })
   createTime: string | null;

@@ -50,10 +50,11 @@ export class DeptService {
   /**
    * 根据 ID 列表查询部门
    */
-  async findByIds(ids: number[]): Promise<SysDept[]> {
+  async findByIds(ids: (number | string)[]): Promise<SysDept[]> {
     if (!ids || ids.length === 0) return [];
+    const idStrs = ids.map((id) => id.toString());
     return await this.deptRepository.find({
-      where: { id: In(ids) },
+      where: { id: In(idStrs) },
     });
   }
 
@@ -71,6 +72,12 @@ export class DeptService {
     const treePath = await this.buildTreePath(createDeptDto.parentId);
     const dept = this.deptRepository.create({
       ...createDeptDto,
+      parentId:
+        createDeptDto.parentId === undefined ? undefined : createDeptDto.parentId.toString(),
+      createBy:
+        createDeptDto.createBy === undefined ? undefined : createDeptDto.createBy.toString(),
+      updateBy:
+        createDeptDto.updateBy === undefined ? undefined : createDeptDto.updateBy.toString(),
       treePath,
     });
     return await this.deptRepository.save(dept);
@@ -79,18 +86,19 @@ export class DeptService {
   /**
    * 获取部门表单
    */
-  async getDeptForm(id: number) {
+  async getDeptForm(id: string | number) {
     return await this.deptRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: id.toString(), isDeleted: 0 },
     });
   }
 
   /**
    * 编辑部门
    */
-  async updateDept(id: number, updateDeptDto: UpdateDeptDto) {
+  async updateDept(id: string | number, updateDeptDto: UpdateDeptDto) {
+    const idStr = id.toString();
     const dept = await this.deptRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: idStr, isDeleted: 0 },
     });
 
     if (!dept) {
@@ -101,10 +109,12 @@ export class DeptService {
     const updateData: Partial<SysDept> = {
       name: updateDeptDto.name,
       code: updateDeptDto.code,
-      parentId: updateDeptDto.parentId,
+      parentId:
+        updateDeptDto.parentId === undefined ? undefined : updateDeptDto.parentId.toString(),
       sort: updateDeptDto.sort,
       status: updateDeptDto.status,
-      updateBy: updateDeptDto.updateBy,
+      updateBy:
+        updateDeptDto.updateBy === undefined ? undefined : updateDeptDto.updateBy.toString(),
       updateTime: new Date(),
     };
 
@@ -118,15 +128,16 @@ export class DeptService {
       (key) => updateData[key] === undefined && delete updateData[key]
     );
 
-    await this.deptRepository.update(id, updateData);
-    return await this.deptRepository.findOne({ where: { id } });
+    await this.deptRepository.update(idStr, updateData);
+    return await this.deptRepository.findOne({ where: { id: idStr } });
   }
 
   /**
    * 删除部门
    */
-  async deleteDept(id: number) {
-    const result = await this.deptRepository.update({ id }, { isDeleted: 1 });
+  async deleteDept(id: string | number) {
+    const idStr = id.toString();
+    const result = await this.deptRepository.update({ id: idStr }, { isDeleted: 1 });
     return result.affected > 0;
   }
 
@@ -134,7 +145,7 @@ export class DeptService {
    * 构建部门树结构
    */
   private buildDeptTree(deptList: SysDept[]): any[] {
-    const map: { [key: number]: any } = {};
+    const map: { [key: string]: any } = {};
     const roots: any[] = [];
 
     deptList.forEach((dept) => {
@@ -145,7 +156,7 @@ export class DeptService {
     });
 
     deptList.forEach((dept) => {
-      if (!dept.parentId || dept.parentId === 0) {
+      if (!dept.parentId || dept.parentId === "0") {
         roots.push(map[dept.id]);
       } else {
         if (map[dept.parentId]) {
@@ -161,19 +172,19 @@ export class DeptService {
    * 构建部门选项树
    */
   private buildOptionsTree(depts: SysDept[]): any[] {
-    const map: { [key: number]: any } = {};
+    const map: { [key: string]: any } = {};
     const roots: any[] = [];
 
     depts.forEach((dept) => {
       map[dept.id] = {
         label: dept.name,
-        value: dept.id.toString(),
+        value: dept.id,
         children: [],
       };
     });
 
     depts.forEach((dept) => {
-      if (!dept.parentId || dept.parentId === 0) {
+      if (!dept.parentId || dept.parentId === "0") {
         roots.push(map[dept.id]);
       } else {
         if (map[dept.parentId]) {
@@ -188,12 +199,12 @@ export class DeptService {
   /**
    * 构建部门 treePath
    */
-  private async buildTreePath(parentId: number): Promise<string> {
-    if (parentId === 0) {
+  private async buildTreePath(parentId: string | number): Promise<string> {
+    if (parentId === 0 || parentId === "0") {
       return "0";
     }
     const parentDept = await this.deptRepository.findOne({
-      where: { id: parentId, isDeleted: 0 },
+      where: { id: parentId.toString(), isDeleted: 0 },
     });
     return parentDept ? `${parentDept.treePath}/${parentDept.id}` : "0";
   }

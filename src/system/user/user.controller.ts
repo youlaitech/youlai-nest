@@ -23,10 +23,13 @@ import { UserQueryDto } from "./dto/user-query.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import type { CurrentUserInfo } from "src/common/interfaces/current-user.interface";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { PasswordChangeDto } from "./dto/password-change.dto";
 import { MobileUpdateDto } from "./dto/mobile-update.dto";
 import { EmailUpdateDto } from "./dto/email-update.dto";
+import { PasswordVerifyDto } from "./dto/password-verify.dto";
+import { UserProfileDto } from "./dto/user-profile.dto";
 import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
@@ -40,10 +43,7 @@ export class UserController {
   ) {}
 
   /**
-   * 获取用户分页列表
-   *
-   * @SetMetadata("resource", "sys_user") - 设置资源权限标识，用于权限控制
-   * 该装饰器标识此接口访问的是用户资源，需要相应的权限才能访问
+   * 用户分页列表
    */
   @ApiOperation({ summary: "用户分页列表" })
   @Get()
@@ -71,21 +71,20 @@ export class UserController {
 
   @ApiOperation({ summary: "获取当前登录用户信息" })
   @Get("me")
-  async getCurrentUser(@Req() req) {
-    return await this.userService.findMe(req.user);
+  async getCurrentUser(@CurrentUser() currentUser: CurrentUserInfo) {
+    return await this.userService.findMe(currentUser);
   }
 
   @ApiOperation({ summary: "获取个人中心用户信息" })
   @Get("profile")
-  async getUserProfile(@Req() req) {
-    return await this.userService.findMe(req.user);
+  async getUserProfile(@CurrentUser() currentUser: CurrentUserInfo) {
+    return await this.userService.findMe(currentUser);
   }
 
   @ApiOperation({ summary: "个人中心修改用户信息" })
   @Put("profile")
-  async updateUserProfile(@Req() req, @Body() profileDto: import("./dto/user-profile.dto").UserProfileDto) {
-    const success = await this.userService.updateProfile(req.user, profileDto);
-    return { success };
+  async updateUserProfile(@Req() req, @Body() profileDto: UserProfileDto) {
+    return await this.userService.updateProfile(req.user, profileDto);
   }
 
   @ApiOperation({ summary: "新增用户" })
@@ -93,33 +92,44 @@ export class UserController {
   async create(@CurrentUser("userId") currentUserId: number, @Body() createUserDto: CreateUserDto) {
     return await this.userService.create({
       ...createUserDto,
-      createBy: currentUserId,
+      createBy: currentUserId.toString(),
     });
   }
 
   @ApiOperation({ summary: "获取用户表单数据" })
-  @Get(":userId(\\d+)/form")
-  async getUserForm(@Param("userId") userId: number) {
-    return await this.userService.getUserFormData(userId);
+  @Get(":userId/form")
+  async getUserForm(@Param("userId") userId: string) {
+    const id = userId?.trim();
+    if (!id || !/^\d+$/.test(id)) {
+      throw new BusinessException("用户ID非法");
+    }
+    return await this.userService.getUserFormData(id);
   }
 
   @ApiOperation({ summary: "修改用户" })
-  @Put(":id(\\d+)")
+  @Put(":id")
   async update(
     @CurrentUser("userId") currentUserId: number,
-    @Param("id") id: number,
+    @Param("id") id: string,
     @Body() updateUserDto: UpdateUserDto
   ) {
-    return await this.userService.update(id, {
+    const userId = id?.trim();
+    if (!userId || !/^\d+$/.test(userId)) {
+      throw new BusinessException("用户ID非法");
+    }
+    return await this.userService.update(userId, {
       ...updateUserDto,
-      updateBy: currentUserId,
+      updateBy: currentUserId.toString(),
     });
   }
 
   @ApiOperation({ summary: "删除用户" })
   @Delete(":ids")
   async deleteUsers(@Param("ids") ids: string) {
-    const idArray = ids.split(",").map((id) => Number(id));
+    const idArray = ids
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
     const results = await Promise.all(
       idArray.map(async (id) => {
         const success = await this.userService.deleteUser(id);
@@ -137,9 +147,13 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "修改用户状态" })
-  @Patch(":userId(\\d+)/status")
-  async updateUserStatus(@Param("userId") userId: number, @Query("status") status: number) {
-    const success = await this.userService.updateUserStatus(userId, status);
+  @Patch(":userId/status")
+  async updateUserStatus(@Param("userId") userId: string, @Query("status") status: number) {
+    const id = userId?.trim();
+    if (!id || !/^\d+$/.test(id)) {
+      throw new BusinessException("用户ID非法");
+    }
+    const success = await this.userService.updateUserStatus(id, status);
     return { success };
   }
 
@@ -154,7 +168,10 @@ export class UserController {
 
     const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
     const fileName = "用户导入模板.xlsx";
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
     res.send(buffer);
   }
@@ -199,14 +216,21 @@ export class UserController {
 
     const fileName = "用户列表.xlsx";
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.send(buffer);
   }
 
   @ApiOperation({ summary: "重置指定用户密码" })
-  @Put(":userId(\\d+)/password/reset")
-  async resetUserPassword(@Param("userId") userId: number, @Query("password") password: string) {
-    const success = await this.userService.resetUserPassword(userId, password);
+  @Put(":userId/password/reset")
+  async resetUserPassword(@Param("userId") userId: string, @Query("password") password: string) {
+    const id = userId?.trim();
+    if (!id || !/^\d+$/.test(id)) {
+      throw new BusinessException("用户ID非法");
+    }
+    const success = await this.userService.resetUserPassword(id, password);
     return { success };
   }
 
@@ -216,36 +240,53 @@ export class UserController {
     @CurrentUser("userId") currentUserId: number,
     @Body() data: PasswordChangeDto
   ) {
-    const success = await this.userService.changeCurrentUserPassword(currentUserId, data);
-    return { success };
+    return await this.userService.changeCurrentUserPassword(currentUserId, data);
   }
 
   @ApiOperation({ summary: "发送短信验证码（绑定或更换手机号）" })
   @Post("mobile/code")
   async sendMobileCode(@Query("mobile") mobile: string) {
-    const success = await this.userService.sendMobileCode(mobile);
-    return { success };
+    return await this.userService.sendMobileCode(mobile);
   }
 
   @ApiOperation({ summary: "绑定或更换手机号" })
   @Put("mobile")
-  async bindOrChangeMobile(@CurrentUser("userId") currentUserId: number, @Body() data: MobileUpdateDto) {
-    const success = await this.userService.bindOrChangeMobile(currentUserId, data);
-    return { success };
+  async bindOrChangeMobile(
+    @CurrentUser("userId") currentUserId: number,
+    @Body() data: MobileUpdateDto
+  ) {
+    return await this.userService.bindOrChangeMobile(currentUserId, data);
+  }
+
+  @ApiOperation({ summary: "解绑手机号" })
+  @Delete("mobile")
+  async unbindMobile(
+    @CurrentUser("userId") currentUserId: number,
+    @Body() data: PasswordVerifyDto
+  ) {
+    return await this.userService.unbindMobile(currentUserId, data.password);
   }
 
   @ApiOperation({ summary: "发送邮箱验证码（绑定或更换邮箱）" })
   @Post("email/code")
   async sendEmailCode(@Query("email") email: string) {
     await this.userService.sendEmailCode(email);
-    return { success: true };
+    return true;
   }
 
   @ApiOperation({ summary: "绑定或更换邮箱" })
   @Put("email")
-  async bindOrChangeEmail(@CurrentUser("userId") currentUserId: number, @Body() data: EmailUpdateDto) {
-    const success = await this.userService.bindOrChangeEmail(currentUserId, data);
-    return { success };
+  async bindOrChangeEmail(
+    @CurrentUser("userId") currentUserId: number,
+    @Body() data: EmailUpdateDto
+  ) {
+    return await this.userService.bindOrChangeEmail(currentUserId, data);
+  }
+
+  @ApiOperation({ summary: "解绑邮箱" })
+  @Delete("email")
+  async unbindEmail(@CurrentUser("userId") currentUserId: number, @Body() data: PasswordVerifyDto) {
+    return await this.userService.unbindEmail(currentUserId, data.password);
   }
 
   @ApiOperation({ summary: "获取用户下拉选项" })

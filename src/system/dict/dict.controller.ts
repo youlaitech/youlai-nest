@@ -50,14 +50,14 @@ export class DictController {
 
   @ApiOperation({ summary: "字典表单数据" })
   @Get(":id/form")
-  async getDictForm(@Param("id") id: number) {
+  async getDictForm(@Param("id") id: string) {
     return await this.dictService.getDictForm(id);
   }
 
   @ApiOperation({ summary: "修改字典" })
   @IsUpdateBy()
   @Put(":id")
-  async updateDict(@Param("id") id: number, @Body() updateDictDto: UpdateDictDto) {
+  async updateDict(@Param("id") id: string, @Body() updateDictDto: UpdateDictDto) {
     return await this.dictService.updateDict(id, updateDictDto);
   }
 
@@ -65,7 +65,10 @@ export class DictController {
   @IsUpdateBy()
   @Delete(":ids")
   async deleteDict(@Param("ids") ids: string) {
-    const idArray = ids.split(",").map((id) => parseInt(id));
+    const idArray = ids
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
     for (const id of idArray) {
       const success = await this.dictService.deleteDict(id, 1); // 这里的 1 是临时的 updateBy 值
       if (!success) {
@@ -111,7 +114,7 @@ export class DictController {
 
   @ApiOperation({ summary: "字典项表单数据" })
   @Get(":dictCode/items/:itemId/form")
-  async getDictItemForm(@Param("itemId") itemId: number) {
+  async getDictItemForm(@Param("itemId") itemId: string) {
     return await this.dictService.getDictItemForm(itemId);
   }
 
@@ -119,7 +122,7 @@ export class DictController {
   @IsUpdateBy()
   @Put(":dictCode/items/:itemId")
   async updateDictItem(
-    @Param("itemId") itemId: number,
+    @Param("itemId") itemId: string,
     @Body() updateDictItemDto: UpdateDictItemDto
   ) {
     return await this.dictService.updateDictItem(itemId, updateDictItemDto);
@@ -129,7 +132,10 @@ export class DictController {
   @IsUpdateBy()
   @Delete(":dictCode/items/:itemIds")
   async deleteDictItems(@Param("itemIds") itemIds: string) {
-    const idArray = itemIds.split(",").map((id) => parseInt(id));
+    const idArray = itemIds
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
     for (const id of idArray) {
       await this.dictService.deleteDictItems(id);
     }

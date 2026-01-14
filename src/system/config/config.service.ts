@@ -28,7 +28,9 @@ export class ConfigService {
     qb.where("config.isDeleted = :isDeleted", { isDeleted: 0 });
 
     if (keywords) {
-      qb.andWhere("(config.configName LIKE :kw OR config.configKey LIKE :kw)", { kw: `%${keywords}%` });
+      qb.andWhere("(config.configName LIKE :kw OR config.configKey LIKE :kw)", {
+        kw: `%${keywords}%`,
+      });
     }
 
     qb.orderBy("config.createTime", "DESC");
@@ -63,6 +65,7 @@ export class ConfigService {
 
     const config = this.configRepository.create({
       ...formData,
+      createBy: (formData as any).createBy == null ? null : String((formData as any).createBy),
       createTime: new Date(),
     });
 
@@ -77,9 +80,9 @@ export class ConfigService {
   /**
    * 获取系统配置表单数据
    */
-  async getConfigFormData(id: number) {
+  async getConfigFormData(id: string | number) {
     const config = await this.configRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: id.toString(), isDeleted: 0 },
     });
 
     if (!config) {
@@ -92,9 +95,10 @@ export class ConfigService {
   /**
    * 修改系统配置
    */
-  async updateConfig(id: number, formData: UpdateConfigDto) {
+  async updateConfig(id: string | number, formData: UpdateConfigDto) {
+    const idStr = id.toString();
     const config = await this.configRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: idStr, isDeleted: 0 },
     });
 
     if (!config) {
@@ -107,12 +111,15 @@ export class ConfigService {
         where: { configKey: formData.configKey, isDeleted: 0 },
       });
 
-      if (existingConfig && existingConfig.id !== id) {
+      if (existingConfig && existingConfig.id !== idStr) {
         throw new BadRequestException("配置键已存在");
       }
     }
 
-    Object.assign(config, formData);
+    Object.assign(config, {
+      ...formData,
+      updateBy: (formData as any).updateBy == null ? null : String((formData as any).updateBy),
+    });
     config.updateTime = new Date();
 
     await this.configRepository.save(config);
@@ -126,9 +133,9 @@ export class ConfigService {
   /**
    * 删除系统配置
    */
-  async deleteConfig(id: number) {
+  async deleteConfig(id: string | number) {
     const config = await this.configRepository.findOne({
-      where: { id, isDeleted: 0 },
+      where: { id: id.toString(), isDeleted: 0 },
     });
 
     if (!config) {

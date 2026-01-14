@@ -29,6 +29,10 @@ export default registerAs("typeorm", () => ({
   // 自动加载通过 TypeOrmModule.forFeature 注册的实体
   autoLoadEntities: true,
 
+  supportBigNumbers: true,
+
+  bigNumberStrings: true,
+
   // 禁止自动同步实体到数据库结构（生产环境必须为 false）
   synchronize: false,
 

@@ -2,8 +2,8 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("sys_config")
 export class SysConfig {
-  @PrimaryGeneratedColumn({ comment: "主键" })
-  id: number;
+  @PrimaryGeneratedColumn({ type: "bigint", comment: "主键" })
+  id: string;
 
   @Column({ name: "config_name", length: 50, comment: "配置名称" })
   configName: string;
@@ -17,14 +17,14 @@ export class SysConfig {
   @Column({ length: 500, nullable: true, comment: "备注" })
   remark: string;
 
-  @Column({ name: "create_by", nullable: true, comment: "创建人ID" })
-  createBy: number;
+  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
+  createBy?: string | null;
 
   @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;
 
-  @Column({ name: "update_by", nullable: true, comment: "更新人ID" })
-  updateBy: number;
+  @Column({ name: "update_by", type: "bigint", nullable: true, comment: "更新人ID" })
+  updateBy?: string | null;
 
   @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;

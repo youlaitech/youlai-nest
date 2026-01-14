@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform, Type } from "class-transformer";
+import { Transform } from "class-transformer";
 import { IsArray, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { BaseQueryDto } from "src/common/dto/base-query.dto";
@@ -21,15 +21,22 @@ export class UserQueryDto extends BaseQueryDto {
 
   @ApiProperty({ description: "部门ID", required: false })
   @IsOptional()
-  @IsNumber()
-  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
-  deptId?: number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  deptId?: string;
 
   @ApiProperty({ description: "角色ID集合", required: false, type: [Number] })
   @IsOptional()
   @IsArray()
-  @Type(() => Number)
-  roleIds?: number[];
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (Array.isArray(value)) return value.map((v) => String(v));
+    return [String(value)];
+  })
+  @IsString({ each: true })
+  roleIds?: string[];
 
   @ApiProperty({ description: "创建开始时间", required: false })
   @IsOptional()
