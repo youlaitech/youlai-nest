@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -11,6 +11,8 @@ import { SysUserRole } from "../user/entities/sys-user-role.entity";
 
 @Injectable()
 export class RoleService {
+  private readonly logger = new Logger(RoleService.name);
+
   constructor(
     @InjectRepository(SysRole)
     private roleRepository: Repository<SysRole>,
@@ -37,7 +39,7 @@ export class RoleService {
   async saveRole(
     roleForm: Partial<CreateRoleDto> & Partial<UpdateRoleDto> & { id?: string | number }
   ) {
-    const roleId = roleForm.id == null ? undefined : roleForm.id.toString();
+    const roleId = roleForm.id?.toString();
 
     let oldRole: SysRole | null = null;
     if (roleId) {
@@ -129,7 +131,7 @@ export class RoleService {
   /**
    * 根据角色查询菜单
    */
-  async getMenuIdsByRoleIds(roleIds: (string | number)[]): Promise<string[]> {
+  async getMenuIdsByRoleIds(roleIds: string[]): Promise<string[]> {
     if (!roleIds?.length) return [];
     const ids = roleIds.map((id) => id.toString());
 
@@ -141,7 +143,7 @@ export class RoleService {
     return [...new Set(roleMenus.map((rm) => rm.menuId))];
   }
 
-  async getRoleMenuIds(roleId: string | number): Promise<string[]> {
+  async getRoleMenuIds(roleId: string): Promise<string[]> {
     return await this.getMenuIdsByRoleIds([roleId.toString()]);
   }
 
@@ -175,7 +177,7 @@ export class RoleService {
       // 4. 根据菜单ID查询权限标识
       return await this.menuService.findPermsByMenuIds(menuIds);
     } catch (error) {
-      console.error("获取角色权限失败:", error);
+      this.logger.error("获取角色权限失败", (error as any)?.stack ?? String(error));
       return [];
     }
   }
@@ -219,7 +221,7 @@ export class RoleService {
   /**
    * 根据 ID 查询角色
    */
-  async getRoleForm(id: string | number) {
+  async getRoleForm(id: string) {
     return await this.roleRepository.findOne({
       where: { id: id.toString(), isDeleted: 0 },
     });
@@ -228,11 +230,11 @@ export class RoleService {
   /**
    * 更新角色
    */
-  async update(id: string | number, updateRoleDto: UpdateRoleDto) {
+  async update(id: string, updateRoleDto: UpdateRoleDto) {
     return await this.roleRepository.update(id.toString(), updateRoleDto);
   }
 
-  async updateRoleStatus(roleId: string | number, status: number): Promise<boolean> {
+  async updateRoleStatus(roleId: string, status: number): Promise<boolean> {
     const roleIdStr = roleId.toString();
     const role = await this.roleRepository.findOne({
       where: { id: roleIdStr, isDeleted: 0 },
@@ -250,7 +252,7 @@ export class RoleService {
   /**
    * 更新角色菜单
    */
-  async updateMenus(roleId: string | number, menuIds: (string | number)[]) {
+  async updateMenus(roleId: string, menuIds: string[]) {
     const roleIdStr = roleId.toString();
     // 先删除原有的关联
     await this.roleMenuRepository.delete({ roleId: roleIdStr });
@@ -267,7 +269,7 @@ export class RoleService {
   /**
    * 删除角色
    */
-  async remove(id: string | number) {
+  async remove(id: string) {
     return await this.roleRepository.update(id.toString(), { isDeleted: 1 });
   }
 
@@ -301,7 +303,7 @@ export class RoleService {
   /**
    * 查询角色信息
    */
-  async findRolesByIds(roleIds: (string | number)[]): Promise<SysRole[]> {
+  async findRolesByIds(roleIds: string[]): Promise<SysRole[]> {
     const ids = roleIds.map((id) => id.toString());
     return await this.roleRepository.find({
       where: { id: In(ids), isDeleted: 0 },

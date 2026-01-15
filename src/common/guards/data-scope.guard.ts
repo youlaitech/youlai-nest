@@ -5,7 +5,11 @@ import { RequestContext } from "../context/request-context";
 
 @Injectable()
 export class DataScopeGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  private readonly reflector: Reflector;
+
+  constructor(reflector: Reflector) {
+    this.reflector = reflector;
+  }
 
   async canActivate(context: ExecutionContext) {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -22,8 +26,14 @@ export class DataScopeGuard implements CanActivate {
 
     const user = request.user || request["user"];
 
-    const userId = user?.userId;
-    const deptId = user?.deptId ?? null;
+    const userIdRaw = user?.userId;
+    const deptIdRaw = user?.deptId;
+    const userId =
+      userIdRaw === undefined || userIdRaw === null || userIdRaw === ""
+        ? undefined
+        : String(userIdRaw);
+    const deptId =
+      deptIdRaw === undefined || deptIdRaw === null || deptIdRaw === "" ? null : String(deptIdRaw);
     const deptTreePath = user?.deptTreePath ?? null;
     const dataScope = user?.dataScope ?? null;
 

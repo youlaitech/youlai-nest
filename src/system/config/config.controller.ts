@@ -8,7 +8,11 @@ import { CurrentUser } from "src/common/decorators/current-user.decorator";
 @ApiTags("08.系统配置")
 @Controller("configs")
 export class ConfigController {
-  constructor(private readonly configService: ConfigService) {}
+  private readonly configService: ConfigService;
+
+  constructor(configService: ConfigService) {
+    this.configService = configService;
+  }
 
   @ApiOperation({ summary: "系统配置分页列表" })
   @Get()
@@ -19,10 +23,10 @@ export class ConfigController {
   @ApiOperation({ summary: "新增系统配置" })
   @Post()
   async saveConfig(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() formData: CreateConfigDto
   ) {
-    await this.configService.saveConfig({ ...formData, createBy: currentUserId.toString() });
+    await this.configService.saveConfig({ ...formData, createBy: currentUserId });
     return { success: true };
   }
 
@@ -43,10 +47,10 @@ export class ConfigController {
   @Put(":id")
   async updateConfig(
     @Param("id") id: string,
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() formData: UpdateConfigDto
   ) {
-    await this.configService.updateConfig(id, { ...formData, updateBy: currentUserId.toString() });
+    await this.configService.updateConfig(id, { ...formData, updateBy: currentUserId });
     return { success: true };
   }
 

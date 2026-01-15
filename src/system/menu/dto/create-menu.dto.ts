@@ -1,4 +1,5 @@
 import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class CreateMenuDto {
   // 菜单名称
@@ -13,7 +14,11 @@ export class CreateMenuDto {
 
   // 父级ID
   @IsOptional()
-  parentId?: string | number;
+  @Transform(({ value }) =>
+    value === undefined || value === null || value === "" ? undefined : String(value)
+  )
+  @IsString()
+  parentId?: string;
 
   // 菜单类型（C-目录 M-菜单 B-按钮）
   @IsString()

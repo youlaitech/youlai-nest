@@ -20,7 +20,11 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 @ApiTags("05.部门接口")
 @Controller("depts")
 export class DeptController {
-  constructor(private readonly deptService: DeptService) {}
+  private readonly deptService: DeptService;
+
+  constructor(deptService: DeptService) {
+    this.deptService = deptService;
+  }
 
   @ApiOperation({ summary: "获取部门表格树形列表" })
   @Get()
@@ -38,10 +42,10 @@ export class DeptController {
 
   @ApiOperation({ summary: "创建部门" })
   @Post()
-  async create(@CurrentUser("userId") currentUserId: number, @Body() createDeptDto: CreateDeptDto) {
+  async create(@CurrentUser("userId") currentUserId: string, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
       ...createDeptDto,
-      createBy: currentUserId.toString(),
+      createBy: currentUserId,
     });
   }
 
@@ -58,7 +62,7 @@ export class DeptController {
   @ApiOperation({ summary: "编辑部门" })
   @Put(":id")
   async update(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Param("id") id: string,
     @Body() requestBody: any
   ) {
@@ -77,7 +81,7 @@ export class DeptController {
 
     const result = await this.deptService.updateDept(id, {
       ...updateDeptDto,
-      updateBy: currentUserId.toString(),
+      updateBy: currentUserId,
     });
 
     if (!result) {

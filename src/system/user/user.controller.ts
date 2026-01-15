@@ -37,10 +37,13 @@ import { Logger as WinstonLogger } from "winston";
 @ApiTags("02.用户接口")
 @Controller("users")
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger
-  ) {}
+  private readonly userService: UserService;
+  private readonly logger: WinstonLogger;
+
+  constructor(userService: UserService, @Inject(WINSTON_MODULE_PROVIDER) logger: WinstonLogger) {
+    this.userService = userService;
+    this.logger = logger;
+  }
 
   /**
    * 用户分页列表
@@ -89,10 +92,10 @@ export class UserController {
 
   @ApiOperation({ summary: "新增用户" })
   @Post()
-  async create(@CurrentUser("userId") currentUserId: number, @Body() createUserDto: CreateUserDto) {
+  async create(@CurrentUser("userId") currentUserId: string, @Body() createUserDto: CreateUserDto) {
     return await this.userService.create({
       ...createUserDto,
-      createBy: currentUserId.toString(),
+      createBy: currentUserId,
     });
   }
 
@@ -109,7 +112,7 @@ export class UserController {
   @ApiOperation({ summary: "修改用户" })
   @Put(":id")
   async update(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Param("id") id: string,
     @Body() updateUserDto: UpdateUserDto
   ) {
@@ -119,7 +122,7 @@ export class UserController {
     }
     return await this.userService.update(userId, {
       ...updateUserDto,
-      updateBy: currentUserId.toString(),
+      updateBy: currentUserId,
     });
   }
 
@@ -179,7 +182,7 @@ export class UserController {
   @ApiOperation({ summary: "导入用户" })
   @Post("import")
   @UseInterceptors(FileInterceptor("file"))
-  async importUsers(@UploadedFile() file: Express.Multer.File) {
+  async importUsers(@UploadedFile() file: any) {
     if (!file?.buffer) {
       throw new BusinessException("导入文件不能为空");
     }
@@ -237,7 +240,7 @@ export class UserController {
   @ApiOperation({ summary: "当前用户修改密码" })
   @Put("password")
   async changeCurrentUserPassword(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() data: PasswordChangeDto
   ) {
     return await this.userService.changeCurrentUserPassword(currentUserId, data);
@@ -252,7 +255,7 @@ export class UserController {
   @ApiOperation({ summary: "绑定或更换手机号" })
   @Put("mobile")
   async bindOrChangeMobile(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() data: MobileUpdateDto
   ) {
     return await this.userService.bindOrChangeMobile(currentUserId, data);
@@ -261,7 +264,7 @@ export class UserController {
   @ApiOperation({ summary: "解绑手机号" })
   @Delete("mobile")
   async unbindMobile(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() data: PasswordVerifyDto
   ) {
     return await this.userService.unbindMobile(currentUserId, data.password);
@@ -277,7 +280,7 @@ export class UserController {
   @ApiOperation({ summary: "绑定或更换邮箱" })
   @Put("email")
   async bindOrChangeEmail(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() data: EmailUpdateDto
   ) {
     return await this.userService.bindOrChangeEmail(currentUserId, data);
@@ -285,7 +288,7 @@ export class UserController {
 
   @ApiOperation({ summary: "解绑邮箱" })
   @Delete("email")
-  async unbindEmail(@CurrentUser("userId") currentUserId: number, @Body() data: PasswordVerifyDto) {
+  async unbindEmail(@CurrentUser("userId") currentUserId: string, @Body() data: PasswordVerifyDto) {
     return await this.userService.unbindEmail(currentUserId, data.password);
   }
 

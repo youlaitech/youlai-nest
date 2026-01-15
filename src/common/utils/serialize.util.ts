@@ -36,7 +36,7 @@ function isPlainObject(value: any): boolean {
 }
 
 export function transformDatesInObject<T>(obj: T, opts?: DateFormatOptions): T {
-  if (obj == null) return obj;
+  if (obj === null || obj === undefined) return obj;
 
   // Handle Date -> formatted string
   if (obj instanceof Date) {

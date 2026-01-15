@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Optional } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Like } from "typeorm";
+import { Repository } from "typeorm";
 import { SysConfig } from "./entities/sys-config.entity";
 import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
@@ -65,7 +65,7 @@ export class ConfigService {
 
     const config = this.configRepository.create({
       ...formData,
-      createBy: (formData as any).createBy == null ? null : String((formData as any).createBy),
+      createBy: (formData as any).createBy?.toString() ?? null,
       createTime: new Date(),
     });
 
@@ -118,7 +118,7 @@ export class ConfigService {
 
     Object.assign(config, {
       ...formData,
-      updateBy: (formData as any).updateBy == null ? null : String((formData as any).updateBy),
+      updateBy: (formData as any).updateBy?.toString() ?? null,
     });
     config.updateTime = new Date();
 

@@ -8,7 +8,11 @@ import { CurrentUser } from "src/common/decorators/current-user.decorator";
 @ApiTags("09.通知公告")
 @Controller("notices")
 export class NoticeController {
-  constructor(private readonly noticeService: NoticeService) {}
+  private readonly noticeService: NoticeService;
+
+  constructor(noticeService: NoticeService) {
+    this.noticeService = noticeService;
+  }
 
   @ApiOperation({ summary: "通知公告分页列表" })
   @Get()
@@ -19,7 +23,7 @@ export class NoticeController {
   @ApiOperation({ summary: "新增通知公告" })
   @Post()
   async saveNotice(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() formData: CreateNoticeDto
   ) {
     await this.noticeService.saveNotice({ ...formData, createBy: currentUserId });
@@ -42,7 +46,7 @@ export class NoticeController {
   @Put(":id")
   async updateNotice(
     @Param("id") id: string,
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Body() formData: UpdateNoticeDto
   ) {
     await this.noticeService.updateNotice(id, { ...formData, updateBy: currentUserId });
@@ -51,7 +55,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "发布通知公告" })
   @Put(":id/publish")
-  async publishNotice(@Param("id") id: string, @CurrentUser("userId") currentUserId: number) {
+  async publishNotice(@Param("id") id: string, @CurrentUser("userId") currentUserId: string) {
     await this.noticeService.publishNotice(id, currentUserId);
     return { success: true };
   }
@@ -76,7 +80,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "全部已读" })
   @Put("read-all")
-  async readAll(@CurrentUser("userId") currentUserId: number) {
+  async readAll(@CurrentUser("userId") currentUserId: string) {
     await this.noticeService.readAll(currentUserId);
     return { success: true };
   }
@@ -84,7 +88,7 @@ export class NoticeController {
   @ApiOperation({ summary: "获取我的通知公告分页列表" })
   @Get("my")
   async getMyNoticePage(
-    @CurrentUser("userId") currentUserId: number,
+    @CurrentUser("userId") currentUserId: string,
     @Query() query: NoticeQueryDto
   ) {
     return await this.noticeService.getMyNoticePage(currentUserId, query);

@@ -12,13 +12,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const normalizeMsg = (value: unknown): string => {
       if (Array.isArray(value)) {
         const items = value
-          .map((v) => (v == null ? "" : String(v)).trim())
+          .map((v) => (v === null || v === undefined ? "" : String(v)).trim())
           .filter((v) => v.length > 0);
         if (items.length > 0) return items.join("；");
         return ErrorCode.SYSTEM_ERROR.msg;
       }
       if (typeof value === "string") return value;
-      if (value == null) return ErrorCode.SYSTEM_ERROR.msg;
+      if (value === null || value === undefined) return ErrorCode.SYSTEM_ERROR.msg;
       return String(value);
     };
 

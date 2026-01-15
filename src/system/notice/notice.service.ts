@@ -63,7 +63,7 @@ export class NoticeService {
     };
   }
 
-  async saveNotice(form: CreateNoticeDto & { createBy: string | number }) {
+  async saveNotice(form: CreateNoticeDto & { createBy: string }) {
     const now = new Date();
     const notice = this.noticeRepository.create({
       ...form,
@@ -76,7 +76,7 @@ export class NoticeService {
     return true;
   }
 
-  async getNoticeFormData(id: string | number): Promise<(CreateNoticeDto & { id: string }) | null> {
+  async getNoticeFormData(id: string): Promise<(CreateNoticeDto & { id: string }) | null> {
     const idStr = id.toString();
     const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) return null;
@@ -84,11 +84,11 @@ export class NoticeService {
     return { id: idStr, title, content, type, level, targetType, targetUserIds };
   }
 
-  async getNoticeDetail(id: string | number) {
+  async getNoticeDetail(id: string) {
     return await this.noticeRepository.findOne({ where: { id: id.toString(), isDeleted: 0 } });
   }
 
-  async updateNotice(id: string | number, form: UpdateNoticeDto & { updateBy: string | number }) {
+  async updateNotice(id: string, form: UpdateNoticeDto & { updateBy: string }) {
     const idStr = id.toString();
     const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) {
@@ -104,7 +104,7 @@ export class NoticeService {
     return true;
   }
 
-  async publishNotice(id: string | number, publisherId: string | number) {
+  async publishNotice(id: string, publisherId: string) {
     const idStr = id.toString();
     const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) return false;
@@ -165,7 +165,7 @@ export class NoticeService {
     return true;
   }
 
-  async revokeNotice(id: string | number) {
+  async revokeNotice(id: string) {
     const notice = await this.noticeRepository.findOne({
       where: { id: id.toString(), isDeleted: 0 },
     });
@@ -178,13 +178,13 @@ export class NoticeService {
     return true;
   }
 
-  async deleteNotices(ids: (string | number)[]) {
+  async deleteNotices(ids: string[]) {
     const idStrs = (ids || []).map((v) => v.toString());
     await this.noticeRepository.update(idStrs, { isDeleted: 1 });
     return true;
   }
 
-  async readAll(userId: string | number) {
+  async readAll(userId: string) {
     const now = new Date();
     await this.userNoticeRepository
       .createQueryBuilder()
@@ -195,7 +195,7 @@ export class NoticeService {
     return true;
   }
 
-  async getMyNoticePage(userId: string | number, query: NoticeQueryDto) {
+  async getMyNoticePage(userId: string, query: NoticeQueryDto) {
     const { pageNum, pageSize, isRead } = query;
 
     const page = Number(pageNum) > 0 ? Number(pageNum) : 1;

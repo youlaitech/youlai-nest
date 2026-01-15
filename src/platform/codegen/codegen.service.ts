@@ -289,11 +289,11 @@ export class CodegenService {
     const businessName = body.businessName || tableName;
     const entityName = body.entityName || toPascalCase(tableName);
     const author = body.author || this.codegenConfig.defaultAuthor;
-    const parentMenuId = body.parentMenuId ? Number(body.parentMenuId) : null;
+    const parentMenuId = body.parentMenuId ? String(body.parentMenuId) : null;
 
-    let configId: number;
+    let configId: string;
     if (cfgRows?.[0]?.id) {
-      configId = Number(cfgRows[0].id);
+      configId = String(cfgRows[0].id);
       await this.dataSource.query(
         `UPDATE gen_table
          SET module_name = ?,
@@ -326,7 +326,7 @@ export class CodegenService {
         ]
       );
 
-      configId = Number(insertResult?.insertId);
+      configId = String(insertResult?.insertId);
     }
 
     // 先清理旧字段配置，再写入新配置
@@ -336,7 +336,6 @@ export class CodegenService {
     for (let i = 0; i < fieldConfigs.length; i++) {
       const f = fieldConfigs[i] as FieldConfigDto;
       const columnType = String(f.columnType || "");
-      const javaType = f.fieldType || getJavaTypeByColumnType(columnType);
 
       await this.dataSource.query(
         `INSERT INTO gen_table_column(
@@ -364,11 +363,11 @@ export class CodegenService {
     const cfgRows = await this.dataSource.query(
       `SELECT id
        FROM gen_table
-       WHERE table_name = ? AND is_deleted = b'0'
+       WHERE table_name = ?
        LIMIT 1`,
       [tableName]
     );
-    const configId = cfgRows?.[0]?.id ? Number(cfgRows[0].id) : null;
+    const configId = cfgRows?.[0]?.id ? String(cfgRows[0].id) : null;
     if (!configId) {
       return true;
     }

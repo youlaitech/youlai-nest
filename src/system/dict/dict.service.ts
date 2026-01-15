@@ -125,7 +125,7 @@ export class DictService {
 
     await this.dictRepository.update(idStr, {
       ...(updateDictDto as any),
-      updateBy: updateDictDto.updateBy == null ? undefined : updateDictDto.updateBy.toString(),
+      updateBy: updateDictDto.updateBy?.toString(),
     });
     return true;
   }
@@ -313,7 +313,7 @@ export class DictService {
 
     await this.dictItemRepository.update(idStr, {
       ...(updateData as any),
-      updateBy: updateData.updateBy == null ? undefined : updateData.updateBy.toString(),
+      updateBy: updateData.updateBy?.toString(),
     });
     return true;
   }

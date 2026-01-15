@@ -46,6 +46,7 @@ export default [
       prettier: prettierPlugin,
     },
     rules: {
+      "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
@@ -59,10 +60,20 @@ export default [
 
       "no-console": "warn",
       "no-debugger": "error",
+      "no-undef": "off",
       eqeqeq: ["error", "always"],
       curly: "error",
 
-      "prettier/prettier": "error",
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
+    },
+  },
+
+  {
+    files: ["**/*.d.ts"],
+    rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-undef": "off",
     },
   },
 

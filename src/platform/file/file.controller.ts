@@ -11,7 +11,7 @@ export class FileController {
   @ApiOperation({ summary: "上传文件" })
   @Post()
   @UseInterceptors(FileInterceptor("file"))
-  async upload(@UploadedFile() file: Express.Multer.File) {
+  async upload(@UploadedFile() file: any) {
     return await this.ossService.uploadFile(file);
   }
 
