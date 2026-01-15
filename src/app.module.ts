@@ -1,10 +1,4 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  OnModuleInit,
-  RequestMethod,
-} from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -21,6 +15,7 @@ import { ConfigModule as SystemConfigModule } from "./system/config/config.modul
 import { WebsocketModule } from "./platform/websocket/websocket.module";
 import { CodegenModule } from "./platform/codegen/codegen.module";
 import { FileModule } from "./platform/file/file.module";
+import { AiModule } from "./platform/ai/ai.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 import { StatisticsModule } from "./system/statistics/statistics.module";
@@ -38,7 +33,6 @@ import typeormConfig from "./config/typeorm.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
 import { DataScopeGuard } from "./common/guards/data-scope.guard";
-import { DataScopeInterceptor } from "./common/interceptors/data-scope.interceptor";
 import "./common/plugins/global-scope.plugin";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
@@ -100,6 +94,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     WebsocketModule,
     FileModule,
     CodegenModule,
+    AiModule,
     LogModule,
     NoticeModule,
     StatisticsModule,

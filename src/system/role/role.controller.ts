@@ -65,6 +65,7 @@ export class RoleController {
   @ApiOperation({ summary: "角色分配权限" })
   @Put(":id/menus")
   async updateMenus(@Param("id") id: string, @Body() menuIds: (string | number)[]): Promise<any> {
-    return await this.rolesService.updateMenus(id, menuIds);
+    const ids = (menuIds || []).map((v) => v.toString());
+    return await this.rolesService.updateMenus(id, ids);
   }
 }

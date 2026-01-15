@@ -185,7 +185,7 @@ export class CodegenService {
           dict_type AS dictType
         FROM gen_table_column
         WHERE table_id = ?
-        ORDER BY ordinal_position ASC`,
+        ORDER BY field_sort ASC`,
         [config.id]
       );
 
@@ -339,17 +339,40 @@ export class CodegenService {
 
       await this.dataSource.query(
         `INSERT INTO gen_table_column(
-            table_id, column_name, column_type, column_comment, is_nullable,
-            character_maximum_length, ordinal_position, create_time, update_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            table_id,
+            column_name,
+            column_type,
+            field_name,
+            field_type,
+            field_sort,
+            field_comment,
+            max_length,
+            is_required,
+            is_show_in_list,
+            is_show_in_form,
+            is_show_in_query,
+            query_type,
+            form_type,
+            dict_type,
+            create_time,
+            update_time
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           configId,
           f.columnName || null,
           columnType || null,
-          f.fieldComment || null,
-          f.isRequired ? "NO" : "YES",
-          f.maxLength ?? null,
+          f.fieldName || null,
+          f.fieldType || getJavaTypeByColumnType(columnType),
           f.fieldSort ?? i + 1,
+          f.fieldComment || null,
+          f.maxLength ?? null,
+          f.isRequired ?? 0,
+          f.isShowInList ?? 0,
+          f.isShowInForm ?? 0,
+          f.isShowInQuery ?? 0,
+          f.queryType ?? 1,
+          f.formType ?? getDefaultFormTypeByColumnType(columnType),
+          f.dictType ?? null,
           now,
           now,
         ]

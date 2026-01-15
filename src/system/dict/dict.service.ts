@@ -56,7 +56,7 @@ export class DictService {
 
   async getDictOptions() {
     const dicts = await this.dictRepository.find({
-      where: { status: 0, isDeleted: 0 },
+      where: { status: 1, isDeleted: 0 },
       order: { createTime: "DESC" },
       select: ["dictCode", "name"],
     });

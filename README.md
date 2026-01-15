@@ -11,8 +11,6 @@
    </a>
 </div>
 
-![](https://raw.gitmirror.com/youlaitech/image/main/docs/rainbow.png)
-
 <div align="center">
   <a target="_blank" href="https://vue.youlai.tech/">🔍 在线预览</a> |  <a target="_blank" href="https://www.youlai.tech/youlai-nest/">📖 阅读文档</a> | <a href="./README.en-US.md">🌐English</a>
 </div>
@@ -48,46 +46,69 @@
 | 在线接口文档       | [https://www.apifox.cn/apidoc](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
 | 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                             |
 
-## 🚀 项目启动
+## ⚙️ 环境准备
 
-### 推荐运行环境
+### 1️⃣ 基础环境
 
-- **Node.js**：>= 20 LTS（推荐 20.17+ 或 22.x）
-- **pnpm**：>= 9.x
-- **npm（如果使用）**：>= 10（当前依赖已是 npm 11）
+- **Node.js**：20.x / 24.x LTS 下载：https://nodejs.org/zh-cn/download
 
-1. **数据库初始化（MySQL）**
+  > NestJS 11 已不再支持 Node 16 / 18
+  > https://docs.nestjs.com/migration-guide#nodejs-v16-and-v18-no-longer-supported
 
-   MySQL 初始化脚本位于：`sql/mysql/youlai_admin.sql`，脚本会创建示例库 `youlai_admin` 并初始化基础表结构与数据。
-   - **可视化工具导入（Navicat 等）**
+- **包管理器**：pnpm（>= 8）
 
-     使用 Navicat/HeidiSQL 等工具，选择你自己的 MySQL 实例，执行 `sql/mysql/youlai_admin.sql` 脚本即可。
+- **开发工具**：VS Code / WebStorm
 
-2. **修改配置**
+- **VS Code 插件**（推荐）：
+  - ESLint
+  - Prettier - Code formatter
+  - EditorConfig for VS Code
 
-   默认使用 `.env`/`.env.dev` 中配置的 MySQL/Redis 连接信息，本地开发时请根据实际数据库地址、账号密码进行修改。
+验证环境是否就绪：
 
-3. **启动项目**
+```bash
+node -v
+pnpm -v
+```
 
-   ```bash
-   # 克隆代码
-   git clone https://gitee.com/youlaiorg/youlai-nest.git
+### 2️⃣ 依赖服务
 
-   # 切换目录
-   cd youlai-nest
+▸ MySQL 5.7~8.x：业务数据存储（用户/角色/权限），安装：[Windows](https://youlai.blog.csdn.net/article/details/133272887) | [Linux](https://youlai.blog.csdn.net/article/details/130398179)
+▸ Redis 稳定版：登录会话/验证码/数据缓存，安装：[Windows](https://youlai.blog.csdn.net/article/details/133410293) | [Linux](https://youlai.blog.csdn.net/article/details/130439335)
 
-   # 安装 pnpm
-   npm install pnpm -g
+> ⚠️ 本地未配置 MySQL、Redis 不影响启动，项目默认接入 youlai 线上公共环境运行。
 
-   # 设置镜像源(可忽略)
-   pnpm config set registry https://registry.npmmirror.com
+### 3️⃣ 初始化数据库
 
-   # 安装依赖
-   pnpm install
+执行以下脚本完成数据库初始化：
 
-   # 启动运行
-   pnpm run start:dev
-   ```
+```text
+sql/mysql/youlai_admin.sql
+```
+
+> ⚠️ 该步骤为必执行步骤。
+
+## ▶️ 快速启动
+
+```bash
+# 克隆代码
+git clone https://gitee.com/youlaiorg/youlai-nest.git
+
+# 切换目录
+cd youlai-nest
+
+# 安装 pnpm
+npm install pnpm -g
+
+# 设置镜像源(可忽略)
+pnpm config set registry https://registry.npmmirror.com
+
+# 安装依赖
+pnpm install
+
+# 启动运行
+pnpm run start:dev
+```
 
 访问接口文档地址 [http://localhost:8000/api-docs](http://localhost:8000/api-docs) 验证项目启动是否成功。
 

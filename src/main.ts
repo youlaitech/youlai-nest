@@ -1,7 +1,7 @@
 import { NestFactory, Reflector } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { NestInterceptor, ValidationPipe, HttpStatus } from "@nestjs/common";
+import { ValidationPipe, HttpStatus } from "@nestjs/common";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
 import { ConfigService } from "@nestjs/config";
 import * as session from "express-session";
@@ -11,9 +11,8 @@ import { ErrorCode } from "./common/enums/error-code.enum";
 
 async function bootstrap() {
   // Ensure BigInt is always JSON-serializable (and matches Java Long/BigInteger -> string strategy)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   if (typeof (BigInt.prototype as any).toJSON !== "function") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (BigInt.prototype as any).toJSON = function () {
       return this.toString();
     };
@@ -111,10 +110,11 @@ async function bootstrap() {
   );
 
   // 端口统一通过环境变量 SERVER_PORT 配置（默认 8000）
-  const port = configService.get("SERVER_PORT", 8000);
+  const portRaw = configService.get("APP_PORT") ?? configService.get("SERVER_PORT") ?? 8000;
+  const port = Number(portRaw) || 8000;
   await app.listen(port);
   console.log(`应用已启动: http://localhost:${port}`);
   console.log(`接口文档: http://localhost:${port}/api-docs`);
 }
 
-bootstrap();
+void bootstrap();

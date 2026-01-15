@@ -237,6 +237,70 @@ export class UserService {
     };
   }
 
+  async findByMobile(mobile: string): Promise<{
+    id: string;
+    username: string;
+    status: number;
+    deptId: string;
+    roles: string[];
+    dataScope: number;
+  } | null> {
+    const mobileSafe = mobile?.trim();
+    if (!mobileSafe) return null;
+
+    const user = await this.userRepository.findOne({
+      where: { mobile: mobileSafe, isDeleted: 0 },
+      relations: ["roles"],
+    });
+    if (!user) return null;
+
+    const roleIds = (user.roles || []).map((role) => role.id);
+    const roles = await this.roleService.findRolesByIds(roleIds);
+    const roleCodes = roles.map((r) => r.code);
+    const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
+
+    return {
+      id: user.id.toString(),
+      username: user.username,
+      status: user.status,
+      deptId: user.deptId?.toString() || "",
+      roles: roleCodes,
+      dataScope,
+    };
+  }
+
+  async findByOpenid(openid: string): Promise<{
+    id: string;
+    username: string;
+    status: number;
+    deptId: string;
+    roles: string[];
+    dataScope: number;
+  } | null> {
+    const openidSafe = openid?.trim();
+    if (!openidSafe) return null;
+
+    const user = await this.userRepository.findOne({
+      where: { openid: openidSafe, isDeleted: 0 },
+      relations: ["roles"],
+    });
+    if (!user) return null;
+
+    const roleIds = (user.roles || []).map((role) => role.id);
+    const roles = await this.roleService.findRolesByIds(roleIds);
+    const roleCodes = roles.map((r) => r.code);
+    const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
+
+    return {
+      id: user.id.toString(),
+      username: user.username,
+      status: user.status,
+      deptId: user.deptId?.toString() || "",
+      roles: roleCodes,
+      dataScope,
+    };
+  }
+
   /**
    * 获取当前用户信息
    */
