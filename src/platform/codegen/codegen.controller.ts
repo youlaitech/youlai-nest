@@ -15,7 +15,7 @@ import { CodegenService } from "./codegen.service";
 import type { GenConfigFormDto } from "./dto/gen-config-form.dto";
 import { TableQueryDto } from "./dto/table-query.dto";
 
-@ApiTags("11.代码生成")
+@ApiTags("12.代码生成")
 @Controller("codegen")
 export class CodegenController {
   constructor(private readonly codegenService: CodegenService) {}

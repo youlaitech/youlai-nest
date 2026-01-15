@@ -74,28 +74,17 @@ async function bootstrap() {
   // Swagger 配置
   const config = new DocumentBuilder()
     .setTitle("youlai-nest")
-    .setDescription(`youlai 全家桶（Node/Nest）权限管理后台接口文档`)
+    .setDescription(`youlai 全家桶（Node/Nest 11）权限管理后台接口文档`)
     .setVersion("1.0")
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  // Ensure Swagger tag groups appear in a deterministic, human-friendly order.
-  // If tags use numeric prefixes like "01.认证接口", this will sort by that leading number.
-  if (document.tags && Array.isArray(document.tags)) {
-    document.tags.sort((a, b) => {
-      const parse = (t: { name: string }) => {
-        const m = /^\\s*(\\d+)\\s*\\.\\s*(.*)$/.exec(t.name);
-        if (m) return { num: parseInt(m[1], 10), rest: m[2].trim().toLowerCase() };
-        // no numeric prefix -> place after numbered groups, sort by name
-        return { num: Number.POSITIVE_INFINITY, rest: t.name.trim().toLowerCase() };
-      };
-      const A = parse(a);
-      const B = parse(b);
-      if (A.num !== B.num) return A.num - B.num;
-      return A.rest.localeCompare(B.rest);
-    });
-  }
-  SwaggerModule.setup("api-docs", app, document);
+  // 使用内置 alpha 排序，配合 01/02 数字前缀即可保证从小到大显示。
+  SwaggerModule.setup("api-docs", app, document, {
+    swaggerOptions: {
+      tagsSorter: "alpha",
+    },
+  });
 
   // Session 配置
   app.use(

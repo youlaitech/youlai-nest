@@ -5,7 +5,7 @@ import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
-@ApiTags("08.系统配置")
+@ApiTags("07.系统配置")
 @Controller("configs")
 export class ConfigController {
   private readonly configService: ConfigService;

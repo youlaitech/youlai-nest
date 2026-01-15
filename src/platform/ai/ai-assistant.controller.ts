@@ -8,7 +8,7 @@ import { AiParseRequestDto } from "./dto/ai-parse-request.dto";
 import { AiExecuteRequestDto } from "./dto/ai-execute-request.dto";
 import { AiAssistantQueryDto } from "./dto/ai-assistant-query.dto";
 
-@ApiTags("12.AI 助手接口")
+@ApiTags("14.AI 助手接口")
 // 提供解析、执行及记录查询接口。
 @Controller("ai/assistant")
 export class AiAssistantController {

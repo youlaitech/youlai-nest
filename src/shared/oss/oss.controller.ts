@@ -3,7 +3,7 @@ import { OssService } from "./oss.service";
 import { ApiTags } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
 
-@ApiTags("07.对象存储")
+@ApiTags("08.对象存储")
 @Controller("oss")
 export class OssController {
   constructor(private oss: OssService) {}
