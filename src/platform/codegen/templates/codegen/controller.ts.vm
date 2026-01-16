@@ -1,0 +1,55 @@
+/**
+ * ${businessName} 控制器
+ *
+ * 提供分页、表单、创建、更新、删除等标准 CRUD 接口。
+ */
+import { Controller, Get, Post, Body, Param, Delete, Query, Put } from "@nestjs/common";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ${entityName}Service } from "./${entityKebab}.service";
+import { ${entityName}QueryDto } from "./dto/${entityKebab}-query.dto";
+import { Create${entityName}Dto } from "./dto/create-${entityKebab}.dto";
+import { Update${entityName}Dto } from "./dto/update-${entityKebab}.dto";
+
+@ApiTags("${businessName}接口")
+@Controller("${entityKebab}")
+export class ${entityName}Controller {
+  constructor(private readonly ${entityLowerCamel}Service: ${entityName}Service) {}
+
+  /** ${businessName} 分页列表 */
+  @ApiOperation({ summary: "${businessName}分页列表" })
+  @Get()
+  async get${entityName}Page(@Query() query: ${entityName}QueryDto) {
+    return await this.${entityLowerCamel}Service.get${entityName}Page(query);
+  }
+
+  /** 获取 ${businessName} 表单数据 */
+  @ApiOperation({ summary: "获取${businessName}表单数据" })
+  @Get(":id/form")
+  async get${entityName}Form(@Param("id") id: string) {
+    return await this.${entityLowerCamel}Service.get${entityName}FormData(id);
+  }
+
+  /** 新增 ${businessName} */
+  @ApiOperation({ summary: "新增${businessName}" })
+  @Post()
+  async create(@Body() formData: Create${entityName}Dto) {
+    await this.${entityLowerCamel}Service.create(formData);
+    return { success: true };
+  }
+
+  /** 修改 ${businessName} */
+  @ApiOperation({ summary: "修改${businessName}" })
+  @Put(":id")
+  async update(@Param("id") id: string, @Body() formData: Update${entityName}Dto) {
+    await this.${entityLowerCamel}Service.update(id, formData);
+    return { success: true };
+  }
+
+  /** 删除 ${businessName} */
+  @ApiOperation({ summary: "删除${businessName}" })
+  @Delete(":ids")
+  async delete(@Param("ids") ids: string) {
+    await this.${entityLowerCamel}Service.delete(ids);
+    return { success: true };
+  }
+}

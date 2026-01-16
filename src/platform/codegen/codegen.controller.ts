@@ -48,9 +48,10 @@ export class CodegenController {
   @Get(":tableName/preview")
   async getPreview(
     @Param("tableName") tableName: string,
-    @Query("pageType") pageType?: "classic" | "curd"
+    @Query("pageType") pageType?: "classic" | "curd",
+    @Query("type") type?: "ts" | "js"
   ) {
-    return await this.codegenService.getPreview(tableName, pageType);
+    return await this.codegenService.getPreview(tableName, pageType, type);
   }
 
   @ApiOperation({ summary: "下载代码" })
@@ -59,10 +60,11 @@ export class CodegenController {
   async download(
     @Res() res: Response,
     @Param("tableName") tableName: string,
-    @Query("pageType") pageType?: "classic" | "curd"
+    @Query("pageType") pageType?: "classic" | "curd",
+    @Query("type") type?: "ts" | "js"
   ) {
     const tableNames = tableName.split(",").filter(Boolean);
-    const { fileName, buffer } = await this.codegenService.downloadZip(tableNames, pageType);
+    const { fileName, buffer } = await this.codegenService.downloadZip(tableNames, pageType, type);
 
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
     res.setHeader("Content-Type", "application/octet-stream");

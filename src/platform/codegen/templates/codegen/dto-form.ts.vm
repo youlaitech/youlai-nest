@@ -1,0 +1,14 @@
+/**
+ * ${businessName} 表单 DTO
+ */
+import { ApiProperty } from "@nestjs/swagger";
+
+export class ${entityName}FormDto {
+#foreach($fieldConfig in $fieldConfigs)
+  #if($fieldConfig.isShowInForm && $fieldConfig.formType != "HIDDEN")
+  @ApiProperty({ description: "${fieldConfig.fieldComment}" })
+  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
+
+  #end
+#end
+}

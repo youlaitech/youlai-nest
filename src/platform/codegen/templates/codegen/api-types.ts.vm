@@ -1,5 +1,5 @@
 /**
- * ${entityName} $!{businessName}类型定义
+ * ${entityName} $!{businessName} 类型定义
  */
 
 /** $!{businessName}分页查询参数 */

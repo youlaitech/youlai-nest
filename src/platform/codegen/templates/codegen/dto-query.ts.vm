@@ -1,0 +1,32 @@
+/**
+ * ${businessName} 查询 DTO
+ */
+import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
+import { IsArray, IsNumber, IsOptional, IsString } from "class-validator";
+import { BaseQueryDto } from "src/common/dto/base-query.dto";
+
+export class ${entityName}QueryDto extends BaseQueryDto {
+#if($fieldConfigs.size() > 0)
+  /** 查询条件 */
+#end
+#foreach($fieldConfig in $fieldConfigs)
+  #if($fieldConfig.isShowInQuery)
+  @ApiProperty({ description: "${fieldConfig.fieldComment}", required: false })
+  @IsOptional()
+    #if($fieldConfig.queryType == "BETWEEN")
+  @IsArray()
+  @IsString({ each: true })
+  ${fieldConfig.fieldName}?: string[];
+    #elseif($fieldConfig.tsType == "number")
+  @Transform(({ value }) => (value === undefined || value === null || value === "" ? undefined : Number(value)))
+  @IsNumber()
+  ${fieldConfig.fieldName}?: number;
+    #else
+  @IsString()
+  ${fieldConfig.fieldName}?: string;
+    #end
+
+  #end
+#end
+}

@@ -1,0 +1,16 @@
+/**
+ * ${businessName} 模块
+ */
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { ${entityName}Service } from "./${entityKebab}.service";
+import { ${entityName}Controller } from "./${entityKebab}.controller";
+import { ${entityName} } from "./entities/${tableKebab}.entity";
+
+@Module({
+  imports: [TypeOrmModule.forFeature([${entityName}])],
+  controllers: [${entityName}Controller],
+  providers: [${entityName}Service],
+  exports: [${entityName}Service],
+})
+export class ${entityName}Module {}

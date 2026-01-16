@@ -16,14 +16,12 @@ type TemplateName =
   | "VIEW"
   | "Controller"
   | "Service"
-  | "ServiceImpl"
-  | "Mapper"
-  | "MapperXml"
-  | "Converter"
-  | "Query"
-  | "Form"
-  | "Vo"
-  | "Entity";
+  | "Module"
+  | "Entity"
+  | "DtoQuery"
+  | "DtoForm"
+  | "DtoCreate"
+  | "DtoUpdate";
 
 interface TemplateConfig {
   templatePath: string;
@@ -37,7 +35,7 @@ export class CodegenService {
 
   private readonly codegenConfig = {
     downloadFileName: "youlai-admin-code.zip",
-    backendAppName: "youlai-boot",
+    backendAppName: "youlai-nest",
     frontendAppName: "vue3-element-admin",
     defaultAuthor: "youlaitech",
     defaultModuleName: "system",
@@ -54,52 +52,89 @@ export class CodegenService {
     },
     VIEW: { templatePath: "codegen/index.vue.vm", subpackageName: "views", extension: ".vue" },
     Controller: {
-      templatePath: "codegen/controller.java.vm",
-      subpackageName: "controller",
-      extension: ".java",
+      templatePath: "codegen/controller.ts.vm",
+      subpackageName: "",
+      extension: ".ts",
     },
     Service: {
-      templatePath: "codegen/service.java.vm",
-      subpackageName: "service",
-      extension: ".java",
+      templatePath: "codegen/service.ts.vm",
+      subpackageName: "",
+      extension: ".ts",
     },
-    ServiceImpl: {
-      templatePath: "codegen/serviceImpl.java.vm",
-      subpackageName: "service.impl",
-      extension: ".java",
+    Module: {
+      templatePath: "codegen/module.ts.vm",
+      subpackageName: "",
+      extension: ".ts",
     },
-    Mapper: {
-      templatePath: "codegen/mapper.java.vm",
-      subpackageName: "mapper",
-      extension: ".java",
-    },
-    MapperXml: {
-      templatePath: "codegen/mapper.xml.vm",
-      subpackageName: "mapper",
-      extension: ".xml",
-    },
-    Converter: {
-      templatePath: "codegen/converter.java.vm",
-      subpackageName: "converter",
-      extension: ".java",
-    },
-    Query: {
-      templatePath: "codegen/query.java.vm",
-      subpackageName: "model.query",
-      extension: ".java",
-    },
-    Form: {
-      templatePath: "codegen/form.java.vm",
-      subpackageName: "model.form",
-      extension: ".java",
-    },
-    Vo: { templatePath: "codegen/vo.java.vm", subpackageName: "model.vo", extension: ".java" },
     Entity: {
-      templatePath: "codegen/entity.java.vm",
-      subpackageName: "model.entity",
-      extension: ".java",
+      templatePath: "codegen/entity.ts.vm",
+      subpackageName: "entities",
+      extension: ".ts",
+    },
+    DtoQuery: {
+      templatePath: "codegen/dto-query.ts.vm",
+      subpackageName: "dto",
+      extension: ".ts",
+    },
+    DtoForm: {
+      templatePath: "codegen/dto-form.ts.vm",
+      subpackageName: "dto",
+      extension: ".ts",
+    },
+    DtoCreate: {
+      templatePath: "codegen/dto-create.ts.vm",
+      subpackageName: "dto",
+      extension: ".ts",
+    },
+    DtoUpdate: {
+      templatePath: "codegen/dto-update.ts.vm",
+      subpackageName: "dto",
+      extension: ".ts",
     },
   };
+
+  /**
+   * 解析前端模板路径
+   * @param templateName 模板标识
+   * @param templateConfig 模板配置
+   * @param frontendType 前端类型
+   */
+  private resolveFrontendTemplatePath(
+    templateName: TemplateName,
+    templateConfig: TemplateConfig,
+    frontendType: string
+  ) {
+    if (frontendType !== "js") {
+      return templateConfig.templatePath;
+    }
+    if (templateName === "API") {
+      return "codegen/api.js.vm";
+    }
+    if (templateName === "VIEW") {
+      return "codegen/index.js.vue.vm";
+    }
+    return templateConfig.templatePath;
+  }
+
+  /**
+   * 解析前端文件后缀
+   * @param templateName 模板标识
+   * @param templateConfig 模板配置
+   * @param frontendType 前端类型
+   */
+  private resolveFrontendExtension(
+    templateName: TemplateName,
+    templateConfig: TemplateConfig,
+    frontendType: string
+  ) {
+    if (frontendType !== "js") {
+      return templateConfig.extension;
+    }
+    if (templateName === "API") {
+      return ".js";
+    }
+    return templateConfig.extension;
+  }
 
   async getTablePage(query: TableQueryDto) {
     const { pageNum, pageSize, keywords } = query;
@@ -406,19 +441,36 @@ export class CodegenService {
     return true;
   }
 
+  /**
+   * 获取预览代码
+   * @param tableName 表名
+   * @param pageType 页面类型
+   * @param type 前端类型
+   */
   async getPreview(
     tableName: string,
-    pageType: "classic" | "curd" = "classic"
+    pageType: "classic" | "curd" = "classic",
+    type: "ts" | "js" = "ts"
   ): Promise<CodegenPreviewVo[]> {
     const config = await this.getGenConfig(tableName);
     const fieldConfigs = config.fieldConfigs || [];
+    const frontendType = type === "js" ? "js" : "ts";
 
     const previews: CodegenPreviewVo[] = [];
     for (const [templateName, templateConfig] of Object.entries(this.templateConfigs) as [
       TemplateName,
       TemplateConfig,
     ][]) {
-      const fileName = this.getFileName(config.entityName!, templateName, templateConfig.extension);
+      if (frontendType === "js" && templateName === "API_TYPES") {
+        continue;
+      }
+
+      const effectiveTemplatePath = this.resolveFrontendTemplatePath(
+        templateName,
+        templateConfig,
+        frontendType
+      );
+      const extension = this.resolveFrontendExtension(templateName, templateConfig, frontendType);
       const filePath = this.getFilePath(
         templateName,
         config.moduleName!,
@@ -429,22 +481,37 @@ export class CodegenService {
 
       const content = this.renderTemplate(
         templateName,
-        templateConfig,
+        effectiveTemplatePath,
+        templateConfig.subpackageName,
         config,
         fieldConfigs,
         pageType
       );
-      previews.push({ path: filePath, fileName, content });
+      previews.push({
+        path: filePath,
+        fileName: this.getFileName(config.entityName!, templateName, extension, config.tableName),
+        content,
+      });
     }
 
     return previews;
   }
 
-  async downloadZip(tableNames: string[], pageType: "classic" | "curd" = "classic") {
+  /**
+   * 下载代码
+   * @param tableNames 表名列表
+   * @param pageType 页面类型
+   * @param type 前端类型
+   */
+  async downloadZip(
+    tableNames: string[],
+    pageType: "classic" | "curd" = "classic",
+    type: "ts" | "js" = "ts"
+  ) {
     const zip = new JSZip();
 
     for (const tableName of tableNames) {
-      const list = await this.getPreview(tableName, pageType);
+      const list = await this.getPreview(tableName, pageType, type);
       for (const item of list) {
         const zipPath = `${item.path}/${item.fileName}`.replace(/\\/g, "/");
         zip.file(zipPath, item.content);
@@ -455,29 +522,44 @@ export class CodegenService {
     return { fileName: this.codegenConfig.downloadFileName, buffer };
   }
 
+  /**
+   * 渲染模板
+   * @param templateName 模板标识
+   * @param templatePath 模板路径
+   * @param subpackageName 子包名
+   * @param config 生成配置
+   * @param fieldConfigs 字段配置
+   * @param pageType 页面类型
+   */
   private renderTemplate(
     templateName: TemplateName,
-    templateConfig: TemplateConfig,
+    templatePath: string,
+    subpackageName: string,
     config: GenConfigFormDto,
     fieldConfigs: FieldConfigDto[],
     pageType: "classic" | "curd"
   ) {
-    let templatePath = templateConfig.templatePath;
-    if (templateName === "VIEW" && pageType === "curd" && templatePath.endsWith("index.vue.vm")) {
-      templatePath = templatePath.replace("index.vue.vm", "index.curd.vue.vm");
+    let effectivePath = templatePath;
+    if (templateName === "VIEW" && pageType === "curd") {
+      if (effectivePath.endsWith("index.js.vue.vm")) {
+        effectivePath = effectivePath.replace("index.js.vue.vm", "index.curd.js.vue.vm");
+      } else if (effectivePath.endsWith("index.vue.vm")) {
+        effectivePath = effectivePath.replace("index.vue.vm", "index.curd.vue.vm");
+      }
     }
 
-    const absTemplatePath = resolveBootTemplatePath(templatePath);
+    const absTemplatePath = resolveBootTemplatePath(effectivePath);
     const tpl = fs.readFileSync(absTemplatePath, "utf8");
 
     const entityName = config.entityName || "";
     const bindMap: any = {
       packageName: config.packageName,
       moduleName: config.moduleName,
-      subpackageName: templateConfig.subpackageName,
+      subpackageName,
       date: formatDateTime(new Date()),
       entityName,
       tableName: config.tableName,
+      tableKebab: toKebabCase(config.tableName || entityName),
       author: config.author,
       entityLowerCamel: lowerFirst(entityName),
       entityKebab: toKebabCase(entityName),
@@ -502,21 +584,46 @@ export class CodegenService {
     };
   }
 
-  private getFileName(entityName: string, templateName: TemplateName, extension: string) {
+  private getFileName(
+    entityName: string,
+    templateName: TemplateName,
+    extension: string,
+    tableName?: string
+  ) {
+    const entityKebab = toKebabCase(entityName);
     if (templateName === "Entity") {
-      return `${entityName}${extension}`;
-    }
-    if (templateName === "MapperXml") {
-      return `${entityName}Mapper${extension}`;
+      const tableKebab = toKebabCase(tableName || entityName);
+      return `${tableKebab}.entity${extension}`;
     }
     if (templateName === "API") {
-      return `${toKebabCase(entityName)}${extension}`;
+      return `${entityKebab}${extension}`;
     }
     if (templateName === "API_TYPES") {
-      return `${toKebabCase(entityName)}${extension}`;
+      return `${entityKebab}${extension}`;
     }
     if (templateName === "VIEW") {
       return "index.vue";
+    }
+    if (templateName === "Controller") {
+      return `${entityKebab}.controller${extension}`;
+    }
+    if (templateName === "Service") {
+      return `${entityKebab}.service${extension}`;
+    }
+    if (templateName === "Module") {
+      return `${entityKebab}.module${extension}`;
+    }
+    if (templateName === "DtoQuery") {
+      return `${entityKebab}-query.dto${extension}`;
+    }
+    if (templateName === "DtoForm") {
+      return `${entityKebab}-form.dto${extension}`;
+    }
+    if (templateName === "DtoCreate") {
+      return `create-${entityKebab}.dto${extension}`;
+    }
+    if (templateName === "DtoUpdate") {
+      return `update-${entityKebab}.dto${extension}`;
     }
     return `${entityName}${templateName}${extension}`;
   }
@@ -532,24 +639,26 @@ export class CodegenService {
     const frontend = this.codegenConfig.frontendAppName;
 
     let p: string;
-    if (templateName === "MapperXml") {
-      p = path.join(backend, "src", "main", "resources", subpackageName, moduleName);
-    } else if (templateName === "API") {
+    if (templateName === "API") {
       p = path.join(frontend, "src", subpackageName, moduleName);
     } else if (templateName === "API_TYPES") {
       p = path.join(frontend, "src", "types", "api");
     } else if (templateName === "VIEW") {
       p = path.join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName));
     } else {
-      p = path.join(
-        backend,
-        "src",
-        "main",
-        "java",
-        ...packageName.split("."),
-        moduleName,
-        ...subpackageName.split(".")
-      );
+      const featureDir = path.join(backend, "src", moduleName, toKebabCase(entityName));
+      if (templateName === "Entity") {
+        p = path.join(featureDir, "entities");
+      } else if (
+        templateName === "DtoQuery" ||
+        templateName === "DtoForm" ||
+        templateName === "DtoCreate" ||
+        templateName === "DtoUpdate"
+      ) {
+        p = path.join(featureDir, "dto");
+      } else {
+        p = featureDir;
+      }
     }
 
     return p;

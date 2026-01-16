@@ -1,0 +1,214 @@
+/**
+ * ${businessName} 服务层
+ */
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { In, Repository } from "typeorm";
+import { ${entityName} } from "./entities/${tableKebab}.entity";
+import { ${entityName}QueryDto } from "./dto/${entityKebab}-query.dto";
+import { Create${entityName}Dto } from "./dto/create-${entityKebab}.dto";
+import { Update${entityName}Dto } from "./dto/update-${entityKebab}.dto";
+
+#set($hasSoftDelete = false)
+#set($hasCreateTime = false)
+#set($hasUpdateTime = false)
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.fieldName == "isDeleted")
+#set($hasSoftDelete = true)
+#end
+#if($fieldConfig.fieldName == "createTime")
+#set($hasCreateTime = true)
+#end
+#if($fieldConfig.fieldName == "updateTime")
+#set($hasUpdateTime = true)
+#end
+#end
+
+@Injectable()
+export class ${entityName}Service {
+  constructor(
+    @InjectRepository(${entityName})
+    private readonly ${entityLowerCamel}Repository: Repository<${entityName}>
+  ) {}
+
+  /**
+   * ${businessName} 分页列表
+   */
+  async get${entityName}Page(query: ${entityName}QueryDto) {
+    const pageNum = Number(query.pageNum) > 0 ? Number(query.pageNum) : 1;
+    const pageSize = Number(query.pageSize) > 0 ? Number(query.pageSize) : 10;
+
+    const qb = this.${entityLowerCamel}Repository.createQueryBuilder("t");
+#if($hasSoftDelete)
+    qb.where("t.isDeleted = :isDeleted", { isDeleted: 0 });
+#end
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInQuery)
+    if (
+      query.${fieldConfig.fieldName} !== undefined &&
+      query.${fieldConfig.fieldName} !== null &&
+      query.${fieldConfig.fieldName} !== ""
+    ) {
+  #if($fieldConfig.queryType == "LIKE")
+      qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: `%${query.${fieldConfig.fieldName}}%`,
+      });
+  #elseif($fieldConfig.queryType == "LIKE_LEFT")
+      qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: `%${query.${fieldConfig.fieldName}}`,
+      });
+  #elseif($fieldConfig.queryType == "LIKE_RIGHT")
+      qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: `${query.${fieldConfig.fieldName}}%`,
+      });
+  #elseif($fieldConfig.queryType == "IN")
+      const ${fieldConfig.fieldName}List = Array.isArray(query.${fieldConfig.fieldName})
+        ? query.${fieldConfig.fieldName}
+        : String(query.${fieldConfig.fieldName}).split(",").filter(Boolean);
+      if (${fieldConfig.fieldName}List.length) {
+        qb.andWhere("t.${fieldConfig.fieldName} IN (:...${fieldConfig.fieldName}List)", {
+          ${fieldConfig.fieldName}List,
+        });
+      }
+  #elseif($fieldConfig.queryType == "BETWEEN")
+      const ${fieldConfig.fieldName}Range = query.${fieldConfig.fieldName};
+      if (Array.isArray(${fieldConfig.fieldName}Range) && ${fieldConfig.fieldName}Range.length === 2) {
+        qb.andWhere(
+          "t.${fieldConfig.fieldName} BETWEEN :${fieldConfig.fieldName}Start AND :${fieldConfig.fieldName}End",
+          {
+            ${fieldConfig.fieldName}Start: ${fieldConfig.fieldName}Range[0],
+            ${fieldConfig.fieldName}End: ${fieldConfig.fieldName}Range[1],
+          }
+        );
+      }
+  #elseif($fieldConfig.queryType == "GT")
+      qb.andWhere("t.${fieldConfig.fieldName} > :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
+      });
+  #elseif($fieldConfig.queryType == "GE")
+      qb.andWhere("t.${fieldConfig.fieldName} >= :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
+      });
+  #elseif($fieldConfig.queryType == "LT")
+      qb.andWhere("t.${fieldConfig.fieldName} < :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
+      });
+  #elseif($fieldConfig.queryType == "LE")
+      qb.andWhere("t.${fieldConfig.fieldName} <= :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
+      });
+  #elseif($fieldConfig.queryType == "NE")
+      qb.andWhere("t.${fieldConfig.fieldName} != :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
+      });
+  #else
+      qb.andWhere("t.${fieldConfig.fieldName} = :${fieldConfig.fieldName}", {
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
+      });
+  #end
+    }
+#end
+#end
+
+    qb.orderBy("t.id", "DESC");
+    const [list, total] = await qb
+      .skip((pageNum - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return {
+      data: list,
+      page: {
+        pageNum,
+        pageSize,
+        total,
+      },
+    };
+  }
+
+  /**
+   * 获取 ${businessName} 表单数据
+   */
+  async get${entityName}FormData(id: string) {
+    const where: any = { id: id.toString() };
+#if($hasSoftDelete)
+    where.isDeleted = 0;
+#end
+    return await this.${entityLowerCamel}Repository.findOne({ where });
+  }
+
+  /**
+   * 新增 ${businessName}
+   */
+  async create(formData: Create${entityName}Dto) {
+    const now = new Date();
+    const entity = this.${entityLowerCamel}Repository.create({
+      ...formData,
+#if($hasSoftDelete)
+      isDeleted: 0,
+#end
+#if($hasCreateTime)
+      createTime: now,
+#end
+#if($hasUpdateTime)
+      updateTime: now,
+#end
+    });
+
+    await this.${entityLowerCamel}Repository.save(entity);
+    return true;
+  }
+
+  /**
+   * 修改 ${businessName}
+   */
+  async update(id: string, formData: Update${entityName}Dto) {
+    const where: any = { id: id.toString() };
+#if($hasSoftDelete)
+    where.isDeleted = 0;
+#end
+    const entity = await this.${entityLowerCamel}Repository.findOne({ where });
+    if (!entity) {
+      return false;
+    }
+
+    Object.assign(entity, formData, {
+#if($hasUpdateTime)
+      updateTime: new Date(),
+#end
+    });
+
+    await this.${entityLowerCamel}Repository.save(entity);
+    return true;
+  }
+
+  /**
+   * 删除 ${businessName}
+   */
+  async delete(ids: string) {
+    const idList = ids
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+
+    if (!idList.length) {
+      return false;
+    }
+
+#if($hasSoftDelete)
+    await this.${entityLowerCamel}Repository.update(
+      { id: In(idList) },
+      {
+        isDeleted: 1,
+#if($hasUpdateTime)
+        updateTime: new Date(),
+#end
+      }
+    );
+#else
+    await this.${entityLowerCamel}Repository.delete({ id: In(idList) });
+#end
+
+    return true;
+  }
+}

@@ -1,0 +1,32 @@
+/**
+ * ${businessName} 创建 DTO
+ */
+import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+
+export class Create${entityName}Dto {
+#foreach($fieldConfig in $fieldConfigs)
+  #if($fieldConfig.isShowInForm && $fieldConfig.formType != "HIDDEN" && $fieldConfig.fieldName != "id")
+  @ApiProperty({ description: "${fieldConfig.fieldComment}", required: #if($fieldConfig.isRequired == 1)true#elsefalse#end })
+    #if($fieldConfig.isRequired == 1)
+  @IsNotEmpty({ message: "${fieldConfig.fieldComment}不能为空" })
+    #else
+  @IsOptional()
+    #end
+    #if($fieldConfig.formType == "CHECK_BOX")
+  @IsArray()
+  @IsString({ each: true })
+  ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end string[];
+    #elseif($fieldConfig.tsType == "number")
+  @Transform(({ value }) => (value === undefined || value === null || value === "" ? undefined : Number(value)))
+  @IsNumber()
+  ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end number;
+    #else
+  @IsString()
+  ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end string;
+    #end
+
+  #end
+#end
+}

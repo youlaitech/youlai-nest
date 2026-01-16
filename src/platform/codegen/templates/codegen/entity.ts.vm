@@ -1,0 +1,32 @@
+/**
+ * ${businessName} 实体
+ */
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+
+@Entity("${tableName}")
+export class ${entityName} {
+#foreach($fieldConfig in $fieldConfigs)
+  #if($fieldConfig.fieldName == "id")
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
+  #else
+  @Column({
+    #if($fieldConfig.columnName && $fieldConfig.columnName != $fieldConfig.fieldName)
+    name: "${fieldConfig.columnName}",
+    #end
+    type: "${fieldConfig.columnType}",
+    #if($fieldConfig.maxLength)
+    length: ${fieldConfig.maxLength},
+    #end
+    #if($fieldConfig.isRequired != 1)
+    nullable: true,
+    #end
+    #if("$!fieldConfig.fieldComment" != "")
+    comment: "${fieldConfig.fieldComment}",
+    #end
+  })
+  ${fieldConfig.fieldName}: ${fieldConfig.tsType};
+  #end
+
+#end
+}

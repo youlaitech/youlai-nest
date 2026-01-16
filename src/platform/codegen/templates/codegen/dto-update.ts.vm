@@ -1,0 +1,7 @@
+/**
+ * ${businessName} 更新 DTO
+ */
+import { PartialType } from "@nestjs/swagger";
+import { Create${entityName}Dto } from "./create-${entityKebab}.dto";
+
+export class Update${entityName}Dto extends PartialType(Create${entityName}Dto) {}
