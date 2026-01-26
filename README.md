@@ -1,121 +1,146 @@
 <div align="center">
    <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
-   <h2><a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
-     youlai-nest
-   </a></h2>
-
-   <br/>
-   <img alt="有来技术" src="https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg"/>
-   <a href="https://gitee.com/youlaiorg" target="_blank">
-     <img alt="有来技术" src="https://img.shields.io/badge/Author-有来开源组织-orange.svg"/>
+   <h2>youlai-nest</h2>
+   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-20+-green.svg"/>
+   <img alt="NestJS" src="https://img.shields.io/badge/NestJS-11-red.svg"/>
+   <a href="https://gitee.com/youlaiorg/youlai-nest" target="_blank">
+     <img alt="Gitee star" src="https://gitee.com/youlaiorg/youlai-nest/badge/star.svg"/>
+   </a>
+   <a href="https://github.com/youlaitech/youlai-nest" target="_blank">
+     <img alt="Github star" src="https://img.shields.io/github/stars/youlaitech/youlai-nest.svg?style=social&label=Stars"/>
    </a>
 </div>
 
-<div align="center">
-  <a target="_blank" href="https://vue.youlai.tech/">🔍 在线预览</a> |  <a target="_blank" href="https://www.youlai.tech/youlai-nest/">📖 阅读文档</a> | <a href="./README.en-US.md">🌐English</a>
-</div>
+<p align="center">
+  <a target="_blank" href="https://vue.youlai.tech/">🖥️ 在线预览</a>
+  <span>&nbsp;|&nbsp;</span>
+  <a target="_blank" href="https://www.youlai.tech/youlai-nest">📑 阅读文档</a>
+  <span>&nbsp;|&nbsp;</span>
+  <a target="_blank" href="https://www.youlai.tech">🌐 官网</a>
+</p>
 
 ## 📢 项目简介
 
-**在线预览**: [https://vue.youlai.tech](https://vue.youlai.tech)
+`youlai-nest` 是 `vue3-element-admin` 配套的 Node.js 后端实现，基于 NestJS 11, TypeScript, TypeORM, JWT, Redis, MySQL 构建，是 **youlai 全家桶** 的重要组成部分。
 
-基于 Node.js（>= 20）、NestJS、MySQL、JWT、Redis、阿里云oss、Vue 3、Element-Plus 构建的前后端分离单体权限管理系统。
-
-- **🚀 开发框架**: 使用 nest.js 和 Vue 3，以及 Element-Plus 等主流技术栈，实时更新。
-
-- **🔐 安全认证**: 结合 NestJS 的自定义 AuthGuard 和 JWT，提供安全、无状态、分布式友好的身份验证和授权机制。
-
-- **🔑 权限管理**: 基于 RBAC 模型，实现细粒度的权限控制，涵盖接口方法和按钮级别。
-
-- **🛠️ 功能模块**: 包括用户管理、角色管理、菜单管理、部门管理、字典管理等多个功能。
-
-- **📘 接口文档**: 自动生成接口文档，支持在线调试，提高开发效率。
+- **🚀 企业级框架**: 基于 NestJS 11，提供稳定、可扩展的后端架构。
+- **🔐 双重认证**: 支持 JWT 和 Redis Token 两种会话模式，可根据业务需求灵活切换。
+- **🔑 权限管理**: 内置基于 RBAC 的权限模型，精确控制接口和按钮权限。
+- **🛠️ 功能模块**: 包含用户、角色、菜单、部门、字典等后台管理系统的核心功能。
 
 ## 🌈 项目源码
 
-| 项目类型       | Gitee                                                                      | Github                                                                       | GitCode                                                                   |
-| -------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| ✅ Node 后端   | [youlai-nest](https://gitee.com/youlaiorg/youlai-nest)                     | [youlai-nest](https://github.com/youlaitech/youlai-nest)                     | [youlai-nest](https://gitcode.com/youlai/youlai-nest)                     |
-| vue3 前端      | [vue3-element-template](https://gitee.com/youlaiorg/vue3-element-template) | [vue3-element-template](https://github.com/youlaitech/vue3-element-template) | [vue3-element-template](https://gitcode.com/youlai/vue3-element-template) |
-| uni-app 移动端 | [vue-uniapp-template](https://gitee.com/youlaiorg/vue-uniapp-template)     | [vue-uniapp-template](https://github.com/youlaitech/vue-uniapp-template)     | [vue-uniapp-template](https://gitcode.com/youlai/vue-uniapp-template)     |
+| 项目类型        | Gitee                                                                  | Github                                                                   | GitCode                                                               |
+| --------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| ✅ Node.js 后端 | [youlai-nest](https://gitee.com/youlaiorg/youlai-nest)                 | [youlai-nest](https://github.com/youlaitech/youlai-nest)                 | [youlai-nest](https://gitcode.com/youlai/youlai-nest)                 |
+| vue3 前端       | [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin)   | [vue3-element-admin](https://github.com/youlaitech/vue3-element-admin)   | [vue3-element-admin](https://gitcode.com/youlai/vue3-element-admin)   |
+| uni-app 移动端  | [vue-uniapp-template](https://gitee.com/youlaiorg/vue-uniapp-template) | [vue-uniapp-template](https://github.com/youlaitech/vue-uniapp-template) | [vue-uniapp-template](https://gitcode.com/youlai/vue-uniapp-template) |
 
 ## 📚 项目文档
 
-| 文档名称           | 访问地址                                                                                                 |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| 在线接口文档       | [https://www.apifox.cn/apidoc](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
-| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest/](https://www.youlai.tech/youlai-nest/)                             |
+| 文档名称           | 访问地址                                                                   |
+| ------------------ | -------------------------------------------------------------------------- |
+| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest](https://www.youlai.tech/youlai-nest) |
 
-## ⚙️ 环境准备
+## 📁 项目目录
 
-### 1️⃣ 基础环境
-
-- **Node.js**：20.x / 24.x LTS 下载：https://nodejs.org/zh-cn/download
-
-  > NestJS 11 已不再支持 Node 16 / 18
-  > https://docs.nestjs.com/migration-guide#nodejs-v16-and-v18-no-longer-supported
-
-- **包管理器**：pnpm（>= 8）
-
-- **开发工具**：VS Code / WebStorm
-
-- **VS Code 插件**（推荐）：
-  - ESLint
-  - Prettier - Code formatter
-  - EditorConfig for VS Code
-
-验证环境是否就绪：
-
-```bash
-node -v
-pnpm -v
-```
-
-### 2️⃣ 依赖服务
-
-▸ MySQL 5.7~8.x：业务数据存储（用户/角色/权限），安装：[Windows](https://youlai.blog.csdn.net/article/details/133272887) | [Linux](https://youlai.blog.csdn.net/article/details/130398179)
-▸ Redis 稳定版：登录会话/验证码/数据缓存，安装：[Windows](https://youlai.blog.csdn.net/article/details/133410293) | [Linux](https://youlai.blog.csdn.net/article/details/130439335)
-
-> ⚠️ 本地未配置 MySQL、Redis 不影响启动，项目默认接入 youlai 线上公共环境运行。
-
-### 3️⃣ 初始化数据库
-
-执行以下脚本完成数据库初始化：
+<details>
+<summary> 目录结构 </summary>
 
 ```text
-sql/mysql/youlai_admin.sql
+youlai-nest/
+├─ src/                      # 核心业务源码
+│  ├─ main.ts                # 应用入口
+│  ├─ app.module.ts          # 根模块
+│  ├─ auth/                  # 认证与鉴权模块
+│  ├─ system/                # 系统核心模块（用户/角色/菜单等）
+│  ├─ shared/                # 通用服务（Redis/Logger等）
+│  └─ common/                # 公共能力（拦截器/守卫等）
+├─ sql/                      # 数据库脚本
+├─ .env                      # 基础环境配置
+├─ .env.dev                  # 开发环境配置
+├─ .env.prod                 # 生产环境配置
+└─ package.json              # 项目配置与脚本
 ```
 
-> ⚠️ 该步骤为必执行步骤。
+</details>
 
-## ▶️ 快速启动
+## 🚀 快速启动
+
+### 1. 环境准备
+
+| 要求        | 说明         |
+| ----------- | ------------ |
+| **Node.js** | 20+ / 24 LTS |
+| **pnpm**    | 包管理器     |
+| **MySQL**   | 5.7+ 或 8.x  |
+| **Redis**   | 7.x 稳定版   |
+
+> ⚠️ **重要提示**：MySQL 与 Redis 为项目启动必需依赖，请确保服务已启动。
+
+### 2. 数据库初始化
+
+推荐使用 **Navicat**、**DBeaver** 或 **MySQL Workbench** 执行 `sql/mysql/youlai_admin.sql` 脚本，完成数据库和基础数据的初始化。
+
+### 3. 修改配置
+
+根据 `.env.example` 创建 `.env.dev` 和 `.env.prod` 文件，并根据实际情况修改 MySQL 和 Redis 的连接信息。
+
+### 4. 启动项目
 
 ```bash
-# 克隆代码
-git clone https://gitee.com/youlaiorg/youlai-nest.git
-
-# 切换目录
-cd youlai-nest
-
-# 安装 pnpm
-npm install pnpm -g
-
-# 设置镜像源(可忽略)
-pnpm config set registry https://registry.npmmirror.com
-
 # 安装依赖
 pnpm install
 
-# 启动运行
+# 启动开发环境
 pnpm run start:dev
 ```
 
-访问接口文档地址 [http://localhost:8000/api-docs](http://localhost:8000/api-docs) 验证项目启动是否成功。
+启动成功后，访问 [http://localhost:8000/api-docs](http://localhost:8000/api-docs) 验证项目是否成功。
 
-## 💖 加交流群
+## 🤝 前端整合
 
-① 关注「有来技术」公众号，点击菜单 **交流群** 获取加群二维码（此举防止广告进群，感谢理解和支持）。
+`youlai-nest` 与 `vue3-element-admin` 前后端协议完全兼容，可无缝对接。
 
-② 直接添加微信 **`haoxianrui`** 备注「前端/后端/全栈」。
+```bash
+# 1. 获取前端项目
+git clone https://gitee.com/youlaiorg/vue3-element-admin.git
+cd vue3-element-admin
 
-![有来技术公众号](https://foruda.gitee.com/images/1737108820762592766/3390ed0d_716974.png)
+# 2. 安装依赖
+pnpm install
+
+# 3. 配置后端地址 (编辑 .env.development)
+VITE_APP_API_URL=http://localhost:8000
+
+# 4. 启动前端
+pnpm run dev
+```
+
+- **访问地址**: [http://localhost:3000](http://localhost:3000)
+- **登录账号**: `admin` / `123456`
+
+## 🐳 项目部署
+
+### 1. 原生部署
+
+```bash
+# 构建
+pnpm run build
+
+# 启动
+pnpm run start:prod
+```
+
+### 2. Docker 部署
+
+```bash
+# 构建并启动容器
+docker compose up -d --build
+```
+
+## 💖 技术交流
+
+- **问题反馈**：[Gitee Issues](https://gitee.com/youlaiorg/youlai-nest/issues)
+- **技术交流群**：[QQ 群：950387562](https://qm.qq.com/cgi-bin/qm/qr?k=U57IDw7ufwuzMA4qQ7BomwZ44hpHGkLg)
+- **博客教程**：[https://www.youlai.tech](https://www.youlai.tech)
