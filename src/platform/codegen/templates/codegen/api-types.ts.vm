@@ -6,9 +6,11 @@
 export interface ${entityName}PageQuery extends PageQuery {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInQuery)
-    #if("$!fieldConfig.fieldComment" != "")
-  /** ${fieldConfig.fieldComment} */
-    #end
+#set($desc = $fieldConfig.fieldComment)
+#if("$!desc" == "")
+#set($desc = $fieldConfig.fieldName)
+#end
+  /** $desc */
     #if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
       #if($fieldConfig.queryType == "BETWEEN")
   ${fieldConfig.fieldName}?: [string, string];
@@ -26,9 +28,11 @@ export interface ${entityName}PageQuery extends PageQuery {
 export interface ${entityName}Form {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInForm)
-    #if("$!fieldConfig.fieldComment" != "")
-  /** ${fieldConfig.fieldComment} */
-    #end
+#set($desc = $fieldConfig.fieldComment)
+#if("$!desc" == "")
+#set($desc = $fieldConfig.fieldName)
+#end
+  /** $desc */
   ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
   #end
 #end
@@ -38,9 +42,11 @@ export interface ${entityName}Form {
 export interface ${entityName}PageVo {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInList)
-    #if("$!fieldConfig.fieldComment" != "")
-  /** ${fieldConfig.fieldComment} */
-    #end
+#set($desc = $fieldConfig.fieldComment)
+#if("$!desc" == "")
+#set($desc = $fieldConfig.fieldName)
+#end
+  /** $desc */
   ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
   #end
 #end

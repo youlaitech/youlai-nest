@@ -131,6 +131,7 @@ export class NoticeService {
         .map((v) => v.trim())
         .filter(Boolean);
       if (targetUserIds.length) {
+        // 二次过滤，避免写入不存在/已删除的用户
         const users = await this.userRepository.find({
           where: { id: In(targetUserIds), isDeleted: 0 },
         });
@@ -139,6 +140,7 @@ export class NoticeService {
     }
 
     if (targetUserIds.length) {
+      // 批量生成用户通知记录
       const records = targetUserIds.map((userId) => {
         const record = new SysUserNotice();
         record.noticeId = notice.id;
@@ -153,7 +155,7 @@ export class NoticeService {
       await this.userNoticeRepository.save(records);
     }
 
-    // 通过 WebSocket 广播通知消息
+    // 发布后立刻推送给在线用户
     this.websocketGateway.broadcastNotification({
       id: notice.id,
       title: notice.title,

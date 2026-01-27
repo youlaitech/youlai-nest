@@ -12,7 +12,11 @@ export class ${entityName}QueryDto extends BaseQueryDto {
 #end
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInQuery)
-  @ApiProperty({ description: "${fieldConfig.fieldComment}", required: false })
+#set($desc = $fieldConfig.fieldComment)
+#if("$!desc" == "")
+#set($desc = $fieldConfig.fieldName)
+#end
+  @ApiProperty({ description: "$desc", required: false })
   @IsOptional()
     #if($fieldConfig.queryType == "BETWEEN")
   @IsArray()

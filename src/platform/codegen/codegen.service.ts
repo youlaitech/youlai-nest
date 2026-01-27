@@ -136,6 +136,24 @@ export class CodegenService {
     return templateConfig.extension;
   }
 
+  /**
+   * 解析文件范围
+   */
+  private resolveScope(templateName: TemplateName) {
+    if (templateName === "API" || templateName === "API_TYPES" || templateName === "VIEW") {
+      return "frontend" as const;
+    }
+    return "backend" as const;
+  }
+
+  /**
+   * 解析文件语言（扩展名）
+   */
+  private resolveLanguage(fileName: string) {
+    const ext = path.extname(fileName);
+    return ext.startsWith(".") ? ext.slice(1).toLowerCase() : "";
+  }
+
   async getTablePage(query: TableQueryDto) {
     const { pageNum, pageSize, keywords } = query;
 
@@ -471,6 +489,12 @@ export class CodegenService {
         frontendType
       );
       const extension = this.resolveFrontendExtension(templateName, templateConfig, frontendType);
+      const fileName = this.getFileName(
+        config.entityName!,
+        templateName,
+        extension,
+        config.tableName
+      );
       const filePath = this.getFilePath(
         templateName,
         config.moduleName!,
@@ -489,8 +513,10 @@ export class CodegenService {
       );
       previews.push({
         path: filePath,
-        fileName: this.getFileName(config.entityName!, templateName, extension, config.tableName),
+        fileName,
         content,
+        scope: this.resolveScope(templateName),
+        language: this.resolveLanguage(fileName),
       });
     }
 

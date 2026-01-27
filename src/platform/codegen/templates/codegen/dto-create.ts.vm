@@ -8,9 +8,13 @@ import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-valid
 export class Create${entityName}Dto {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInForm && $fieldConfig.formType != "HIDDEN" && $fieldConfig.fieldName != "id")
-  @ApiProperty({ description: "${fieldConfig.fieldComment}", required: #if($fieldConfig.isRequired == 1)true#elsefalse#end })
+#set($desc = $fieldConfig.fieldComment)
+#if("$!desc" == "")
+#set($desc = $fieldConfig.fieldName)
+#end
+  @ApiProperty({ description: "$desc", required: #if($fieldConfig.isRequired == 1)true#elsefalse#end })
     #if($fieldConfig.isRequired == 1)
-  @IsNotEmpty({ message: "${fieldConfig.fieldComment}不能为空" })
+  @IsNotEmpty({ message: "$desc不能为空" })
     #else
   @IsOptional()
     #end
