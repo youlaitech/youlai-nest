@@ -7,30 +7,29 @@ import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-valid
 
 export class Create${entityName}Dto {
 #foreach($fieldConfig in $fieldConfigs)
-  #if($fieldConfig.isShowInForm && $fieldConfig.formType != "HIDDEN" && $fieldConfig.fieldName != "id")
+#if($fieldConfig.isShowInForm && $fieldConfig.formType != "HIDDEN" && $fieldConfig.fieldName != "id")
 #set($desc = $fieldConfig.fieldComment)
 #if("$!desc" == "")
 #set($desc = $fieldConfig.fieldName)
 #end
   @ApiProperty({ description: "$desc", required: #if($fieldConfig.isRequired == 1)true#elsefalse#end })
-    #if($fieldConfig.isRequired == 1)
+#if($fieldConfig.isRequired == 1)
   @IsNotEmpty({ message: "$desc不能为空" })
-    #else
+#else
   @IsOptional()
-    #end
-    #if($fieldConfig.formType == "CHECK_BOX")
+#end
+#if($fieldConfig.formType == "CHECK_BOX")
   @IsArray()
   @IsString({ each: true })
   ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end string[];
-    #elseif($fieldConfig.tsType == "number")
+#elseif($fieldConfig.tsType == "number")
   @Transform(({ value }) => (value === undefined || value === null || value === "" ? undefined : Number(value)))
   @IsNumber()
   ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end number;
-    #else
+#else
   @IsString()
   ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end string;
-    #end
-
-  #end
+#end
+#end
 #end
 }

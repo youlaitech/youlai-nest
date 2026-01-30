@@ -51,15 +51,15 @@ export class ${entityName}Service {
     ) {
   #if($fieldConfig.queryType == "LIKE")
       qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
-        ${fieldConfig.fieldName}: `%${query.${fieldConfig.fieldName}}%`,
+        ${fieldConfig.fieldName}: "%" + query.${fieldConfig.fieldName} + "%",
       });
   #elseif($fieldConfig.queryType == "LIKE_LEFT")
       qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
-        ${fieldConfig.fieldName}: `%${query.${fieldConfig.fieldName}}`,
+        ${fieldConfig.fieldName}: "%" + query.${fieldConfig.fieldName},
       });
   #elseif($fieldConfig.queryType == "LIKE_RIGHT")
       qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
-        ${fieldConfig.fieldName}: `${query.${fieldConfig.fieldName}}%`,
+        ${fieldConfig.fieldName}: query.${fieldConfig.fieldName} + "%",
       });
   #elseif($fieldConfig.queryType == "IN")
       const ${fieldConfig.fieldName}List = Array.isArray(query.${fieldConfig.fieldName})

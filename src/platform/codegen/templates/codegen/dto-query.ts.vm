@@ -10,27 +10,26 @@ export class ${entityName}QueryDto extends BaseQueryDto {
 #if($fieldConfigs.size() > 0)
   /** 查询条件 */
 #end
-#foreach($fieldConfig in $fieldConfigs)
-  #if($fieldConfig.isShowInQuery)
-#set($desc = $fieldConfig.fieldComment)
-#if("$!desc" == "")
-#set($desc = $fieldConfig.fieldName)
-#end
+#foreach($fieldConfig in $fieldConfigs)##
+#if($fieldConfig.isShowInQuery)##
+#set($desc = $fieldConfig.fieldComment)##
+#if("$!desc" == "")##
+#set($desc = $fieldConfig.fieldName)##
+#end##
   @ApiProperty({ description: "$desc", required: false })
   @IsOptional()
-    #if($fieldConfig.queryType == "BETWEEN")
+#if($fieldConfig.queryType == "BETWEEN")##
   @IsArray()
   @IsString({ each: true })
   ${fieldConfig.fieldName}?: string[];
-    #elseif($fieldConfig.tsType == "number")
+#elseif($fieldConfig.tsType == "number")##
   @Transform(({ value }) => (value === undefined || value === null || value === "" ? undefined : Number(value)))
   @IsNumber()
   ${fieldConfig.fieldName}?: number;
-    #else
+#else##
   @IsString()
   ${fieldConfig.fieldName}?: string;
-    #end
-
-  #end
-#end
+#end##
+#end##
+#end##
 }
