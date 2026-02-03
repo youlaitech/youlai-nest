@@ -39,7 +39,7 @@ export class CodegenService {
     frontendAppName: "vue3-element-admin",
     defaultAuthor: "youlaitech",
     defaultModuleName: "system",
-    defaultPackageName: "com.youlai.boot",
+    defaultPackageName: "src",
     defaultRemoveTablePrefix: "sys_",
   };
 
