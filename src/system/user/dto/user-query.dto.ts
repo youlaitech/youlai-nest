@@ -5,7 +5,7 @@ import { IsArray, IsNumber, IsOptional, IsString, Max, Min } from "class-validat
 import { BaseQueryDto } from "src/common/dto/base-query.dto";
 
 /**
- * 用户查询对象
+ * 用户查询参数
  */
 export class UserQueryDto extends BaseQueryDto {
   @ApiProperty({ description: "关键字(用户名/昵称/手机号)", required: false })

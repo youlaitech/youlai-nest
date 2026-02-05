@@ -23,9 +23,8 @@ export class NoticeService {
   async getNoticePage(query: NoticeQueryDto) {
     const { pageNum, pageSize, keywords, type, level, publishStatus } = query;
 
-    // 在 Service 层自行处理分页参数，避免对外部请求做过强约束
-    const page = Number(pageNum) > 0 ? Number(pageNum) : 1;
-    const size = Number(pageSize) > 0 ? Number(pageSize) : 10;
+    const page = pageNum || 1;
+    const size = pageSize || 10;
 
     const qb = this.noticeRepository.createQueryBuilder("n");
     qb.where("n.isDeleted = :isDeleted", { isDeleted: 0 });
@@ -63,10 +62,16 @@ export class NoticeService {
     };
   }
 
+  /**
+   * 新增通知公告
+   * 处理目标用户并补充创建信息
+   */
   async saveNotice(form: CreateNoticeDto & { createBy: string }) {
     const now = new Date();
+    const normalizedTargetUserIds = this.normalizeTargetUserIds(form.targetUserIds);
     const notice = this.noticeRepository.create({
       ...form,
+      targetUserIds: normalizedTargetUserIds,
       createBy: form.createBy.toString(),
       createTime: now,
       isDeleted: 0,
@@ -76,18 +81,63 @@ export class NoticeService {
     return true;
   }
 
+  /**
+   * 将目标用户 ID 统一转成逗号字符串
+   * 空值返回 null
+   */
+  private normalizeTargetUserIds(targetUserIds?: number[] | string | null) {
+    if (Array.isArray(targetUserIds)) {
+      return targetUserIds.length ? targetUserIds.join(",") : null;
+    }
+    if (typeof targetUserIds === "string") {
+      const trimmed = targetUserIds.trim();
+      return trimmed.length ? trimmed : null;
+    }
+    return null;
+  }
+
+  /**
+   * 解析数据库中的 targetUserIds 字符串
+   * 返回 number[] 便于表单回填
+   */
+  private parseTargetUserIds(targetUserIds?: string | null): number[] {
+    if (!targetUserIds) {
+      return [];
+    }
+    return targetUserIds
+      .split(",")
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+  }
+
+  /**
+   * 获取公告表单数据
+   * 用于编辑弹窗回显
+   */
   async getNoticeFormData(id: string): Promise<(CreateNoticeDto & { id: string }) | null> {
     const idStr = id.toString();
     const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) return null;
     const { title, content, type, level, targetType, targetUserIds } = notice;
-    return { id: idStr, title, content, type, level, targetType, targetUserIds };
+    return {
+      id: idStr,
+      title,
+      content,
+      type,
+      level,
+      targetType,
+      targetUserIds: this.parseTargetUserIds(targetUserIds),
+    };
   }
 
   async getNoticeDetail(id: string) {
     return await this.noticeRepository.findOne({ where: { id: id.toString(), isDeleted: 0 } });
   }
 
+  /**
+   * 更新公告信息
+   * 同步目标用户字段
+   */
   async updateNotice(id: string, form: UpdateNoticeDto & { updateBy: string }) {
     const idStr = id.toString();
     const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
@@ -95,7 +145,10 @@ export class NoticeService {
       return false;
     }
 
+    const normalizedTargetUserIds = this.normalizeTargetUserIds(form.targetUserIds);
+
     Object.assign(notice, form, {
+      targetUserIds: normalizedTargetUserIds,
       updateBy: form.updateBy.toString(),
       updateTime: new Date(),
     });
@@ -180,12 +233,20 @@ export class NoticeService {
     return true;
   }
 
+  /**
+   * 逻辑删除通知公告
+   * 批量更新删除标识
+   */
   async deleteNotices(ids: string[]) {
     const idStrs = (ids || []).map((v) => v.toString());
     await this.noticeRepository.update(idStrs, { isDeleted: 1 });
     return true;
   }
 
+  /**
+   * 我的通知全部标记已读
+   * 写入 readTime
+   */
   async readAll(userId: string) {
     const now = new Date();
     await this.userNoticeRepository
@@ -197,29 +258,50 @@ export class NoticeService {
     return true;
   }
 
+  /**
+   * 获取我的通知分页列表
+   * 返回公告信息与已读状态
+   */
   async getMyNoticePage(userId: string, query: NoticeQueryDto) {
     const { pageNum, pageSize, isRead } = query;
 
-    const page = Number(pageNum) > 0 ? Number(pageNum) : 1;
-    const size = Number(pageSize) > 0 ? Number(pageSize) : 5;
+    const page = pageNum || 1;
+    const size = pageSize || 10;
 
     const qb = this.userNoticeRepository
       .createQueryBuilder("un")
-      .innerJoinAndSelect(SysNotice, "n", "un.noticeId = n.id")
+      .innerJoin(SysNotice, "n", "un.noticeId = n.id")
+      .leftJoin(SysUser, "u", "n.publisherId = u.id")
       .where("un.userId = :userId", { userId: userId.toString() })
       .andWhere("un.isDeleted = 0")
       .andWhere("n.isDeleted = 0")
-      .orderBy("n.publishTime", "DESC");
+      .andWhere("n.publishStatus = 1")
+      .orderBy("n.publishTime", "DESC")
+      .addOrderBy("n.createTime", "DESC");
 
     // isRead 过滤：0 未读，1 已读，其他值则不过滤
     if (isRead === "0" || isRead === "1") {
       qb.andWhere("un.isRead = :isRead", { isRead: Number(isRead) });
     }
 
-    const [rows, total] = await qb
+    const dataQb = qb
+      .clone()
+      .select("n.id", "id")
+      .addSelect("n.title", "title")
+      .addSelect("n.content", "content")
+      .addSelect("n.type", "type")
+      .addSelect("n.level", "level")
+      .addSelect("n.publishStatus", "publishStatus")
+      .addSelect("n.publishTime", "publishTime")
+      .addSelect("n.revokeTime", "revokeTime")
+      .addSelect("n.createTime", "createTime")
+      .addSelect("n.targetType", "targetType")
+      .addSelect("un.isRead", "isRead")
+      .addSelect("u.nickname", "publisherName")
       .skip((page - 1) * size)
-      .take(size)
-      .getManyAndCount();
+      .take(size);
+
+    const [rows, total] = await Promise.all([dataQb.getRawMany(), qb.clone().getCount()]);
 
     return {
       data: rows,
