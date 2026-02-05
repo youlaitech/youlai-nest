@@ -2,11 +2,14 @@ import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateMenuDto } from "./dto/create-menu.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, In, Not } from "typeorm";
+import { Repository, In } from "typeorm";
 import { SysMenu } from "./entities/sys-menu.entity";
 import { UserService } from "../user/user.service";
-import { MenuItem, Route } from "./interface/menu.type";
+import { Route } from "./interface/menu.type";
 
+/**
+ * 菜单服务
+ */
 @Injectable()
 export class MenuService {
   constructor(

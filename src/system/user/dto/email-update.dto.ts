@@ -1,6 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsString } from "class-validator";
 
+/**
+ * 邮箱更新参数
+ */
 export class EmailUpdateDto {
   @ApiProperty({ description: "邮箱" })
   @IsString()

@@ -1,5 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * 访问统计数据
+ */
 export class VisitStatsDto {
   @ApiProperty({ description: "今日独立访客数 (UV)" })
   todayUvCount: number | null;

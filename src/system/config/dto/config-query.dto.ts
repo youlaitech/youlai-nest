@@ -3,6 +3,9 @@ import { IsOptional, IsString } from "class-validator";
 
 import { BaseQueryDto } from "src/common/dto/base-query.dto";
 
+/**
+ * 系统配置查询参数
+ */
 export class ConfigQueryDto extends BaseQueryDto {
   @ApiProperty({ required: false, description: "关键字" })
   @IsOptional()

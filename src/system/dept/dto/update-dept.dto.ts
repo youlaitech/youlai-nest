@@ -2,6 +2,9 @@ import { IsOptional, IsString, IsNumber, IsIn } from "class-validator";
 import { Transform } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * 部门更新参数
+ */
 export class UpdateDeptDto {
   @ApiProperty({ description: "部门名称", required: false })
   @IsOptional()

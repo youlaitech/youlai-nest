@@ -1,6 +1,9 @@
-import { IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import { IsOptional, IsString, IsNumber } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * 字典创建参数
+ */
 export class CreateDictDto {
   dict_code: string;
   name: string;

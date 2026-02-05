@@ -3,6 +3,9 @@ import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Inject } from "@nestjs/common";
 import { Logger } from "winston";
 
+/**
+ * 应用日志服务
+ */
 @Injectable()
 export class AppLogger implements LoggerService {
   constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}

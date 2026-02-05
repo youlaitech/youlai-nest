@@ -1,6 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsObject, IsOptional, IsString } from "class-validator";
 
+/**
+ * AI 函数调用描述
+ */
 export class AiFunctionCallDto {
   @ApiProperty({ description: "函数名称" })
   @IsString()

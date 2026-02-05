@@ -3,6 +3,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SysUser } from "src/system/user/entities/sys-user.entity";
 
+/**
+ * AI 用户工具服务
+ */
 @Injectable()
 export class UserToolsService {
   constructor(@InjectRepository(SysUser) private readonly userRepository: Repository<SysUser>) {}

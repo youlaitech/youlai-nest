@@ -6,6 +6,9 @@ import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
 import { RedisService } from "src/shared/redis/redis.service";
 
+/**
+ * 系统配置服务
+ */
 @Injectable()
 export class ConfigService {
   constructor(

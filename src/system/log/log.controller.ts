@@ -3,6 +3,9 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LogService } from "./log.service";
 import { LogQueryDto } from "./dto/log-query.dto";
 
+/**
+ * 日志接口控制器
+ */
 @ApiTags("10.日志接口")
 @Controller("logs")
 export class LogController {

@@ -15,6 +15,9 @@ import { ToolRegistry } from "./tools/tool-registry";
 import { ToolExecutor } from "./tools/tool-executor";
 import { UserToolsService } from "./tools/user-tools.service";
 
+/**
+ * AI 助手服务
+ */
 @Injectable()
 export class AiAssistantService {
   // 工具注册表：集中声明模型可调用的函数

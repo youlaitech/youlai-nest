@@ -1,3 +1,6 @@
+/**
+ * 当前登录用户信息
+ */
 export class CurrentUserDto {
   userId: string;
 

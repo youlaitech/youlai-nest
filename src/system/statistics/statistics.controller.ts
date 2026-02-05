@@ -2,6 +2,9 @@ import { Controller, Get, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LogService } from "../log/log.service";
 
+/**
+ * 统计分析接口控制器
+ */
 @ApiTags("13.统计分析")
 @Controller("statistics")
 export class StatisticsController {

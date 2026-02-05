@@ -20,6 +20,9 @@ export interface OpenAiTool {
   };
 }
 
+/**
+ * OpenAI-compatible 客户端
+ */
 @Injectable()
 export class OpenAiClientService {
   constructor(private readonly configService: ConfigService) {}

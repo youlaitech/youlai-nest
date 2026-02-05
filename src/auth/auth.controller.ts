@@ -24,6 +24,9 @@ import { v4 as uuidv4 } from "uuid";
 import { RedisService } from "../shared/redis/redis.service";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 
+/**
+ * 认证接口控制器
+ */
 @ApiTags("01.认证接口")
 @Controller("auth")
 export class AuthController {

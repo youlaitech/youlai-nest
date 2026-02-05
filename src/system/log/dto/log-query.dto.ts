@@ -4,6 +4,9 @@ import { IsOptional } from "class-validator";
 
 import { BaseQueryDto } from "src/common/dto/base-query.dto";
 
+/**
+ * 日志查询参数
+ */
 export class LogQueryDto extends BaseQueryDto {
   @ApiProperty({
     description: "关键字(日志内容/请求路径/请求方法/地区/浏览器/终端系统)",

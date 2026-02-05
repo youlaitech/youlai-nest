@@ -9,6 +9,9 @@ import { MenuService } from "../menu/menu.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
 
+/**
+ * 角色服务
+ */
 @Injectable()
 export class RoleService {
   private readonly logger = new Logger(RoleService.name);

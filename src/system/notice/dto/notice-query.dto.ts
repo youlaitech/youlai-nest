@@ -2,6 +2,9 @@ import { IsOptional, IsString } from "class-validator";
 
 import { BaseQueryDto } from "src/common/dto/base-query.dto";
 
+/**
+ * 通知公告查询参数
+ */
 export class NoticeQueryDto extends BaseQueryDto {
   // 关键字
   @IsOptional()

@@ -5,6 +5,9 @@ import { UpdateRoleDto } from "./dto/update-role.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { RoleQueryDto } from "./dto/role-query.dto";
 
+/**
+ * 角色接口控制器
+ */
 @ApiTags("03.角色接口")
 @Controller("roles")
 export class RoleController {

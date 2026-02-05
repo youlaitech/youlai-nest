@@ -13,6 +13,9 @@ import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
 
+/**
+ * 对象存储服务
+ */
 @Injectable()
 export class OssService {
   /** 当前 OSS 类型：aliyun | minio | local */

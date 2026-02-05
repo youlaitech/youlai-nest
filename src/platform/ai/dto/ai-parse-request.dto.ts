@@ -1,6 +1,9 @@
 import { IsOptional, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * AI 解析请求参数
+ */
 export class AiParseRequestDto {
   @ApiProperty({ description: "用户输入的自然语言命令" })
   @IsString()

@@ -8,6 +8,9 @@ import { VisitTrendDto } from "./dto/visit-trend.dto";
 import { VisitStatsDto } from "./dto/visit-stats.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
 
+/**
+ * 日志服务
+ */
 @Injectable()
 export class LogService {
   constructor(

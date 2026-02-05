@@ -2,6 +2,9 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
+/**
+ * 通用分页查询参数
+ */
 export class BaseQueryDto {
   @ApiProperty({ description: "页码", required: false, default: 1, minimum: 1 })
   @IsOptional()

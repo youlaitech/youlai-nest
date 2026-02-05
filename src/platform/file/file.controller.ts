@@ -3,6 +3,9 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { OssService } from "src/shared/oss/oss.service";
 
+/**
+ * 文件接口控制器
+ */
 @ApiTags("11.文件接口")
 @Controller("files")
 export class FileController {

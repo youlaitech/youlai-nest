@@ -6,6 +6,9 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { Route } from "./interface/menu.type";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
+/**
+ * 菜单接口控制器
+ */
 @ApiTags("04.菜单接口")
 @Controller("menus")
 export class MenuController {

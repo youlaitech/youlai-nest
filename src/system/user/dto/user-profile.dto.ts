@@ -1,6 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsString, IsInt } from "class-validator";
 
+/**
+ * 用户资料更新参数
+ */
 export class UserProfileDto {
   @ApiProperty({ description: "昵称", required: false })
   @IsOptional()

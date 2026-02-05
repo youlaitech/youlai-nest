@@ -1,5 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * 日志分页项
+ */
 export class LogPageVo {
   @ApiProperty({ description: "主键" })
   id: string;

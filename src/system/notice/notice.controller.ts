@@ -5,6 +5,9 @@ import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
+/**
+ * 通知公告接口控制器
+ */
 @ApiTags("09.通知公告")
 @Controller("notices")
 export class NoticeController {

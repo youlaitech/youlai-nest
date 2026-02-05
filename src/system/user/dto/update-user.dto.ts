@@ -2,6 +2,9 @@ import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsDate } from "class-
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 
+/**
+ * 用户更新参数
+ */
 export class UpdateUserDto {
   @ApiProperty({ description: "ID" })
   @IsOptional()

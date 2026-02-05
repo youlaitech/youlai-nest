@@ -9,7 +9,6 @@ import {
   Put,
   HttpException,
   HttpStatus,
-  Req,
 } from "@nestjs/common";
 import { DictService } from "./dict.service";
 import { DictFormDto } from "./dto/create-dict.dto";
@@ -21,6 +20,9 @@ import { UpdateDictItemDto } from "./dto/update-dict-item.dto";
 import { DictQueryDto } from "./dto/dict-query.dto";
 import { DictItemQueryDto } from "./dto/dict-item-query.dto";
 
+/**
+ * 字典接口控制器
+ */
 @ApiTags("06.字典接口")
 @Controller("dicts")
 export class DictController {

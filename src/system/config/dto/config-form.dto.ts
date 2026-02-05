@@ -2,6 +2,9 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 
+/**
+ * 系统配置创建参数
+ */
 export class CreateConfigDto {
   @ApiProperty({ description: "配置名称", required: true })
   @IsNotEmpty({ message: "配置名称不能为空" })
@@ -35,6 +38,9 @@ export class CreateConfigDto {
   createBy?: string;
 }
 
+/**
+ * 系统配置更新参数
+ */
 export class UpdateConfigDto {
   @ApiProperty({ description: "配置名称", required: false })
   @IsOptional()

@@ -3,6 +3,9 @@ import { OssService } from "./oss.service";
 import { ApiTags } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
 
+/**
+ * 对象存储接口控制器
+ */
 @ApiTags("08.对象存储")
 @Controller("oss")
 export class OssController {

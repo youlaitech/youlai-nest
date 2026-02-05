@@ -2,6 +2,9 @@ import { IsNotEmpty, IsOptional, IsString, IsNumber, IsArray, IsEmail } from "cl
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 
+/**
+ * 用户创建参数
+ */
 export class CreateUserDto {
   @IsNotEmpty({ message: "用户名不能为空" })
   @IsString()

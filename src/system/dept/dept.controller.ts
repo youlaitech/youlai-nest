@@ -17,6 +17,9 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
+/**
+ * 部门接口控制器
+ */
 @ApiTags("05.部门接口")
 @Controller("depts")
 export class DeptController {

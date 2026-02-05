@@ -1,3 +1,6 @@
+/**
+ * AI 执行响应
+ */
 export class AiExecuteResponseDto {
   success: boolean;
   data?: any;

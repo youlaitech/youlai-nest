@@ -3,6 +3,9 @@ import { Type } from "class-transformer";
 import { IsBoolean, IsOptional, IsString, ValidateNested } from "class-validator";
 import { AiFunctionCallDto } from "./ai-function-call.dto";
 
+/**
+ * AI 执行请求参数
+ */
 export class AiExecuteRequestDto {
   @ApiProperty({ description: "关联的解析日志ID", required: false })
   @IsOptional()

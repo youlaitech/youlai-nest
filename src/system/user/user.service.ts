@@ -23,6 +23,9 @@ import type { UserProfileDto } from "./dto/user-profile.dto";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as XLSX from "xlsx";
 
+/**
+ * 用户服务
+ */
 @Injectable()
 export class UserService {
   constructor(

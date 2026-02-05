@@ -2,6 +2,9 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsNumber, IsOptional } from "class-validator";
 import { Transform } from "class-transformer";
 
+/**
+ * 字典项更新参数
+ */
 export class UpdateDictItemDto {
   @ApiProperty({ description: "字典编码" })
   @IsString()

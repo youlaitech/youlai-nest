@@ -1,6 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { AiFunctionCallDto } from "./ai-function-call.dto";
 
+/**
+ * AI 解析响应
+ */
 export class AiParseResponseDto {
   @ApiProperty({ description: "解析日志ID（用于关联执行记录）", required: false })
   parseLogId?: string;

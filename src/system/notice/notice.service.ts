@@ -8,6 +8,9 @@ import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
 import { WebsocketGateway } from "src/platform/websocket/websocket.gateway";
 
+/**
+ * 通知公告服务
+ */
 @Injectable()
 export class NoticeService {
   constructor(

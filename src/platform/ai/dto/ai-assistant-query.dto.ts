@@ -3,6 +3,9 @@ import { Transform } from "class-transformer";
 import { IsNumber, IsOptional, IsString } from "class-validator";
 import { BaseQueryDto } from "src/common/dto/base-query.dto";
 
+/**
+ * AI 助手记录查询参数
+ */
 export class AiAssistantQueryDto extends BaseQueryDto {
   @ApiProperty({ description: "关键字(原始命令/函数名称/用户名)", required: false })
   @IsOptional()

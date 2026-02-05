@@ -1,5 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+/**
+ * 用户表单详情
+ */
 export class UserFormDto {
   @ApiProperty({ description: "用户ID" })
   id: string;
