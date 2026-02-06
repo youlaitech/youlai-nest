@@ -4,6 +4,12 @@ import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import { RequestContext } from "../context/request-context";
 
 @Injectable()
+/**
+ * 数据范围上下文守卫
+ *
+ * 从 request.user 中提取用户的部门与数据范围信息，并写入 RequestContext。
+ * 后续服务在构造查询条件时可以读取这些字段，实现按部门/本人等维度的数据过滤。
+ */
 export class DataScopeGuard implements CanActivate {
   private readonly reflector: Reflector;
 
@@ -18,6 +24,7 @@ export class DataScopeGuard implements CanActivate {
     ]);
 
     if (isPublic) {
+      // Public 接口不需要上下文，避免残留
       RequestContext.setCurrentUser(null);
       return true;
     }
@@ -28,6 +35,8 @@ export class DataScopeGuard implements CanActivate {
 
     const userIdRaw = user?.userId;
     const deptIdRaw = user?.deptId;
+    const roles = user?.roles ?? [];
+    const perms = user?.perms ?? [];
     const userId =
       userIdRaw === undefined || userIdRaw === null || userIdRaw === ""
         ? undefined
@@ -42,11 +51,14 @@ export class DataScopeGuard implements CanActivate {
       return true;
     }
 
+    // 给后续查询阶段使用
     RequestContext.setCurrentUser({
       userId,
       deptId,
       deptTreePath,
       dataScope,
+      roles,
+      perms,
     });
 
     return true;

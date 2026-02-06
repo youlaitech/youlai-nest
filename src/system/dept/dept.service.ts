@@ -2,9 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { CreateDeptDto } from "./dto/create-dept.dto";
 import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, In } from "typeorm";
 import { SysDept } from "./entities/sys-dept.entity";
-import { In } from "typeorm";
+import { SysUser } from "../user/entities/sys-user.entity";
+import { BusinessException } from "../../common/exceptions/business.exception";
 
 /**
  * 部门服务
@@ -13,7 +14,9 @@ import { In } from "typeorm";
 export class DeptService {
   constructor(
     @InjectRepository(SysDept)
-    private readonly deptRepository: Repository<SysDept>
+    private readonly deptRepository: Repository<SysDept>,
+    @InjectRepository(SysUser)
+    private readonly userRepository: Repository<SysUser>
   ) {}
 
   /**
@@ -137,6 +140,23 @@ export class DeptService {
    */
   async deleteDept(id: string | number) {
     const idStr = id.toString();
+
+    // 检查是否有子部门
+    const hasChildren = await this.deptRepository.findOne({
+      where: { parentId: idStr, isDeleted: 0 },
+    });
+    if (hasChildren) {
+      throw new BusinessException("该部门下有子部门，禁止删除");
+    }
+
+    // 检查是否有用户关联
+    const hasUsers = await this.userRepository.findOne({
+      where: { deptId: idStr, isDeleted: 0 },
+    });
+    if (hasUsers) {
+      throw new BusinessException("该部门下有用户关联，禁止删除");
+    }
+
     const result = await this.deptRepository.update({ id: idStr }, { isDeleted: 1 });
     return result.affected > 0;
   }

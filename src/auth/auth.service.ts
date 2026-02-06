@@ -28,6 +28,10 @@ export class AuthService {
     private readonly configService: ConfigService
   ) {}
 
+  private getJwtUserSessionKey(userId: string) {
+    return `auth:user:jwt_session:${userId}`;
+  }
+
   private async issueTokens(user: any): Promise<LoginResultDto> {
     // SESSION_TYPE=jwt：令牌自包含；SESSION_TYPE=redis-token：令牌只做索引，用户会话存 Redis
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
@@ -39,6 +43,21 @@ export class AuthService {
       const versionKey = `auth:user:security_version:${userId}`;
       const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
       const securityVersion = currentVersionRaw ?? 0;
+
+      const refreshTtl = this.config.expiresIn * 10;
+      await this.redisCacheService.set(
+        this.getJwtUserSessionKey(userId),
+        {
+          userId,
+          username: user.username,
+          deptId: user.deptId,
+          dataScope: user.dataScope,
+          deptTreePath: user.deptTreePath,
+          roles: user.roles,
+          perms: user.perms,
+        },
+        refreshTtl
+      );
 
       const jti = uuidv4();
       const payload = {
@@ -88,6 +107,7 @@ export class AuthService {
       deptId: user.deptId,
       dataScope: user.dataScope,
       roles: user.roles,
+      perms: user.perms,
     };
 
     // access/refresh 双 token + userId 反向索引，方便注销/踢下线时快速定位并清理

@@ -3,10 +3,11 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { DeptService } from "./dept.service";
 import { DeptController } from "./dept.controller";
 import { SysDept } from "./entities/sys-dept.entity";
+import { SysUser } from "../user/entities/sys-user.entity";
 import { UserModule } from "../user/user.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SysDept]), forwardRef(() => UserModule)],
+  imports: [TypeOrmModule.forFeature([SysDept, SysUser]), forwardRef(() => UserModule)],
   controllers: [DeptController],
   providers: [DeptService],
   exports: [DeptService],

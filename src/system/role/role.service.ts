@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -8,6 +9,8 @@ import { SysRoleMenu } from "./entities/sys-role-menu.entity";
 import { MenuService } from "../menu/menu.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
+import { ROOT_ROLE_CODE } from "src/common/constants";
+import { RedisService } from "src/shared/redis/redis.service";
 
 /**
  * 角色服务
@@ -24,8 +27,42 @@ export class RoleService {
     @InjectRepository(SysUserRole)
     private userRoleRepository: Repository<SysUserRole>,
     @Inject(forwardRef(() => MenuService))
-    private readonly menuService: MenuService
+    private readonly menuService: MenuService,
+    private readonly configService: ConfigService,
+    private readonly redisCacheService: RedisService
   ) {}
+
+  private async invalidateUsersSessions(userIds: string[]): Promise<void> {
+    const ids = (userIds || []).map((v) => v?.toString()).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
+    for (const userId of ids) {
+      const versionKey = `auth:user:security_version:${userId}`;
+      const currentVersion = await this.redisCacheService.get<number>(versionKey);
+      const nextVersion = (currentVersion ?? 0) + 1;
+      await this.redisCacheService.set(versionKey, nextVersion);
+      await this.redisCacheService.del(`auth:user:jwt_session:${userId}`);
+
+      if (sessionType === "redis-token") {
+        const accessKey = `auth:user:access:${userId}`;
+        const refreshKey = `auth:user:refresh:${userId}`;
+
+        const accessToken = await this.redisCacheService.get<string>(accessKey);
+        const refreshToken = await this.redisCacheService.get<string>(refreshKey);
+
+        if (accessToken) {
+          await this.redisCacheService.del(`auth:token:access:${accessToken}`);
+        }
+        if (refreshToken) {
+          await this.redisCacheService.del(`auth:token:refresh:${refreshToken}`);
+        }
+
+        await this.redisCacheService.del(accessKey);
+        await this.redisCacheService.del(refreshKey);
+      }
+    }
+  }
 
   async findRoleIdsByCodes(roleCodes: string[]): Promise<string[]> {
     const codes = (roleCodes || []).map((c) => (c ?? "").trim()).filter(Boolean);
@@ -94,7 +131,7 @@ export class RoleService {
     const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
-    const reservedCodes = ["ROOT"];
+    const reservedCodes = [ROOT_ROLE_CODE];
     const queryBuilder = this.roleRepository.createQueryBuilder("role");
     queryBuilder.where("role.isDeleted = :isDeleted", { isDeleted: 0 });
     queryBuilder.andWhere("role.code NOT IN (:...reservedCodes)", { reservedCodes });
@@ -181,7 +218,7 @@ export class RoleService {
    * 角色下拉列表
    */
   async getRoleOptions() {
-    const reservedCodes = ["ROOT"];
+    const reservedCodes = [ROOT_ROLE_CODE];
     const roles = await this.roleRepository
       .createQueryBuilder("role")
       .where("role.isDeleted = :isDeleted", { isDeleted: 0 })
@@ -256,7 +293,13 @@ export class RoleService {
       menuId: menuId.toString(),
     }));
 
-    return await this.roleMenuRepository.save(roleMenus);
+    const saved = await this.roleMenuRepository.save(roleMenus);
+
+    const relations = await this.userRoleRepository.find({ where: { roleId: roleIdStr } });
+    const userIds = relations.map((r) => r.userId?.toString()).filter(Boolean);
+    await this.invalidateUsersSessions(userIds);
+
+    return saved;
   }
 
   /**
@@ -280,7 +323,12 @@ export class RoleService {
     for (const roleId of roleIds) {
       const role = await this.roleRepository.findOne({ where: { id: roleId, isDeleted: 0 } });
       if (!role) {
-        throw new BusinessException("角色不存在");
+        continue;
+      }
+
+      // 系统内置角色禁止删除
+      if (role.code === ROOT_ROLE_CODE) {
+        throw new BusinessException(`系统内置角色【${role.name}】禁止删除`);
       }
 
       const assignedCount = await this.userRoleRepository.count({ where: { roleId } });

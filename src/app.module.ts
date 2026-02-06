@@ -33,6 +33,7 @@ import typeormConfig from "./config/typeorm.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
 import { DataScopeGuard } from "./common/guards/data-scope.guard";
+import { PermissionGuard } from "src/common/guards/permission.guard";
 import "./common/plugins/global-scope.plugin";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
@@ -121,6 +122,11 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     {
       provide: APP_GUARD,
       useClass: DataScopeGuard,
+    },
+    // RBAC 权限全局守卫
+    {
+      provide: APP_GUARD,
+      useClass: PermissionGuard,
     },
     // 应用http全局过滤器
     {

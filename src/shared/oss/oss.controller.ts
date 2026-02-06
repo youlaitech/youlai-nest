@@ -1,7 +1,7 @@
 import { Body, Controller, Headers, Get, Post, Query } from "@nestjs/common";
 import { OssService } from "./oss.service";
 import { ApiTags } from "@nestjs/swagger";
-import { Public } from "../../common/decorators/public.decorator";
+import { Permissions, Public } from "src/common/decorators/public.decorator";
 
 /**
  * 对象存储接口控制器
@@ -20,19 +20,21 @@ export class OssController {
     return this.oss.getstaticSignature();
   }
   @Get("download")
-  @Public()
+  @Permissions("sys:file:download")
   async downloadPrivateFile(@Query("key") key: string) {
     const signedUrl = await this.oss.generateSignedUrl(key);
     return { url: signedUrl }; // 重定向到签名URL
   }
 
   @Get("getFileAsBlob")
+  @Permissions("sys:file:get")
   async getFileAsBlob(@Query("key") key: string) {
     const data = await this.oss.getFileAsBlob(key);
     return data;
   }
 
   @Post("result")
+  @Permissions("sys:file:result")
   @Public()
   getResult(@Headers("x-oss-pub-key-url") xOssPubKeyUrl: string, @Body() file: any) {
     return this.oss.getResult(xOssPubKeyUrl, file);

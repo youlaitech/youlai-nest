@@ -1,5 +1,6 @@
-import { createParamDecorator, ExecutionContext, UnauthorizedException } from "@nestjs/common";
-import { CurrentUserInfo } from "../interfaces/current-user.interface";
+import { createParamDecorator } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
+import type { CurrentUserInfo } from "../interfaces/current-user.interface";
 
 export const CurrentUser = createParamDecorator(
   (data: keyof CurrentUserInfo | undefined, ctx: ExecutionContext) => {

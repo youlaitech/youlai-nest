@@ -1,13 +1,22 @@
-import { Controller, Get, Post, Body, Param, Delete, Req, Query, Put } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+  SetMetadata,
+} from "@nestjs/common";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Permissions } from "../../common/decorators/public.decorator";
 import { RoleService } from "./role.service";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { RoleQueryDto } from "./dto/role-query.dto";
 
-/**
- * 角色接口控制器
- */
 @ApiTags("03.角色接口")
 @Controller("roles")
 export class RoleController {
@@ -21,12 +30,14 @@ export class RoleController {
 
   @ApiOperation({ summary: "角色分页列表" })
   @Get()
+  @SetMetadata("resource", "sys_role")
   async getRolePage(@Query() query: RoleQueryDto) {
     return await this.rolesService.getRolePage(query.pageNum, query.pageSize, query.keywords);
   }
 
   @ApiOperation({ summary: "新增角色" })
   @Post()
+  @Permissions("sys:role:create")
   async create(@Req() request, @Body() createRoleDto: CreateRoleDto) {
     await this.rolesService.saveRole({ ...createRoleDto });
     return { success: true };
@@ -34,12 +45,14 @@ export class RoleController {
 
   @ApiOperation({ summary: "角色表单数据" })
   @Get(":id/form")
+  @Permissions("sys:role:update")
   async getRoleForm(@Param("id") id: string) {
     return await this.rolesService.getRoleForm(id);
   }
 
   @ApiOperation({ summary: "修改角色" })
   @Put(":id")
+  @Permissions("sys:role:update")
   async updateRole(@Param("id") id: string, @Body() updateRoleDto: UpdateRoleDto) {
     await this.rolesService.saveRole({ ...updateRoleDto, id });
     return { success: true };
@@ -47,6 +60,7 @@ export class RoleController {
 
   @ApiOperation({ summary: "修改角色状态" })
   @Put(":roleId/status")
+  @Permissions("sys:role:update")
   async updateRoleStatus(@Param("roleId") roleId: string, @Query("status") status: number) {
     const success = await this.rolesService.updateRoleStatus(roleId, status);
     return { success };
@@ -54,6 +68,7 @@ export class RoleController {
 
   @ApiOperation({ summary: "删除角色" })
   @Delete(":ids")
+  @Permissions("sys:role:delete")
   async deleteRoles(@Param("ids") ids: string) {
     await this.rolesService.deleteRoles(ids);
     return { success: true };
@@ -61,12 +76,14 @@ export class RoleController {
 
   @ApiOperation({ summary: "获取角色权限" })
   @Get(":id/menuIds")
+  @Permissions("sys:role:update")
   async findMenuIds(@Param("id") roleId: string) {
     return await this.rolesService.getRoleMenuIds(roleId);
   }
 
   @ApiOperation({ summary: "角色分配权限" })
   @Put(":id/menus")
+  @Permissions("sys:role:assign")
   async updateMenus(@Param("id") id: string, @Body() menuIds: (string | number)[]): Promise<any> {
     const ids = (menuIds || []).map((v) => v.toString());
     return await this.rolesService.updateMenus(id, ids);

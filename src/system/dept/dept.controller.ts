@@ -16,6 +16,7 @@ import { CreateDeptDto } from "./dto/create-dept.dto";
 import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Permissions } from "../../common/decorators/public.decorator";
 
 /**
  * 部门接口控制器
@@ -45,6 +46,7 @@ export class DeptController {
 
   @ApiOperation({ summary: "创建部门" })
   @Post()
+  @Permissions("sys:dept:create")
   async create(@CurrentUser("userId") currentUserId: string, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
       ...createDeptDto,
@@ -64,6 +66,7 @@ export class DeptController {
 
   @ApiOperation({ summary: "编辑部门" })
   @Put(":id")
+  @Permissions("sys:dept:update")
   async update(
     @CurrentUser("userId") currentUserId: string,
     @Param("id") id: string,
@@ -95,6 +98,7 @@ export class DeptController {
 
   @ApiOperation({ summary: "删除部门" })
   @Delete(":ids")
+  @Permissions("sys:dept:delete")
   async deleteDepartments(@Param("ids") ids: string) {
     const idArray = ids
       .split(",")

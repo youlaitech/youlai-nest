@@ -3,6 +3,8 @@ import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigService } from "@nestjs/config";
 import { RedisService } from "src/shared/redis/redis.service";
+import { RoleService } from "src/system/role/role.service";
+import { ROOT_ROLE_CODE } from "src/common/constants";
 
 /**
  * JWT 认证策略
@@ -15,7 +17,8 @@ import { RedisService } from "src/shared/redis/redis.service";
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly redisCacheService: RedisService
+    private readonly redisCacheService: RedisService,
+    private readonly roleService: RoleService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
@@ -57,12 +60,44 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
 
+    const roles: string[] = payload.roles || [];
+
+    const userSessionKey = `auth:user:jwt_session:${userId}`;
+    const cachedSession = await this.redisCacheService.get<any>(userSessionKey);
+
+    let perms: string[] = Array.isArray(cachedSession?.perms) ? cachedSession.perms : [];
+    if (perms.length === 0) {
+      if (roles.includes(ROOT_ROLE_CODE)) {
+        perms = await this.roleService.findAllPerms();
+      } else {
+        perms = await this.roleService.findPermsByRoleCodes(roles);
+      }
+
+      const expiresIn = Number(this.configService.get("JWT_EXPIRES_IN"));
+      const refreshTtl = Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn * 10 : undefined;
+      await this.redisCacheService.set(
+        userSessionKey,
+        {
+          userId,
+          username: payload.username,
+          deptId: payload.deptId,
+          dataScope: payload.dataScope,
+          deptTreePath: payload.deptTreePath,
+          roles,
+          perms,
+        },
+        refreshTtl
+      );
+    }
+
     return {
       userId,
       username: payload.username,
-      roles: payload.roles || [],
+      roles,
+      perms,
       deptId: payload.deptId,
       dataScope: payload.dataScope,
+      deptTreePath: payload.deptTreePath,
     };
   }
 }

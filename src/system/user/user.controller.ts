@@ -30,6 +30,7 @@ import { MobileUpdateDto } from "./dto/mobile-update.dto";
 import { EmailUpdateDto } from "./dto/email-update.dto";
 import { PasswordVerifyDto } from "./dto/password-verify.dto";
 import { UserProfileDto } from "./dto/user-profile.dto";
+import { Permissions } from "src/common/decorators/public.decorator";
 import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
@@ -87,25 +88,39 @@ export class UserController {
 
   @ApiOperation({ summary: "导出用户" })
   @Get("export")
+  @Permissions("sys:user:export")
   @SetMetadata("skipResponseTransform", true)
-  async exportUsers(@Res() res: Response, @Query() queryParams: UserQueryDto) {
-    const exportList = await this.userService.listExportUsers(
-      queryParams.deptId,
-      queryParams.keywords,
-      queryParams.status,
-      queryParams.startTime,
-      queryParams.endTime
+  async exportUsers(@Query() query: UserQueryDto, @Res() res: Response) {
+    const list = await this.userService.listExportUsers(
+      query.deptId,
+      query.keywords,
+      query.status,
+      query.startTime,
+      query.endTime
     );
 
-    const headers = ["用户名", "用户昵称", "部门", "性别", "手机号码", "邮箱", "创建时间"];
-    const rows = exportList.map((u) => [
-      u.username ?? "",
-      u.nickname ?? "",
-      u.deptName ?? "",
-      u.gender ?? "",
-      u.mobile ?? "",
-      u.email ?? "",
-      u.createTime ?? "",
+    const headers = [
+      "ID",
+      "用户名",
+      "昵称",
+      "性别",
+      "手机号码",
+      "状态",
+      "邮箱",
+      "部门",
+      "创建时间",
+    ];
+
+    const rows = list.map((u) => [
+      u.id,
+      u.username,
+      u.nickname,
+      u.gender,
+      u.mobile,
+      u.status,
+      u.email,
+      u.deptName,
+      u.createTime,
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -130,42 +145,28 @@ export class UserController {
 
   @ApiOperation({ summary: "新增用户" })
   @Post()
-  async create(@CurrentUser("userId") currentUserId: string, @Body() createUserDto: CreateUserDto) {
-    return await this.userService.create({
-      ...createUserDto,
-      createBy: currentUserId,
-    });
+  @Permissions("sys:user:create")
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    return await this.userService.create(createUserDto);
   }
 
   @ApiOperation({ summary: "获取用户表单数据" })
-  @Get(":userId/form")
-  async getUserForm(@Param("userId") userId: string) {
-    const id = userId?.trim();
-    if (!id || !/^\d+$/.test(id)) {
-      throw new BusinessException("用户ID非法");
-    }
+  @Get(":id/form")
+  @Permissions("sys:user:update")
+  async getUserFormData(@Param("id") id: string) {
     return await this.userService.getUserFormData(id);
   }
 
   @ApiOperation({ summary: "修改用户" })
   @Put(":id")
-  async update(
-    @CurrentUser("userId") currentUserId: string,
-    @Param("id") id: string,
-    @Body() updateUserDto: UpdateUserDto
-  ) {
-    const userId = id?.trim();
-    if (!userId || !/^\d+$/.test(userId)) {
-      throw new BusinessException("用户ID非法");
-    }
-    return await this.userService.update(userId, {
-      ...updateUserDto,
-      updateBy: currentUserId,
-    });
+  @Permissions("sys:user:update")
+  async updateUser(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
+    return await this.userService.update(id, updateUserDto);
   }
 
   @ApiOperation({ summary: "删除用户" })
   @Delete(":ids")
+  @Permissions("sys:user:delete")
   async deleteUsers(@Param("ids") ids: string) {
     const idArray = ids
       .split(",")
@@ -189,33 +190,25 @@ export class UserController {
 
   @ApiOperation({ summary: "修改用户状态" })
   @Patch(":userId/status")
+  @Permissions("sys:user:update")
   async updateUserStatus(@Param("userId") userId: string, @Query("status") status: number) {
-    const id = userId?.trim();
-    if (!id || !/^\d+$/.test(id)) {
-      throw new BusinessException("用户ID非法");
-    }
-    const success = await this.userService.updateUserStatus(id, status);
-    return { success };
+    return await this.userService.updateUserStatus(userId, status);
   }
 
   @ApiOperation({ summary: "重置指定用户密码" })
   @Put(":userId/password/reset")
+  @Permissions("sys:user:reset-password")
   async resetUserPassword(@Param("userId") userId: string, @Query("password") password: string) {
-    const id = userId?.trim();
-    if (!id || !/^\d+$/.test(id)) {
-      throw new BusinessException("用户ID非法");
-    }
-    const success = await this.userService.resetUserPassword(id, password);
-    return { success };
+    return await this.userService.resetUserPassword(userId, password);
   }
 
   @ApiOperation({ summary: "当前用户修改密码" })
   @Put("password")
   async changeCurrentUserPassword(
-    @CurrentUser("userId") currentUserId: string,
+    @CurrentUser("userId") userId: string,
     @Body() data: PasswordChangeDto
   ) {
-    return await this.userService.changeCurrentUserPassword(currentUserId, data);
+    return await this.userService.changeCurrentUserPassword(userId, data);
   }
 
   @ApiOperation({ summary: "发送短信验证码（绑定或更换手机号）" })
@@ -226,20 +219,14 @@ export class UserController {
 
   @ApiOperation({ summary: "绑定或更换手机号" })
   @Put("mobile")
-  async bindOrChangeMobile(
-    @CurrentUser("userId") currentUserId: string,
-    @Body() data: MobileUpdateDto
-  ) {
-    return await this.userService.bindOrChangeMobile(currentUserId, data);
+  async bindOrChangeMobile(@CurrentUser("userId") userId: string, @Body() data: MobileUpdateDto) {
+    return await this.userService.bindOrChangeMobile(userId, data);
   }
 
   @ApiOperation({ summary: "解绑手机号" })
   @Delete("mobile")
-  async unbindMobile(
-    @CurrentUser("userId") currentUserId: string,
-    @Body() data: PasswordVerifyDto
-  ) {
-    return await this.userService.unbindMobile(currentUserId, data.password);
+  async unbindMobile(@CurrentUser("userId") userId: string, @Body() data: PasswordVerifyDto) {
+    return await this.userService.unbindMobile(userId, data.password);
   }
 
   @ApiOperation({ summary: "发送邮箱验证码（绑定或更换邮箱）" })
@@ -251,25 +238,23 @@ export class UserController {
 
   @ApiOperation({ summary: "绑定或更换邮箱" })
   @Put("email")
-  async bindOrChangeEmail(
-    @CurrentUser("userId") currentUserId: string,
-    @Body() data: EmailUpdateDto
-  ) {
-    return await this.userService.bindOrChangeEmail(currentUserId, data);
+  async bindOrChangeEmail(@CurrentUser("userId") userId: string, @Body() data: EmailUpdateDto) {
+    return await this.userService.bindOrChangeEmail(userId, data);
   }
 
   @ApiOperation({ summary: "解绑邮箱" })
   @Delete("email")
-  async unbindEmail(@CurrentUser("userId") currentUserId: string, @Body() data: PasswordVerifyDto) {
-    return await this.userService.unbindEmail(currentUserId, data.password);
+  async unbindEmail(@CurrentUser("userId") userId: string, @Body() data: PasswordVerifyDto) {
+    return await this.userService.unbindEmail(userId, data.password);
   }
 
   @ApiOperation({ summary: "导入用户" })
   @Post("import")
+  @Permissions("sys:user:import")
   @UseInterceptors(FileInterceptor("file"))
-  async importUsers(@UploadedFile() file: any) {
+  async importUsers(@UploadedFile() file: Express.Multer.File) {
     if (!file?.buffer) {
-      throw new BusinessException("导入文件不能为空");
+      throw new BusinessException("上传文件为空");
     }
     return await this.userService.importUsersFromBuffer(file.buffer);
   }
@@ -279,25 +264,25 @@ export class UserController {
    */
   @ApiOperation({ summary: "用户分页列表" })
   @Get()
-  @SetMetadata("resource", "sys_user")
-  async getUserList(@Query() queryParams: UserQueryDto) {
+  @Permissions("sys:user:list")
+  async getUserPage(@Query() query: UserQueryDto) {
     this.logger.info("获取用户分页列表", {
       context: "UserController",
       metadata: {
-        pageNum: queryParams.pageNum,
-        pageSize: queryParams.pageSize,
-        keywords: queryParams.keywords,
+        pageNum: query.pageNum,
+        pageSize: query.pageSize,
+        keywords: query.keywords,
       },
     });
 
     return await this.userService.getUserPage(
-      queryParams.pageNum,
-      queryParams.pageSize,
-      queryParams.deptId,
-      queryParams.keywords,
-      queryParams.status,
-      queryParams.startTime,
-      queryParams.endTime
+      query.pageNum,
+      query.pageSize,
+      query.deptId,
+      query.keywords,
+      query.status,
+      query.startTime,
+      query.endTime
     );
   }
 }

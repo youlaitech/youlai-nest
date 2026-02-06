@@ -29,6 +29,11 @@ export interface UserAuthInfo {
   roles: string[];
 
   /**
+   * 权限标识列表（按钮权限）
+   */
+  perms: string[];
+
+  /**
    * 部门ID
    */
   deptId: string;

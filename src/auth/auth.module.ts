@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { UserModule } from "../system/user/user.module";
+import { RoleModule } from "../system/role/role.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -13,6 +14,7 @@ import { ToolsService } from "../common/utils/service/tools.service";
 @Module({
   imports: [
     UserModule,
+    RoleModule,
     RedisSharedModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({

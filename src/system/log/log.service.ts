@@ -21,7 +21,7 @@ export class LogService {
   ) {}
 
   async getLogPage(query: LogQueryDto) {
-    const { pageNum, pageSize, keywords, createTime } = query;
+    const { pageNum, pageSize, keywords, createTime, sortBy, order } = query;
 
     const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
@@ -42,7 +42,25 @@ export class LogService {
       });
     }
 
-    qb.orderBy("log.create_time", "DESC");
+    const allowedSortBy = new Set([
+      "create_time",
+      "execution_time",
+      "module",
+      "request_uri",
+      "request_method",
+      "ip",
+    ]);
+
+    const normalizeOrder = (v?: string) => {
+      const dir = (v || "").toUpperCase();
+      return dir === "ASC" || dir === "DESC" ? dir : "DESC";
+    };
+
+    if (sortBy && allowedSortBy.has(sortBy)) {
+      qb.orderBy(`log.${sortBy}`, normalizeOrder(order));
+    } else {
+      qb.orderBy("log.create_time", "DESC");
+    }
 
     const [records, total] = await qb
       .skip((pageNumSafe - 1) * pageSizeSafe)

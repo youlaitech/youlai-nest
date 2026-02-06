@@ -7,7 +7,7 @@ import { DeptService } from "../dept/dept.service";
 import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
-import { DEFAULT_PASSWORD } from "src/common/constants";
+import { DEFAULT_PASSWORD, ROOT_ROLE_CODE } from "src/common/constants";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Not } from "typeorm";
 import { ConfigService } from "@nestjs/config";
@@ -68,7 +68,7 @@ export class UserService {
         WHERE sur.user_id = user.id
           AND r.code = :rootCode
       )`,
-      { rootCode: "ROOT" }
+      { rootCode: ROOT_ROLE_CODE }
     );
 
     if (keywords) {
@@ -156,7 +156,7 @@ export class UserService {
         WHERE sur.user_id = user.id
           AND r.code = :rootCode
       )`,
-      { rootCode: "ROOT" }
+      { rootCode: ROOT_ROLE_CODE }
     );
 
     if (keywords) {
@@ -227,7 +227,14 @@ export class UserService {
     const roleIds = user.roles.map((role) => role.id);
     const roles = await this.roleService.findRolesByIds(roleIds);
     const roleCodes = roles.map((r) => r.code);
-    const dataScope = Math.min(...roles.map((r) => r.dataScope));
+    const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
+
+    let perms: string[] = [];
+    if (roleCodes.includes(ROOT_ROLE_CODE)) {
+      perms = await this.roleService.findAllPerms();
+    } else {
+      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+    }
 
     return {
       id: user.id.toString(),
@@ -236,6 +243,7 @@ export class UserService {
       status: user.status,
       deptId: user.deptId?.toString() || "",
       roles: roleCodes,
+      perms,
       dataScope,
     };
   }
@@ -246,6 +254,7 @@ export class UserService {
     status: number;
     deptId: string;
     roles: string[];
+    perms: string[];
     dataScope: number;
   } | null> {
     const mobileSafe = mobile?.trim();
@@ -262,12 +271,20 @@ export class UserService {
     const roleCodes = roles.map((r) => r.code);
     const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
 
+    let perms: string[] = [];
+    if (roleCodes.includes(ROOT_ROLE_CODE)) {
+      perms = await this.roleService.findAllPerms();
+    } else {
+      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+    }
+
     return {
       id: user.id.toString(),
       username: user.username,
       status: user.status,
       deptId: user.deptId?.toString() || "",
       roles: roleCodes,
+      perms,
       dataScope,
     };
   }
@@ -278,6 +295,7 @@ export class UserService {
     status: number;
     deptId: string;
     roles: string[];
+    perms: string[];
     dataScope: number;
   } | null> {
     const openidSafe = openid?.trim();
@@ -294,12 +312,20 @@ export class UserService {
     const roleCodes = roles.map((r) => r.code);
     const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
 
+    let perms: string[] = [];
+    if (roleCodes.includes(ROOT_ROLE_CODE)) {
+      perms = await this.roleService.findAllPerms();
+    } else {
+      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+    }
+
     return {
       id: user.id.toString(),
       username: user.username,
       status: user.status,
       deptId: user.deptId?.toString() || "",
       roles: roleCodes,
+      perms,
       dataScope,
     };
   }
@@ -341,17 +367,14 @@ export class UserService {
       };
     }
 
-    // 获取角色信息
-    const roles = await this.roleService.findRolesByIds(userRoles.map((ur) => ur.roleId));
-    const roleCodes = roles.map((role) => role.code);
+    const roleIds = userRoles.map((ur) => ur.roleId);
+    const roles = await this.roleService.findRolesByIds(roleIds);
+    const roleCodes = roles.map((r) => r.code);
 
-    // 获取权限列表
     let perms: string[] = [];
-    if (roleCodes.includes("ROOT")) {
-      // 超级管理员获取所有权限
+    if (roleCodes.includes(ROOT_ROLE_CODE)) {
       perms = await this.roleService.findAllPerms();
     } else {
-      // 其他用户获取角色对应的权限
       perms = await this.roleService.findPermsByRoleCodes(roleCodes);
     }
 
@@ -363,7 +386,7 @@ export class UserService {
       email: user.email,
       avatar: user.avatar,
       roles: roleCodes,
-      perms: perms,
+      perms,
     };
   }
 
@@ -758,6 +781,8 @@ export class UserService {
     const nextVersion = (currentVersion ?? 0) + 1;
     await this.redisCacheService.set(versionKey, nextVersion);
 
+    await this.redisCacheService.del(`auth:user:jwt_session:${userIdStr}`);
+
     // redis-token 模式：清理 access/refresh 映射
     if (sessionType === "redis-token") {
       const accessKey = `auth:user:access:${userIdStr}`;
@@ -793,7 +818,7 @@ export class UserService {
    */
   async update(userId: string, updateUserDto: UpdateUserDto) {
     const userIdStr = userId.toString();
-    const { username, deptId, roleIds, password } = updateUserDto;
+    const { username, deptId, roleIds, password, status } = updateUserDto;
 
     if (!roleIds?.length) {
       throw new BusinessException("角色不能为空");
@@ -829,13 +854,30 @@ export class UserService {
       password: hashedPassword || user.password, // 如果没有新密码，保留原密码
     });
 
-    // 更新用户-角色关联
-    await this.userRoleRepository.delete({ userId: userIdStr });
-    const userRoles = roleIds.map((roleId) => ({
-      userId: userIdStr,
-      roleId: roleId.toString(),
-    }));
-    await this.userRoleRepository.save(userRoles);
+    const currentUserRoles = await this.userRoleRepository.find({ where: { userId: userIdStr } });
+    const currentRoleIds = (currentUserRoles || [])
+      .map((ur) => ur.roleId?.toString())
+      .filter(Boolean);
+
+    const nextRoleIds = (roleIds || []).map((r) => r?.toString()).filter(Boolean);
+
+    const rolesChanged =
+      currentRoleIds.length !== nextRoleIds.length ||
+      currentRoleIds.some((r) => !nextRoleIds.includes(r)) ||
+      nextRoleIds.some((r) => !currentRoleIds.includes(r));
+
+    if (rolesChanged) {
+      await this.userRoleRepository.delete({ userId: userIdStr });
+      const userRoles = nextRoleIds.map((roleId) => ({
+        userId: userIdStr,
+        roleId,
+      }));
+      await this.userRoleRepository.save(userRoles);
+    }
+
+    if (rolesChanged) {
+      await this.invalidateUserSessions(userIdStr);
+    }
 
     return await this.userRepository.save(user);
   }
@@ -862,11 +904,39 @@ export class UserService {
     if (!idStr) {
       throw new BusinessException("用户ID不能为空");
     }
-    const result = await this.userRepository.update(
-      { id: idStr, isDeleted: 0 },
-      { isDeleted: 1, updateTime: new Date() as any }
-    );
-    return (result.affected ?? 0) > 0;
+
+    const user = await this.userRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
+    if (!user) {
+      return true;
+    }
+
+    // 系统管理员禁止删除
+    const userRoles = await this.userRoleRepository.find({ where: { userId: idStr } });
+    const roleIds = userRoles.map((ur) => ur.roleId);
+    if (roleIds.length > 0) {
+      const roles = await this.roleService.findRolesByIds(roleIds);
+      if (roles.some((r) => r.code === ROOT_ROLE_CODE)) {
+        throw new BusinessException("系统管理员禁止删除");
+      }
+    }
+
+    // 开启事务处理
+    return await this.userRepository.manager.transaction(async (manager) => {
+      // 1. 删除用户角色关联
+      await manager.delete(SysUserRole, { userId: idStr });
+
+      // 2. 逻辑删除用户
+      const result = await manager.update(
+        SysUser,
+        { id: idStr, isDeleted: 0 },
+        { isDeleted: 1, updateTime: new Date() as any }
+      );
+
+      // 3. 失效会话
+      await this.invalidateUserSessions(idStr);
+
+      return (result.affected ?? 0) > 0;
+    });
   }
 
   /**

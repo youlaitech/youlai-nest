@@ -3,6 +3,8 @@ export interface CurrentUserContext {
   deptId: string | null;
   deptTreePath: string | null;
   dataScope: number | null;
+  roles?: string[];
+  perms?: string[];
 }
 
 /**

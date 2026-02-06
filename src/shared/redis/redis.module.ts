@@ -8,5 +8,3 @@ import { RedisModule as LiaoliaRedisModule } from "@liaoliaots/nestjs-redis";
   exports: [RedisService],
 })
 export class RedisSharedModule {}
-
-

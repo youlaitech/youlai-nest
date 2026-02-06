@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { IncomingHttpHeaders } from "http";
+import type { Request, Response } from "express";
+import type { IncomingHttpHeaders } from "http";
 
 interface RequestLogContext {
   url: string;

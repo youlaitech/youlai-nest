@@ -1,13 +1,21 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  SetMetadata,
+} from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { Permissions } from "src/common/decorators/public.decorator";
 import { NoticeService } from "./notice.service";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
 
-/**
- * 通知公告接口控制器
- */
 @ApiTags("09.通知公告")
 @Controller("notices")
 export class NoticeController {
@@ -19,12 +27,15 @@ export class NoticeController {
 
   @ApiOperation({ summary: "通知公告分页列表" })
   @Get()
+  @SetMetadata("resource", "sys_notice")
+  @Permissions("sys:notice:list")
   async getNoticePage(@Query() query: NoticeQueryDto) {
     return await this.noticeService.getNoticePage(query);
   }
 
   @ApiOperation({ summary: "新增通知公告" })
   @Post()
+  @Permissions("sys:notice:create")
   async saveNotice(
     @CurrentUser("userId") currentUserId: string,
     @Body() formData: CreateNoticeDto
@@ -35,6 +46,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "获取通知公告表单数据" })
   @Get(":id/form")
+  @Permissions("sys:notice:update")
   async getNoticeForm(@Param("id") id: string) {
     return await this.noticeService.getNoticeFormData(id);
   }
@@ -54,6 +66,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "修改通知公告" })
   @Put(":id")
+  @Permissions("sys:notice:update")
   async updateNotice(
     @Param("id") id: string,
     @CurrentUser("userId") currentUserId: string,
@@ -65,6 +78,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "发布通知公告" })
   @Put(":id/publish")
+  @Permissions("sys:notice:publish")
   async publishNotice(@Param("id") id: string, @CurrentUser("userId") currentUserId: string) {
     await this.noticeService.publishNotice(id, currentUserId);
     return { success: true };
@@ -72,6 +86,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "撤回通知公告" })
   @Put(":id/revoke")
+  @Permissions("sys:notice:revoke")
   async revokeNotice(@Param("id") id: string) {
     await this.noticeService.revokeNotice(id);
     return { success: true };
@@ -79,6 +94,7 @@ export class NoticeController {
 
   @ApiOperation({ summary: "删除通知公告" })
   @Delete(":ids")
+  @Permissions("sys:notice:delete")
   async deleteNotices(@Param("ids") ids: string) {
     const idArray = ids
       .split(",")
