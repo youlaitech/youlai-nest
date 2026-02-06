@@ -818,7 +818,7 @@ export class UserService {
    */
   async update(userId: string, updateUserDto: UpdateUserDto) {
     const userIdStr = userId.toString();
-    const { username, deptId, roleIds, password, status } = updateUserDto;
+    const { username, deptId, roleIds, password } = updateUserDto;
 
     if (!roleIds?.length) {
       throw new BusinessException("角色不能为空");
