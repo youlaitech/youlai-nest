@@ -79,7 +79,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  // 使用内置 alpha 排序，配合 01/02 数字前缀即可保证从小到大显示。
+  // 使用 alpha 排序
   SwaggerModule.setup("api-docs", app, document, {
     swaggerOptions: {
       tagsSorter: "alpha",
@@ -98,7 +98,7 @@ async function bootstrap() {
     })
   );
 
-  // 端口统一通过环境变量 SERVER_PORT 配置（默认 8000）
+  // 端口通过环境变量 SERVER_PORT 配置（默认 8000）
   const portRaw = configService.get("APP_PORT") ?? configService.get("SERVER_PORT") ?? 8000;
   const port = Number(portRaw) || 8000;
   await app.listen(port);

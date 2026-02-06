@@ -37,7 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const userId = payload.sub;
 
-    // 1. 校验安全版本号：用于按用户维度失效历史 Token
+    // 校验安全版本号
     const tokenVersion: number = payload.securityVersion ?? 0;
     const versionKey = `auth:user:security_version:${userId}`;
     const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
@@ -47,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException("Token 已失效，请重新登录");
     }
 
-    // 2. 校验黑名单：用于精确作废指定 Token
+    // 校验黑名单
     const jti: string | undefined = payload.jti;
     if (jti) {
       const blacklistKey = `auth:token:blacklist:${jti}`;

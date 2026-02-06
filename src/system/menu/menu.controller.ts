@@ -14,13 +14,13 @@ import { CurrentUser } from "src/common/decorators/current-user.decorator";
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
-  @ApiOperation({ summary: "获取菜单树形表格列表" })
+  @ApiOperation({ summary: "获取菜单列表" })
   @Get()
   async getMenus(@Query("keywords") keywords: string) {
     return await this.menuService.getMenus(keywords);
   }
 
-  @ApiOperation({ summary: "获取菜单路由列表" })
+  @ApiOperation({ summary: "获取路由列表" })
   @Get("routes")
   async getRoutes(@Req() request): Promise<Route[]> {
     const userId = request["user"]?.userId || "";
@@ -34,7 +34,7 @@ export class MenuController {
     return await this.menuService.findOptions();
   }
 
-  @ApiOperation({ summary: "创建菜单" })
+  @ApiOperation({ summary: "菜单详情" })
   @Post()
   async create(@CurrentUser("userId") currentUserId: string, @Body() createMenuDto: CreateMenuDto) {
     return await this.menuService.create({

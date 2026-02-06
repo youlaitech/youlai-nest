@@ -36,7 +36,7 @@ export class AiAssistantRecord {
   })
   functionCalls?: string | null;
 
-  @Column({ length: 500, nullable: true, comment: "AI的理解说明" })
+  @Column({ length: 500, nullable: true, comment: "解析说明" })
   explanation?: string | null;
 
   @Column({ type: "decimal", precision: 3, scale: 2, nullable: true, comment: "置信度(0.00-1.00)" })

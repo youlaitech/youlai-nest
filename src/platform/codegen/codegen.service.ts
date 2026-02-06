@@ -259,7 +259,7 @@ export class CodegenService {
       };
     }
 
-    // 未配置：按表结构生成默认配置
+    // 未配置时按表结构生成配置
     const tableMetaRows = await this.dataSource.query(
       `SELECT TABLE_COMMENT AS tableComment
        FROM information_schema.TABLES

@@ -23,7 +23,7 @@ export class NoticeController {
     return await this.noticeService.getNoticePage(query);
   }
 
-  @ApiOperation({ summary: "新增通知公告" })
+  @ApiOperation({ summary: "新增" })
   @Post()
   async saveNotice(
     @CurrentUser("userId") currentUserId: string,

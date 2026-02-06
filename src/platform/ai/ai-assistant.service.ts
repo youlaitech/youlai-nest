@@ -20,9 +20,9 @@ import { UserToolsService } from "./tools/user-tools.service";
  */
 @Injectable()
 export class AiAssistantService {
-  // 工具注册表：集中声明模型可调用的函数
+  // 工具注册表
   private readonly registry = new ToolRegistry();
-  // 工具执行器：根据 functionCall.name 分发到具体实现
+  // 工具执行器
   private readonly executor = new ToolExecutor(this.registry);
 
   private inferProvider(): string {
@@ -42,7 +42,7 @@ export class AiAssistantService {
     private readonly configService: ConfigService,
     private readonly userTools: UserToolsService
   ) {
-    // 示例工具：修改用户昵称（前端 useAiAction 已内置同名 handler）
+    // 工具：修改用户昵称
     this.registry.register({
       name: "updateUserNickname",
       description: "Update a user's nickname by username",
@@ -59,7 +59,7 @@ export class AiAssistantService {
       },
     });
 
-    // 示例工具：查询用户（前端会识别为 query/get/list/search 类函数，并跳转自动搜索）
+    // 工具：查询用户
     this.registry.register({
       name: "queryUser",
       description: "Search users by keywords (frontend will navigate and auto-search)",
@@ -83,7 +83,7 @@ export class AiAssistantService {
   }
 
   private buildToolsForOpenAi() {
-    // 将工具注册表转换为 OpenAI-compatible tools payload。
+    // 构建 OpenAI tools payload
     return this.registry.list().map((t) => ({
       type: "function" as const,
       function: {
@@ -111,7 +111,7 @@ export class AiAssistantService {
     const username = currentUser?.username ? String(currentUser.username) : null;
     const ipAddress = this.getIpAddress(httpRequest);
 
-    // parse 阶段先落一条记录，后续 execute 可通过 parseLogId 复用
+    // parse 阶段先写记录，后续 execute 可复用 parseLogId
     const record = this.recordRepository.create({
       userId,
       username,
@@ -126,7 +126,7 @@ export class AiAssistantService {
     try {
       const tools = this.buildToolsForOpenAi();
 
-      // system prompt 约束模型仅在匹配工具时才调用。
+      // system prompt 限制工具调用
       const systemPrompt =
         "You are an enterprise operations assistant. Decide which tool(s) to call based on the user's command. If no tool matches, do not call any tool.";
 
@@ -151,7 +151,7 @@ export class AiAssistantService {
       const choice = resp?.choices?.[0];
       const toolCalls = choice?.message?.tool_calls || [];
 
-      // 将 tool_calls 统一为 functionCalls，便于前端与记录落库。
+      // tool_calls 映射为 functionCalls
       const functionCalls = (toolCalls || []).map((c: any) => {
         const fn = c?.function || {};
         const name = String(fn.name || "");
@@ -255,7 +255,7 @@ export class AiAssistantService {
     await this.recordRepository.save(record);
 
     const confirmMode = request.confirmMode || "auto";
-    // manual 模式需用户确认后才执行。
+    // manual 模式需确认后执行
     if (confirmMode === "manual" && request.userConfirmed !== true) {
       const out: AiExecuteResponseDto = {
         success: false,

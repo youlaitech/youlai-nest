@@ -12,7 +12,6 @@ import { AiAssistantQueryDto } from "./dto/ai-assistant-query.dto";
  * AI 助手接口控制器
  */
 @ApiTags("14.AI 助手接口")
-// 提供解析、执行及记录查询接口。
 @Controller("ai/assistant")
 export class AiAssistantController {
   constructor(private readonly aiAssistantService: AiAssistantService) {}

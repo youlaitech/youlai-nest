@@ -101,7 +101,7 @@ export class NoticeService {
 
   /**
    * 解析数据库中的 targetUserIds 字符串
-   * 返回 number[] 便于表单回填
+   * 返回 number[] 用于表单回填
    */
   private parseTargetUserIds(targetUserIds?: string | null): number[] {
     if (!targetUserIds) {
@@ -187,7 +187,7 @@ export class NoticeService {
         .map((v) => v.trim())
         .filter(Boolean);
       if (targetUserIds.length) {
-        // 二次过滤，避免写入不存在/已删除的用户
+        // 过滤不存在或已删除的用户
         const users = await this.userRepository.find({
           where: { id: In(targetUserIds), isDeleted: 0 },
         });

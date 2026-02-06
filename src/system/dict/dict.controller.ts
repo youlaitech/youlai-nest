@@ -37,26 +37,26 @@ export class DictController {
     return await this.dictService.getDictPage(query.pageNum, query.pageSize, query.keywords);
   }
 
-  @ApiOperation({ summary: "字典下拉列表" })
+  @ApiOperation({ summary: "获取选项" })
   @Get("options")
   async getDictOptions() {
     return await this.dictService.getDictOptions();
   }
 
-  @ApiOperation({ summary: "创建字典" })
+  @ApiOperation({ summary: "获取字典数据" })
   @IsCreateBy()
   @Post()
   async createDict(@Body() dictFormDto: DictFormDto) {
     return await this.dictService.createDict(dictFormDto);
   }
 
-  @ApiOperation({ summary: "字典表单数据" })
+  @ApiOperation({ summary: "字典项表单" })
   @Get(":id/form")
   async getDictForm(@Param("id") id: string) {
     return await this.dictService.getDictForm(id);
   }
 
-  @ApiOperation({ summary: "修改字典" })
+  @ApiOperation({ summary: "更新字典" })
   @IsUpdateBy()
   @Put(":id")
   async updateDict(@Param("id") id: string, @Body() updateDictDto: UpdateDictDto) {
@@ -86,7 +86,7 @@ export class DictController {
   //---------------------------------------------------
   // 字典项相关接口
   //---------------------------------------------------
-  @ApiOperation({ summary: "字典项分页列表" })
+  @ApiOperation({ summary: "获取列表" })
   @Get(":dictCode/items")
   async getDictItemPage(@Param("dictCode") dictCode: string, @Query() query: DictItemQueryDto) {
     return await this.dictService.getDictItemPage(
@@ -97,7 +97,7 @@ export class DictController {
     );
   }
 
-  @ApiOperation({ summary: "字典项列表" })
+  @ApiOperation({ summary: "获取列表" })
   @Get(":dictCode/items/options")
   async getDictItems(@Param("dictCode") dictCode: string) {
     return await this.dictService.getDictItems(dictCode);

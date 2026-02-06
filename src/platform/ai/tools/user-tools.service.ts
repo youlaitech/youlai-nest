@@ -10,7 +10,7 @@ import { SysUser } from "src/system/user/entities/sys-user.entity";
 export class UserToolsService {
   constructor(@InjectRepository(SysUser) private readonly userRepository: Repository<SysUser>) {}
 
-  // AI 工具：根据用户名更新昵称
+  // 工具：根据用户名更新昵称
   async updateUserNickname(username: string, nickname: string) {
     const usernameSafe = (username || "").trim();
     const nicknameSafe = (nickname || "").trim();

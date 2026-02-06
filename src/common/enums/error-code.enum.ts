@@ -1,7 +1,5 @@
 /**
  * 响应码枚举
- *
- * 参考阿里巴巴开发手册响应码规范
  * 00000 正常
  * A**** 用户端错误
  * B**** 系统执行出错
@@ -136,7 +134,7 @@ export const ErrorCode = {
   },
   DATABASE_ACCESS_DENIED: {
     code: "C0351",
-    msg: "演示环境已禁用数据库写入功能，请本地部署修改数据库链接或开启Mock模式进行体验",
+    msg: "当前环境禁止数据库写入",
     httpStatus: HttpStatus.BAD_REQUEST,
   },
 } as const;

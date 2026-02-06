@@ -372,10 +372,9 @@ export class OssService {
   }
 
   async ORC(url: string, type: string) {
-    // 请确保代码运行环境设置了环境变量 ALIBABA_CLOUD_ACCESS_KEY_ID 和 ALIBABA_CLOUD_ACCESS_KEY_SECRET。
-    // 工程代码泄露可能会导致 AccessKey 泄露，并威胁账号下所有资源的安全性。以下代码示例使用环境变量获取 AccessKey 的方式进行调用，仅供参考，建议使用更安全的 STS 方式，更多鉴权访问方式请参见：https://help.aliyun.com/document_detail/378664.html
+    // 依赖环境变量 ALIBABA_CLOUD_ACCESS_KEY_ID / ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    // STS 方案：https://help.aliyun.com/document_detail/378664.html
     // let client = this.ORCClient();
-    // 需要安装额外的依赖库，直接点击下载完整工程即可看到所有依赖。
     // const bodyStream = Stream.readFromFilePath('<your-file-path>');
     const recognizeIdcardRequest = new $ocr_api20210707.RecognizeAllTextRequest({
       // body: bodyStream,

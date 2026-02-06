@@ -14,7 +14,7 @@ export class AiParseResponseDto {
   @ApiProperty({ description: "解析后的函数调用列表", type: [AiFunctionCallDto] })
   functionCalls: AiFunctionCallDto[];
 
-  @ApiProperty({ description: "AI 的理解和说明", required: false })
+  @ApiProperty({ description: "解析说明", required: false })
   explanation?: string;
 
   @ApiProperty({ description: "置信度 (0-1)", required: false })
@@ -23,6 +23,6 @@ export class AiParseResponseDto {
   @ApiProperty({ description: "错误信息", required: false })
   error?: string;
 
-  @ApiProperty({ description: "原始 LLM 响应（用于调试）", required: false })
+  @ApiProperty({ description: "原始响应", required: false })
   rawResponse?: string;
 }

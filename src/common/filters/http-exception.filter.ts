@@ -45,7 +45,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      // 对齐 youlai-boot：认证/鉴权错误统一按 401 返回；接口不存在按 404 返回。
+      // 认证/鉴权错误按 401 返回，接口不存在按 404 返回
       if (status === HttpStatus.UNAUTHORIZED) {
         return response
           .status(HttpStatus.UNAUTHORIZED)

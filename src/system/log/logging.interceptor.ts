@@ -30,7 +30,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const log = new SysLog();
           log.module = "SYSTEM";
           log.requestMethod = req.method;
-          // 仅记录 query 和 params，避免把整个 body 写入日志
+          // 仅记录 query 和 params
           log.requestParams = this.safeStringify({
             query: req.query,
             params: req.params,
@@ -64,7 +64,7 @@ export class LoggingInterceptor implements NestInterceptor {
   private safeStringify(payload: any): string | null {
     try {
       const str = JSON.stringify(payload);
-      // 简单截断，避免超大响应占满日志表
+      // 响应体长度截断
       return str.length > 2000 ? str.slice(0, 2000) + "..." : str;
     } catch {
       return null;

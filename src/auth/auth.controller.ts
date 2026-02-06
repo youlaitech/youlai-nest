@@ -116,7 +116,7 @@ export class AuthController {
   async getCode() {
     const svgCaptcha = await this.toolsService.captche();
     const captchaId = uuidv4();
-    // 与 /auth/login 配套使用，默认 120s 过期
+    // 与 /auth/login 配套使用，120s 过期
     await this.RedisService.set(`captcha:image:${captchaId}`, svgCaptcha.captcha.text, 120);
     return {
       captchaBase64: svgCaptcha.base64,

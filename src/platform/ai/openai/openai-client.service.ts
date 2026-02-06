@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
-// OpenAI-compatible Chat Completions client.
-// 依赖环境变量：AI_BASE_URL / AI_API_KEY / AI_MODEL / AI_TIMEOUT_MS。
+// OpenAI-compatible Chat Completions client
+// 依赖环境变量：AI_BASE_URL / AI_API_KEY / AI_MODEL / AI_TIMEOUT_MS
 
 type ChatRole = "system" | "user" | "assistant";
 
@@ -35,7 +35,7 @@ export class OpenAiClientService {
   }) {
     const apiKey = this.configService.get<string>("AI_API_KEY") || "";
     const baseUrlRaw = this.configService.get<string>("AI_BASE_URL") || "https://api.openai.com/v1";
-    // 兼容未带 /v1 的 OpenAI-compatible 基地址
+    // 补全 /v1
     let baseUrl = baseUrlRaw.replace(/\/+$/, "");
     if (!/\/v1$/i.test(baseUrl)) {
       baseUrl = `${baseUrl}/v1`;
@@ -51,7 +51,7 @@ export class OpenAiClientService {
     const t = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      // 按 OpenAI-compatible 协议请求 chat/completions
+      // 请求 chat/completions
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {

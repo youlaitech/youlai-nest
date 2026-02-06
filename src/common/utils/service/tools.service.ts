@@ -5,7 +5,7 @@ import * as svgCaptcha from "svg-captcha";
 export class ToolsService {
   async captche(size = 4) {
     const captcha = svgCaptcha.create({
-      // 验证码视觉参数（与前端 140x44 容器对齐）
+      // 验证码视觉参数
       size,
       fontSize: 38,
       width: 140,

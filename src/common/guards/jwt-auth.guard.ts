@@ -26,7 +26,7 @@ export class JwtAuthGuard extends PassportAuthGuard("jwt") {
 
     if (isPublic) return true;
 
-    // 执行默认 Passport 验证流程
+    // 执行 Passport 验证流程
     return super.canActivate(context);
   }
 

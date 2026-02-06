@@ -91,7 +91,7 @@ export class MenuService {
       return [];
     }
 
-    // 同上：保持路由完整，避免“能访问但未注册路由”的问题
+    // 保持路由完整，防止路由未注册问题
     const menuList = await this.menuRepository.find({
       where: { id: In(menuIds.map((id) => id.toString())), type: In(["C", "M"]) },
       order: { sort: "ASC" },

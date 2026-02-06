@@ -29,8 +29,6 @@ export class RoleService {
 
   async findRoleIdsByCodes(roleCodes: string[]): Promise<string[]> {
     const codes = (roleCodes || []).map((c) => (c ?? "").trim()).filter(Boolean);
-    if (!codes.length) return [];
-
     const roles = await this.roleRepository.find({
       where: { code: In(codes), isDeleted: 0 },
       select: ["id"],
@@ -96,11 +94,9 @@ export class RoleService {
     const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
-    // 系统内置角色不允许在业务列表里维护（避免误操作）
     const reservedCodes = ["ROOT"];
     const queryBuilder = this.roleRepository.createQueryBuilder("role");
     queryBuilder.where("role.isDeleted = :isDeleted", { isDeleted: 0 });
-    // 排除系统内置角色（例如：超级管理员/系统管理员）不在列表中展示
     queryBuilder.andWhere("role.code NOT IN (:...reservedCodes)", { reservedCodes });
 
     if (keywords) {
@@ -157,7 +153,6 @@ export class RoleService {
     try {
       if (!roles?.length) return [];
 
-      // 1. 根据角色编码查询角色ID
       const roleEntities = await this.roleRepository.find({
         where: { code: In(roles), status: 1 },
         select: ["id"],
@@ -167,17 +162,14 @@ export class RoleService {
 
       const roleIds = roleEntities.map((role) => role.id);
 
-      // 2. 根据角色ID查询关联的菜单ID
       const roleMenus = await this.roleMenuRepository.find({
         where: { roleId: In(roleIds) },
       });
 
       if (!roleMenus?.length) return [];
 
-      // 3. 提取菜单ID并去重
       const menuIds = [...new Set(roleMenus.map((rm) => rm.menuId.toString()))];
 
-      // 4. 根据菜单ID查询权限标识
       return await this.menuService.findPermsByMenuIds(menuIds);
     } catch (error) {
       this.logger.error("获取角色权限失败", (error as any)?.stack ?? String(error));
@@ -257,10 +249,8 @@ export class RoleService {
    */
   async updateMenus(roleId: string, menuIds: string[]) {
     const roleIdStr = roleId.toString();
-    // 先删除原有的关联
     await this.roleMenuRepository.delete({ roleId: roleIdStr });
 
-    // 直接重建关联表（sys_role_menu）
     const roleMenus = menuIds.map((menuId) => ({
       roleId: roleIdStr,
       menuId: menuId.toString(),

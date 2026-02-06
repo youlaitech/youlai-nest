@@ -36,14 +36,14 @@ export class DeptController {
     return await this.deptService.findAll(keywords, status);
   }
 
-  @ApiOperation({ summary: "获取部门下拉树形列表" })
+  @ApiOperation({ summary: "部门下拉列表" })
   @Get("options")
   @SetMetadata("resource", "sys_dept")
   async getOptions() {
     return await this.deptService.findAllOptions();
   }
 
-  @ApiOperation({ summary: "创建部门" })
+  @ApiOperation({ summary: "创建" })
   @Post()
   async create(@CurrentUser("userId") currentUserId: string, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
@@ -52,7 +52,7 @@ export class DeptController {
     });
   }
 
-  @ApiOperation({ summary: "获取部门表单" })
+  @ApiOperation({ summary: "获取部门详情" })
   @Get(":id/form")
   async getDeptForm(@Param("id") id: string) {
     const dept = await this.deptService.getDeptForm(id);

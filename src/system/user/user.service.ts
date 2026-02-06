@@ -97,7 +97,7 @@ export class UserService {
       .skip((pageNumSafe - 1) * pageSizeSafe)
       .take(pageSizeSafe)
       .getManyAndCount();
-    // 部门名称单独回填（避免分页查询里做复杂 join，便于后续扩展字段）
+    // 部门名称单独回填
     const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean))) as string[];
     const depts = await this.deptService.findByIds(deptIds);
     const deptMap = new Map<string, string>();
@@ -313,7 +313,7 @@ export class UserService {
       throw new BusinessException(ErrorCode.ACCESS_TOKEN_INVALID);
     }
 
-    // 1. 获取用户基本信息
+    // 获取用户基本信息
     const user = await this.userRepository.findOne({
       where: { id: userId.toString(), isDeleted: 0 },
       select: ["id", "username", "nickname", "mobile", "email", "avatar"],
@@ -323,7 +323,7 @@ export class UserService {
       throw new BusinessException("用户不存在");
     }
 
-    // 2. 获取用户角色
+    // 获取用户角色
     const userRoles = await this.userRoleRepository.find({
       where: { userId: userId.toString() },
     });
@@ -341,11 +341,11 @@ export class UserService {
       };
     }
 
-    // 3. 获取角色信息
+    // 获取角色信息
     const roles = await this.roleService.findRolesByIds(userRoles.map((ur) => ur.roleId));
     const roleCodes = roles.map((role) => role.code);
 
-    // 4. 获取权限列表
+    // 获取权限列表
     let perms: string[] = [];
     if (roleCodes.includes("ROOT")) {
       // 超级管理员获取所有权限
@@ -387,7 +387,7 @@ export class UserService {
     Object.keys(updateData).forEach((k) => updateData[k] === undefined && delete updateData[k]);
 
     if (Object.keys(updateData).length === 0) {
-      throw new BusinessException("请至少修改一项");
+      throw new BusinessException("未变更数据");
     }
 
     updateData.updateTime = new Date();
@@ -742,7 +742,7 @@ export class UserService {
   }
 
   /**
-   * 失效指定用户的所有会话（对齐 Java 的 invalidateUserSessions）
+   * 失效指定用户的所有会话
    * - JWT 模式：递增用户安全版本号 auth:user:security_version:{userId}
    * - redis-token 模式：删除该用户的 access/refresh 映射
    */
@@ -752,13 +752,13 @@ export class UserService {
 
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
 
-    // 1. JWT 模式：提升安全版本号，旧 JWT 全部失效
+    // JWT 模式：提升安全版本号，旧 JWT 全部失效
     const versionKey = `auth:user:security_version:${userIdStr}`;
     const currentVersion = await this.redisCacheService.get<number>(versionKey);
     const nextVersion = (currentVersion ?? 0) + 1;
     await this.redisCacheService.set(versionKey, nextVersion);
 
-    // 2. redis-token 模式：清理 access/refresh 映射
+    // redis-token 模式：清理 access/refresh 映射
     if (sessionType === "redis-token") {
       const accessKey = `auth:user:access:${userIdStr}`;
       const refreshKey = `auth:user:refresh:${userIdStr}`;
@@ -795,9 +795,8 @@ export class UserService {
     const userIdStr = userId.toString();
     const { username, deptId, roleIds, password } = updateUserDto;
 
-    // 校验角色是否为空
     if (!roleIds?.length) {
-      throw new BusinessException("请选择角色");
+      throw new BusinessException("角色不能为空");
     }
 
     // 检查用户名是否已存在（排除当前用户）
