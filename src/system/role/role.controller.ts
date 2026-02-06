@@ -13,16 +13,16 @@ import { RoleQueryDto } from "./dto/role-query.dto";
 export class RoleController {
   constructor(private readonly rolesService: RoleService) {}
 
-  @ApiOperation({ summary: "角色分页列表" })
-  @Get()
-  async getRolePage(@Query() query: RoleQueryDto) {
-    return await this.rolesService.getRolePage(query.pageNum, query.pageSize, query.keywords);
-  }
-
   @ApiOperation({ summary: "角色下拉列表" })
   @Get("options")
   async getRoleOptions() {
     return await this.rolesService.getRoleOptions();
+  }
+
+  @ApiOperation({ summary: "角色分页列表" })
+  @Get()
+  async getRolePage(@Query() query: RoleQueryDto) {
+    return await this.rolesService.getRolePage(query.pageNum, query.pageSize, query.keywords);
   }
 
   @ApiOperation({ summary: "新增角色" })

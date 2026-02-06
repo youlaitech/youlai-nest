@@ -23,7 +23,7 @@ export class NoticeController {
     return await this.noticeService.getNoticePage(query);
   }
 
-  @ApiOperation({ summary: "新增" })
+  @ApiOperation({ summary: "新增通知公告" })
   @Post()
   async saveNotice(
     @CurrentUser("userId") currentUserId: string,
@@ -41,8 +41,15 @@ export class NoticeController {
 
   @ApiOperation({ summary: "阅读获取通知公告详情" })
   @Get(":id/detail")
-  async getNoticeDetail(@Param("id") id: string) {
-    return await this.noticeService.getNoticeDetail(id);
+  async getNoticeDetail(@Param("id") id: string, @CurrentUser("userId") userId: string) {
+    return await this.noticeService.getNoticeDetail(id, userId);
+  }
+
+  @ApiOperation({ summary: "全部已读" })
+  @Put("read-all")
+  async readAll(@CurrentUser("userId") currentUserId: string) {
+    await this.noticeService.readAll(currentUserId);
+    return { success: true };
   }
 
   @ApiOperation({ summary: "修改通知公告" })
@@ -78,13 +85,6 @@ export class NoticeController {
       .map((v) => v.trim())
       .filter(Boolean);
     await this.noticeService.deleteNotices(idArray);
-    return { success: true };
-  }
-
-  @ApiOperation({ summary: "全部已读" })
-  @Put("read-all")
-  async readAll(@CurrentUser("userId") currentUserId: string) {
-    await this.noticeService.readAll(currentUserId);
     return { success: true };
   }
 

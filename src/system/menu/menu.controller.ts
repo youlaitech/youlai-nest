@@ -14,12 +14,6 @@ import { CurrentUser } from "src/common/decorators/current-user.decorator";
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
-  @ApiOperation({ summary: "获取菜单列表" })
-  @Get()
-  async getMenus(@Query("keywords") keywords: string) {
-    return await this.menuService.getMenus(keywords);
-  }
-
   @ApiOperation({ summary: "获取路由列表" })
   @Get("routes")
   async getRoutes(@Req() request): Promise<Route[]> {
@@ -32,6 +26,12 @@ export class MenuController {
   @Get("options")
   async GetOptions() {
     return await this.menuService.findOptions();
+  }
+
+  @ApiOperation({ summary: "获取菜单列表" })
+  @Get()
+  async getMenus(@Query("keywords") keywords: string) {
+    return await this.menuService.getMenus(keywords);
   }
 
   @ApiOperation({ summary: "菜单详情" })

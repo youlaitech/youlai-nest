@@ -31,16 +31,16 @@ export class DictController {
   //---------------------------------------------------
   // 字典相关接口
   //---------------------------------------------------
-  @ApiOperation({ summary: "字典分页列表" })
-  @Get()
-  async getDictPage(@Query() query: DictQueryDto) {
-    return await this.dictService.getDictPage(query.pageNum, query.pageSize, query.keywords);
-  }
-
   @ApiOperation({ summary: "获取选项" })
   @Get("options")
   async getDictOptions() {
     return await this.dictService.getDictOptions();
+  }
+
+  @ApiOperation({ summary: "字典分页列表" })
+  @Get()
+  async getDictPage(@Query() query: DictQueryDto) {
+    return await this.dictService.getDictPage(query.pageNum, query.pageSize, query.keywords);
   }
 
   @ApiOperation({ summary: "获取字典数据" })

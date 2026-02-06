@@ -48,33 +48,6 @@ export class UserController {
     this.logger = logger;
   }
 
-  /**
-   * 用户分页列表
-   */
-  @ApiOperation({ summary: "用户分页列表" })
-  @Get()
-  @SetMetadata("resource", "sys_user")
-  async getUserList(@Query() queryParams: UserQueryDto) {
-    this.logger.info("获取用户分页列表", {
-      context: "UserController",
-      metadata: {
-        pageNum: queryParams.pageNum,
-        pageSize: queryParams.pageSize,
-        keywords: queryParams.keywords,
-      },
-    });
-
-    return await this.userService.getUserPage(
-      queryParams.pageNum,
-      queryParams.pageSize,
-      queryParams.deptId,
-      queryParams.keywords,
-      queryParams.status,
-      queryParams.startTime,
-      queryParams.endTime
-    );
-  }
-
   @ApiOperation({ summary: "获取当前登录用户信息" })
   @Get("me")
   async getCurrentUser(@CurrentUser() currentUser: CurrentUserInfo) {
@@ -91,6 +64,68 @@ export class UserController {
   @Put("profile")
   async updateUserProfile(@Req() req, @Body() profileDto: UserProfileDto) {
     return await this.userService.updateProfile(req.user, profileDto);
+  }
+
+  @ApiOperation({ summary: "用户导入模板下载" })
+  @Get("template")
+  @SetMetadata("skipResponseTransform", true)
+  async downloadTemplate(@Res() res: Response) {
+    const headers = ["用户名", "昵称", "性别", "手机号码", "邮箱", "角色", "部门"];
+    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "用户导入模板");
+
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const fileName = "用户导入模板.xlsx";
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
+    res.send(buffer);
+  }
+
+  @ApiOperation({ summary: "导出用户" })
+  @Get("export")
+  @SetMetadata("skipResponseTransform", true)
+  async exportUsers(@Res() res: Response, @Query() queryParams: UserQueryDto) {
+    const exportList = await this.userService.listExportUsers(
+      queryParams.deptId,
+      queryParams.keywords,
+      queryParams.status,
+      queryParams.startTime,
+      queryParams.endTime
+    );
+
+    const headers = ["用户名", "用户昵称", "部门", "性别", "手机号码", "邮箱", "创建时间"];
+    const rows = exportList.map((u) => [
+      u.username ?? "",
+      u.nickname ?? "",
+      u.deptName ?? "",
+      u.gender ?? "",
+      u.mobile ?? "",
+      u.email ?? "",
+      u.createTime ?? "",
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "用户列表");
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    const fileName = "用户列表.xlsx";
+    res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.send(buffer);
+  }
+
+  @ApiOperation({ summary: "获取用户下拉选项" })
+  @Get("options")
+  async listUserOptions() {
+    return await this.userService.listUserOptions();
   }
 
   @ApiOperation({ summary: "新增用户" })
@@ -163,72 +198,6 @@ export class UserController {
     return { success };
   }
 
-  @ApiOperation({ summary: "用户导入模板下载" })
-  @Get("template")
-  @SetMetadata("skipResponseTransform", true)
-  async downloadTemplate(@Res() res: Response) {
-    const headers = ["用户名", "昵称", "性别", "手机号码", "邮箱", "角色", "部门"];
-    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "用户导入模板");
-
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-    const fileName = "用户导入模板.xlsx";
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
-    res.send(buffer);
-  }
-
-  @ApiOperation({ summary: "导入用户" })
-  @Post("import")
-  @UseInterceptors(FileInterceptor("file"))
-  async importUsers(@UploadedFile() file: any) {
-    if (!file?.buffer) {
-      throw new BusinessException("导入文件不能为空");
-    }
-    return await this.userService.importUsersFromBuffer(file.buffer);
-  }
-
-  @ApiOperation({ summary: "导出用户" })
-  @Get("export")
-  @SetMetadata("skipResponseTransform", true)
-  async exportUsers(@Res() res: Response, @Query() queryParams: UserQueryDto) {
-    const exportList = await this.userService.listExportUsers(
-      queryParams.deptId,
-      queryParams.keywords,
-      queryParams.status,
-      queryParams.startTime,
-      queryParams.endTime
-    );
-
-    const headers = ["用户名", "用户昵称", "部门", "性别", "手机号码", "邮箱", "创建时间"];
-    const rows = exportList.map((u) => [
-      u.username ?? "",
-      u.nickname ?? "",
-      u.deptName ?? "",
-      u.gender ?? "",
-      u.mobile ?? "",
-      u.email ?? "",
-      u.createTime ?? "",
-    ]);
-
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "用户列表");
-    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-    const fileName = "用户列表.xlsx";
-    res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.send(buffer);
-  }
-
   @ApiOperation({ summary: "重置指定用户密码" })
   @Put(":userId/password/reset")
   async resetUserPassword(@Param("userId") userId: string, @Query("password") password: string) {
@@ -295,9 +264,40 @@ export class UserController {
     return await this.userService.unbindEmail(currentUserId, data.password);
   }
 
-  @ApiOperation({ summary: "获取用户下拉选项" })
-  @Get("options")
-  async listUserOptions() {
-    return await this.userService.listUserOptions();
+  @ApiOperation({ summary: "导入用户" })
+  @Post("import")
+  @UseInterceptors(FileInterceptor("file"))
+  async importUsers(@UploadedFile() file: any) {
+    if (!file?.buffer) {
+      throw new BusinessException("导入文件不能为空");
+    }
+    return await this.userService.importUsersFromBuffer(file.buffer);
+  }
+
+  /**
+   * 用户分页列表
+   */
+  @ApiOperation({ summary: "用户分页列表" })
+  @Get()
+  @SetMetadata("resource", "sys_user")
+  async getUserList(@Query() queryParams: UserQueryDto) {
+    this.logger.info("获取用户分页列表", {
+      context: "UserController",
+      metadata: {
+        pageNum: queryParams.pageNum,
+        pageSize: queryParams.pageSize,
+        keywords: queryParams.keywords,
+      },
+    });
+
+    return await this.userService.getUserPage(
+      queryParams.pageNum,
+      queryParams.pageSize,
+      queryParams.deptId,
+      queryParams.keywords,
+      queryParams.status,
+      queryParams.startTime,
+      queryParams.endTime
+    );
   }
 }

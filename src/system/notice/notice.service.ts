@@ -133,8 +133,20 @@ export class NoticeService {
     };
   }
 
-  async getNoticeDetail(id: string) {
-    return await this.noticeRepository.findOne({ where: { id: id.toString(), isDeleted: 0 } });
+  /**
+   * 查看通知详情并标记已读
+   */
+  async getNoticeDetail(id: string, userId: string) {
+    const idStr = id.toString();
+    const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
+    if (notice) {
+      // 标记当前用户的这条通知为已读
+      await this.userNoticeRepository.update(
+        { noticeId: idStr, userId: userId.toString(), isRead: 0 },
+        { isRead: 1, readTime: new Date(), updateTime: new Date() }
+      );
+    }
+    return notice;
   }
 
   /**
@@ -247,23 +259,23 @@ export class NoticeService {
   }
 
   /**
-   * 我的通知全部标记已读
-   * 写入 readTime
+   * 全部标记已读
    */
   async readAll(userId: string) {
     const now = new Date();
     await this.userNoticeRepository
       .createQueryBuilder()
       .update(SysUserNotice)
-      .set({ isRead: 1, readTime: now })
+      .set({ isRead: 1, readTime: now, updateTime: now })
       .where("userId = :userId", { userId: userId.toString() })
+      .andWhere("isRead = 0")
+      .andWhere("isDeleted = 0")
       .execute();
     return true;
   }
 
   /**
    * 获取我的通知分页列表
-   * 返回公告信息与已读状态
    */
   async getMyNoticePage(userId: string, query: NoticeQueryDto) {
     const { pageNum, pageSize, isRead } = query;

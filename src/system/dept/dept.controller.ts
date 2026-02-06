@@ -29,13 +29,6 @@ export class DeptController {
     this.deptService = deptService;
   }
 
-  @ApiOperation({ summary: "获取部门表格树形列表" })
-  @Get()
-  @SetMetadata("resource", "sys_dept")
-  async findAll(@Query("keywords") keywords?: string, @Query("status") status?: string) {
-    return await this.deptService.findAll(keywords, status);
-  }
-
   @ApiOperation({ summary: "部门下拉列表" })
   @Get("options")
   @SetMetadata("resource", "sys_dept")
@@ -43,7 +36,14 @@ export class DeptController {
     return await this.deptService.findAllOptions();
   }
 
-  @ApiOperation({ summary: "创建" })
+  @ApiOperation({ summary: "获取部门表格树形列表" })
+  @Get()
+  @SetMetadata("resource", "sys_dept")
+  async findAll(@Query("keywords") keywords?: string, @Query("status") status?: string) {
+    return await this.deptService.findAll(keywords, status);
+  }
+
+  @ApiOperation({ summary: "创建部门" })
   @Post()
   async create(@CurrentUser("userId") currentUserId: string, @Body() createDeptDto: CreateDeptDto) {
     return await this.deptService.create({
