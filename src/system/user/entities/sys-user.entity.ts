@@ -53,9 +53,6 @@ export class SysUser {
   })
   isDeleted: number;
 
-  @Column({ length: 28, nullable: true, comment: "微信 openid" })
-  openid: string;
-
   @ManyToMany(() => SysRole)
   @JoinTable({
     name: "sys_user_role",

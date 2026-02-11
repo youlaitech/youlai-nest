@@ -108,9 +108,4 @@ export class UpdateUserDto {
   @IsOptional()
   @IsNumber()
   isDeleted?: number;
-
-  @ApiProperty({ description: "微信openid" })
-  @IsOptional()
-  @IsString()
-  openid?: string;
 }

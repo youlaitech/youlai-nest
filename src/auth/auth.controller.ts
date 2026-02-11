@@ -15,8 +15,6 @@ import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/login-request.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginResultDto } from "./dto/login-result.dto";
-import { WxMiniAppCodeLoginDto } from "./dto/wx-miniapp-code-login.dto";
-import { WxMiniAppPhoneLoginDto } from "./dto/wx-miniapp-phone-login.dto";
 import { Public } from "../common/decorators/public.decorator";
 import { ToolsService } from "../common/utils/service/tools.service";
 import { BusinessException } from "../common/exceptions/business.exception";
@@ -71,27 +69,6 @@ export class AuthController {
   async sendLoginVerifyCode(@Query("mobile") mobile: string) {
     await this.authService.sendSmsLoginCode(mobile);
     return null;
-  }
-
-  @ApiOperation({ summary: "微信授权登录(Web)" })
-  @Public()
-  @Post("login/wechat")
-  async loginByWechat(@Query("code") code: string) {
-    return await this.authService.loginByWechat(code);
-  }
-
-  @ApiOperation({ summary: "微信小程序登录(Code)" })
-  @Public()
-  @Post("wx/miniapp/code-login")
-  async loginByWxMiniAppCode(@Body() dto: WxMiniAppCodeLoginDto) {
-    return await this.authService.loginByWxMiniAppCode(dto);
-  }
-
-  @ApiOperation({ summary: "微信小程序登录(手机号)" })
-  @Public()
-  @Post("wx/miniapp/phone-login")
-  async loginByWxMiniAppPhone(@Body() dto: WxMiniAppPhoneLoginDto) {
-    return await this.authService.loginByWxMiniAppPhone(dto);
   }
 
   @ApiOperation({ summary: "注销登录" })

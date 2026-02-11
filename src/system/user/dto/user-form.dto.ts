@@ -33,7 +33,4 @@ export class UserFormDto {
 
   @ApiProperty({ description: "角色ID集合" })
   roleIds: string[];
-
-  @ApiProperty({ description: "微信openid" })
-  openId: string | null;
 }

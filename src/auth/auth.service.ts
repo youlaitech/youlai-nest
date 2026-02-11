@@ -11,8 +11,6 @@ import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as bcrypt from "bcrypt";
 import { RedisService } from "src/shared/redis/redis.service";
-import { WxMiniAppCodeLoginDto } from "./dto/wx-miniapp-code-login.dto";
-import { WxMiniAppPhoneLoginDto } from "./dto/wx-miniapp-phone-login.dto";
 
 /**
  * 认证服务
@@ -181,46 +179,6 @@ export class AuthService {
       throw new BusinessException(ErrorCode.ACCOUNT_FROZEN);
     }
     return await this.issueTokens(user);
-  }
-
-  async loginByWechat(code: string) {
-    if (!code) {
-      throw new BusinessException(ErrorCode.REQUEST_REQUIRED_PARAMETER_IS_EMPTY);
-    }
-    const user = await this.userService.findByOpenid(code);
-    if (!user) {
-      throw new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND);
-    }
-    if (user.status === 0) {
-      throw new BusinessException(ErrorCode.ACCOUNT_FROZEN);
-    }
-    return await this.issueTokens(user);
-  }
-
-  async loginByWxMiniAppCode(dto: WxMiniAppCodeLoginDto) {
-    return await this.loginByWechat(dto?.code);
-  }
-
-  async loginByWxMiniAppPhone(dto: WxMiniAppPhoneLoginDto) {
-    // 最小实现：优先从 encryptedData 中尝试提取手机号，否则退化为 code->openid
-    const encryptedData = dto?.encryptedData;
-    if (encryptedData) {
-      const raw = String(encryptedData).trim();
-      const m = /^\d{6,20}$/.exec(raw);
-      if (m) {
-        return await this.loginBySms(raw, "1234");
-      }
-      try {
-        const obj = JSON.parse(raw);
-        const mobile = obj?.phoneNumber;
-        if (mobile) {
-          return await this.loginBySms(String(mobile), "1234");
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return await this.loginByWechat(dto?.code);
   }
 
   async refreshToken(refreshToken: string) {

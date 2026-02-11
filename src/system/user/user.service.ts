@@ -289,47 +289,6 @@ export class UserService {
     };
   }
 
-  async findByOpenid(openid: string): Promise<{
-    id: string;
-    username: string;
-    status: number;
-    deptId: string;
-    roles: string[];
-    perms: string[];
-    dataScope: number;
-  } | null> {
-    const openidSafe = openid?.trim();
-    if (!openidSafe) return null;
-
-    const user = await this.userRepository.findOne({
-      where: { openid: openidSafe, isDeleted: 0 },
-      relations: ["roles"],
-    });
-    if (!user) return null;
-
-    const roleIds = (user.roles || []).map((role) => role.id);
-    const roles = await this.roleService.findRolesByIds(roleIds);
-    const roleCodes = roles.map((r) => r.code);
-    const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
-
-    let perms: string[] = [];
-    if (roleCodes.includes(ROOT_ROLE_CODE)) {
-      perms = await this.roleService.findAllPerms();
-    } else {
-      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
-    }
-
-    return {
-      id: user.id.toString(),
-      username: user.username,
-      status: user.status,
-      deptId: user.deptId?.toString() || "",
-      roles: roleCodes,
-      perms,
-      dataScope,
-    };
-  }
-
   /**
    * 获取当前用户信息
    */
@@ -967,7 +926,6 @@ export class UserService {
       status: user.status,
       deptId: user.deptId?.toString() ?? "",
       roleIds: (user.roles || []).map((r) => r.id.toString()),
-      openId: user.openid ?? null,
     };
   }
 }

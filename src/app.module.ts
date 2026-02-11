@@ -15,7 +15,6 @@ import { ConfigModule as SystemConfigModule } from "./system/config/config.modul
 import { WebsocketModule } from "./platform/websocket/websocket.module";
 import { CodegenModule } from "./platform/codegen/codegen.module";
 import { FileModule } from "./platform/file/file.module";
-import { AiModule } from "./platform/ai/ai.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 import { StatisticsModule } from "./system/statistics/statistics.module";
@@ -95,7 +94,6 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     WebsocketModule,
     FileModule,
     CodegenModule,
-    AiModule,
     LogModule,
     NoticeModule,
     StatisticsModule,
