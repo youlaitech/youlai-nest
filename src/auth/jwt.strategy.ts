@@ -40,9 +40,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const userId = payload.sub;
 
-    // 校验安全版本号
-    const tokenVersion: number = payload.securityVersion ?? 0;
-    const versionKey = `auth:user:security_version:${userId}`;
+    // 校验 Token 版本号
+    const tokenVersion: number = payload.tokenVersion ?? 0;
+    const versionKey = `auth:user:token_version:${userId}`;
     const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
     const currentVersion = currentVersionRaw ?? 0;
 

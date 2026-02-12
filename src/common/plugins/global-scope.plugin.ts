@@ -12,7 +12,7 @@ export function applyDataScope<T>(qb: SelectQueryBuilder<T>): void {
   const ctx = RequestContext.getCurrentUser();
   if (!ctx) return;
 
-  const { userId, deptId, dataScope } = ctx;
+  const { userId, deptId, dataScope, customDeptIds } = ctx;
   if (!dataScope) return;
 
   const alias = qb.alias;
@@ -28,6 +28,15 @@ export function applyDataScope<T>(qb: SelectQueryBuilder<T>): void {
       return;
     case DataScopeEnum.SELF:
       qb.andWhere(`${alias}.create_by = :__userId`, { __userId: userId });
+      return;
+    case DataScopeEnum.CUSTOM:
+      // 自定义部门数据权限
+      if (customDeptIds && customDeptIds.length > 0) {
+        qb.andWhere(`${alias}.dept_id IN (:...__customDeptIds)`, { __customDeptIds: customDeptIds });
+      } else {
+        // 没有自定义部门配置，不允许查看任何数据
+        qb.andWhere("1 = 0");
+      }
       return;
     case DataScopeEnum.DEPT_TREE:
     default:

@@ -3,6 +3,7 @@ export interface CurrentUserContext {
   deptId: string | null;
   deptTreePath: string | null;
   dataScope: number | null;
+  customDeptIds?: number[];  // 自定义部门ID列表（CUSTOM 权限类型使用）
   roles?: string[];
   perms?: string[];
 }

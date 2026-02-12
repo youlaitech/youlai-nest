@@ -38,9 +38,9 @@ export class AuthService {
     if (sessionType === "jwt") {
       const userId = user.id;
       // 用于按用户维度统一让历史 Token 失效（例如：重置密码、禁用账号后）
-      const versionKey = `auth:user:security_version:${userId}`;
+      const versionKey = `auth:user:token_version:${userId}`;
       const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
-      const securityVersion = currentVersionRaw ?? 0;
+      const tokenVersion = currentVersionRaw ?? 0;
 
       const refreshTtl = this.config.expiresIn * 10;
       await this.redisCacheService.set(
@@ -65,7 +65,7 @@ export class AuthService {
         dataScope: user.dataScope,
         deptTreePath: user.deptTreePath,
         roles: user.roles,
-        securityVersion,
+        tokenVersion,
         jti,
       };
 
@@ -201,8 +201,8 @@ export class AuthService {
 
         const userId = payload.sub;
 
-        const tokenVersion: number = payload.securityVersion ?? 0;
-        const versionKey = `auth:user:security_version:${userId}`;
+        const tokenVersion: number = payload.tokenVersion ?? 0;
+        const versionKey = `auth:user:token_version:${userId}`;
         const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
         const currentVersion = currentVersionRaw ?? 0;
         if (tokenVersion < currentVersion) {
@@ -227,7 +227,7 @@ export class AuthService {
             dataScope: payload.dataScope,
             deptTreePath: payload.deptTreePath,
             roles: payload.roles,
-            securityVersion: tokenVersion,
+            tokenVersion: tokenVersion,
             jti: newJti,
           },
           {

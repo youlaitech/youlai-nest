@@ -38,7 +38,7 @@ export class RoleService {
 
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
     for (const userId of ids) {
-      const versionKey = `auth:user:security_version:${userId}`;
+      const versionKey = `auth:user:token_version:${userId}`;
       const currentVersion = await this.redisCacheService.get<number>(versionKey);
       const nextVersion = (currentVersion ?? 0) + 1;
       await this.redisCacheService.set(versionKey, nextVersion);

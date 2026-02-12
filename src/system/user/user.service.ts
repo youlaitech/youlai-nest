@@ -725,7 +725,7 @@ export class UserService {
 
   /**
    * 失效指定用户的所有会话
-   * - JWT 模式：递增用户安全版本号 auth:user:security_version:{userId}
+   * - JWT 模式：递增用户 Token 版本号 auth:user:token_version:{userId}
    * - redis-token 模式：删除该用户的 access/refresh 映射
    */
   private async invalidateUserSessions(userId: string): Promise<void> {
@@ -734,8 +734,8 @@ export class UserService {
 
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
 
-    // JWT 模式：提升安全版本号，旧 JWT 全部失效
-    const versionKey = `auth:user:security_version:${userIdStr}`;
+    // JWT 模式：递增 Token 版本号，旧 JWT 全部失效
+    const versionKey = `auth:user:token_version:${userIdStr}`;
     const currentVersion = await this.redisCacheService.get<number>(versionKey);
     const nextVersion = (currentVersion ?? 0) + 1;
     await this.redisCacheService.set(versionKey, nextVersion);
