@@ -46,8 +46,10 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
           return {
             code: ErrorCode.SUCCESS.code,
             msg: ErrorCode.SUCCESS.msg,
-            data: formattedData,
-            page: formattedPage,
+            data: {
+              list: formattedData,
+              total: (formattedPage as any)?.total ?? 0,
+            } as any,
           };
         }
 

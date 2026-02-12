@@ -75,7 +75,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: "获取角色权限" })
-  @Get(":id/menuIds")
+  @Get(":id/menu-ids")
   @Permissions("sys:role:update")
   async findMenuIds(@Param("id") roleId: string) {
     return await this.rolesService.getRoleMenuIds(roleId);
