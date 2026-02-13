@@ -3,14 +3,17 @@ import { ConfigService } from "@nestjs/config";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, In, Brackets } from "typeorm";
+import { Repository, In, Brackets, DataSource } from "typeorm";
 import { SysRole } from "./entities/sys-role.entity";
 import { SysRoleMenu } from "./entities/sys-role-menu.entity";
+import { SysRoleDept } from "./entities/sys-role-dept.entity";
 import { MenuService } from "../menu/menu.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
 import { ROOT_ROLE_CODE } from "src/common/constants";
 import { RedisService } from "src/shared/redis/redis.service";
+import { RoleDataScope } from "../../common/models/role-data-scope.model";
+import { DataScopeEnum } from "../../common/enums/data-scope.enum";
 
 /**
  * 角色服务
@@ -26,10 +29,13 @@ export class RoleService {
     private roleMenuRepository: Repository<SysRoleMenu>,
     @InjectRepository(SysUserRole)
     private userRoleRepository: Repository<SysUserRole>,
+    @InjectRepository(SysRoleDept)
+    private roleDeptRepository: Repository<SysRoleDept>,
     @Inject(forwardRef(() => MenuService))
     private readonly menuService: MenuService,
     private readonly configService: ConfigService,
-    private readonly redisCacheService: RedisService
+    private readonly redisCacheService: RedisService,
+    private readonly dataSource: DataSource
   ) {}
 
   private async invalidateUsersSessions(userIds: string[]): Promise<void> {
@@ -357,5 +363,118 @@ export class RoleService {
    */
   async findAllPerms(): Promise<string[]> {
     return await this.menuService.findALLButtons();
+  }
+
+  /**
+   * 获取角色的数据权限列表
+   *
+   * 与 youlai-boot 的 RoleServiceImpl.getRoleDataScopes 方法对齐
+   * 支持多角色数据权限，返回每个角色的数据权限信息
+   *
+   * @param roleCodes 角色编码列表
+   * @returns 角色数据权限列表
+   */
+  async getRoleDataScopes(roleCodes: string[]): Promise<RoleDataScope[]> {
+    if (!roleCodes || roleCodes.length === 0) {
+      return [];
+    }
+
+    // 1. 查询角色的数据权限信息
+    const roles = await this.roleRepository
+      .createQueryBuilder("role")
+      .select(["role.code", "role.dataScope"])
+      .where("role.code IN (:...roleCodes)", { roleCodes })
+      .andWhere("role.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("role.status = :status", { status: 1 })
+      .getMany();
+
+    if (!roles || roles.length === 0) {
+      return [];
+    }
+
+    // 2. 获取自定义权限角色的ID
+    const customRoleCodes = roles
+      .filter((r) => r.dataScope === DataScopeEnum.CUSTOM)
+      .map((r) => r.code);
+
+    // 3. 查询自定义角色的部门ID
+    const customDeptIdsMap = new Map<string, number[]>();
+
+    if (customRoleCodes.length > 0) {
+      // 先获取自定义角色的ID
+      const customRoles = await this.roleRepository.find({
+        where: { code: In(customRoleCodes), isDeleted: 0 },
+        select: ["id", "code"],
+      });
+
+      const customRoleIds = customRoles.map((r) => r.id);
+      const roleIdToCodeMap = new Map(customRoles.map((r) => [r.id, r.code]));
+
+      if (customRoleIds.length > 0) {
+        const roleDepts = await this.roleDeptRepository
+          .createQueryBuilder("rd")
+          .where("rd.roleId IN (:...roleIds)", { roleIds: customRoleIds })
+          .getMany();
+
+        // 按角色编码分组
+        for (const rd of roleDepts) {
+          const roleCode = roleIdToCodeMap.get(rd.roleId);
+          if (roleCode) {
+            if (!customDeptIdsMap.has(roleCode)) {
+              customDeptIdsMap.set(roleCode, []);
+            }
+            customDeptIdsMap.get(roleCode)!.push(Number(rd.deptId));
+          }
+        }
+      }
+    }
+
+    // 4. 构建 RoleDataScope 列表
+    const result: RoleDataScope[] = roles.map((role) => {
+      const customDeptIds = customDeptIdsMap.get(role.code);
+      return new RoleDataScope(role.code, role.dataScope, customDeptIds);
+    });
+
+    return result;
+  }
+
+  /**
+   * 更新角色部门（自定义数据权限）
+   *
+   * @param roleId 角色ID
+   * @param deptIds 部门ID列表
+   */
+  async updateRoleDepts(roleId: string, deptIds: string[]): Promise<void> {
+    const roleIdStr = roleId.toString();
+
+    // 删除旧的关联
+    await this.roleDeptRepository.delete({ roleId: roleIdStr });
+
+    // 添加新的关联
+    if (deptIds && deptIds.length > 0) {
+      const roleDepts = deptIds.map((deptId) => ({
+        roleId: roleIdStr,
+        deptId: deptId.toString(),
+      }));
+      await this.roleDeptRepository.save(roleDepts);
+    }
+
+    // 使相关用户的会话失效
+    const relations = await this.userRoleRepository.find({ where: { roleId: roleIdStr } });
+    const userIds = relations.map((r) => r.userId?.toString()).filter(Boolean);
+    await this.invalidateUsersSessions(userIds);
+  }
+
+  /**
+   * 获取角色的自定义部门ID列表
+   *
+   * @param roleId 角色ID
+   * @returns 部门ID列表
+   */
+  async getRoleDeptIds(roleId: string): Promise<string[]> {
+    const roleDepts = await this.roleDeptRepository.find({
+      where: { roleId: roleId.toString() },
+    });
+    return roleDepts.map((rd) => rd.deptId);
   }
 }

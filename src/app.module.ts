@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule, RequestMethod, OnModuleInit } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -33,7 +33,8 @@ import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
 import { DataScopeGuard } from "./common/guards/data-scope.guard";
 import { PermissionGuard } from "src/common/guards/permission.guard";
-import "./common/plugins/global-scope.plugin";
+import { DataPermissionInterceptor } from "./common/interceptors/data-permission.interceptor";
+import { initDataPermissionPlugin } from "./common/plugins/data-permission.plugin";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 
@@ -136,9 +137,19 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
       provide: APP_INTERCEPTOR,
       useClass: XRequestInterceptor,
     },
+    // 数据权限拦截器 - 必须在 DataScopeGuard 之后执行
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DataPermissionInterceptor,
+    },
   ],
 })
-export class AppModule implements NestModule {
+export class AppModule implements NestModule, OnModuleInit {
+  onModuleInit() {
+    // 初始化数据权限插件
+    initDataPermissionPlugin();
+  }
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
   }

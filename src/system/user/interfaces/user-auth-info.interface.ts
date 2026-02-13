@@ -1,3 +1,5 @@
+import { RoleDataScope } from "../../../common/models/role-data-scope.model";
+
 /**
  * 用户认证信息接口
  * 用于认证过程中获取用户的关键信息，例如登录时需要的用户名、密码以及权限等。
@@ -39,11 +41,14 @@ export interface UserAuthInfo {
   deptId: string;
 
   /**
-   * 数据范围
-   * 0：全部数据权限
-   * 1：本部门及以下数据权限
-   * 2：本部门
-   * 3：本人
+   * 数据范围（兼容旧版本）
+   * 取所有角色中最大权限
    */
   dataScope: number;
+
+  /**
+   * 多角色数据权限列表
+   * 支持多角色并集策略，与 youlai-boot 对齐
+   */
+  dataScopes: RoleDataScope[];
 }

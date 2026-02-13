@@ -22,6 +22,8 @@ import type { EmailUpdateDto } from "./dto/email-update.dto";
 import type { UserProfileDto } from "./dto/user-profile.dto";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as XLSX from "xlsx";
+import { RoleDataScope } from "../../common/models/role-data-scope.model";
+import { DataScopeUtils } from "../../common/models/role-data-scope.model";
 
 /**
  * 用户服务
@@ -227,7 +229,12 @@ export class UserService {
     const roleIds = user.roles.map((role) => role.id);
     const roles = await this.roleService.findRolesByIds(roleIds);
     const roleCodes = roles.map((r) => r.code);
-    const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
+
+    // 获取多角色数据权限列表
+    const dataScopes = await this.roleService.getRoleDataScopes(roleCodes);
+
+    // 兼容旧版本：取最大权限
+    const dataScope = DataScopeUtils.getMaxDataScope(dataScopes);
 
     let perms: string[] = [];
     if (roleCodes.includes(ROOT_ROLE_CODE)) {
@@ -245,6 +252,7 @@ export class UserService {
       roles: roleCodes,
       perms,
       dataScope,
+      dataScopes,
     };
   }
 
@@ -256,6 +264,7 @@ export class UserService {
     roles: string[];
     perms: string[];
     dataScope: number;
+    dataScopes: RoleDataScope[];
   } | null> {
     const mobileSafe = mobile?.trim();
     if (!mobileSafe) return null;
@@ -269,7 +278,12 @@ export class UserService {
     const roleIds = (user.roles || []).map((role) => role.id);
     const roles = await this.roleService.findRolesByIds(roleIds);
     const roleCodes = roles.map((r) => r.code);
-    const dataScope = roles.length ? Math.min(...roles.map((r) => r.dataScope)) : 0;
+
+    // 获取多角色数据权限列表
+    const dataScopes = await this.roleService.getRoleDataScopes(roleCodes);
+
+    // 兼容旧版本：取最大权限
+    const dataScope = DataScopeUtils.getMaxDataScope(dataScopes);
 
     let perms: string[] = [];
     if (roleCodes.includes(ROOT_ROLE_CODE)) {
@@ -286,6 +300,7 @@ export class UserService {
       roles: roleCodes,
       perms,
       dataScope,
+      dataScopes,
     };
   }
 
