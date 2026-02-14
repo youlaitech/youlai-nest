@@ -17,6 +17,7 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Permissions } from "../../common/decorators/public.decorator";
+import { DataPermission } from "src/common/decorators/data-permission.decorator";
 
 /**
  * 部门接口控制器
@@ -33,6 +34,12 @@ export class DeptController {
   @ApiOperation({ summary: "部门下拉列表" })
   @Get("options")
   @SetMetadata("resource", "sys_dept")
+  @DataPermission({
+    deptAlias: "",
+    deptIdColumnName: "id",
+    userAlias: "",
+    userIdColumnName: "createBy",
+  })
   async getOptions() {
     return await this.deptService.findAllOptions();
   }
@@ -40,6 +47,12 @@ export class DeptController {
   @ApiOperation({ summary: "获取部门表格树形列表" })
   @Get()
   @SetMetadata("resource", "sys_dept")
+  @DataPermission({
+    deptAlias: "dept",
+    deptIdColumnName: "id",
+    userAlias: "dept",
+    userIdColumnName: "createBy",
+  })
   async findAll(@Query("keywords") keywords?: string, @Query("status") status?: string) {
     return await this.deptService.findAll(keywords, status);
   }

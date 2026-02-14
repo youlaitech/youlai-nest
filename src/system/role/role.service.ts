@@ -127,6 +127,13 @@ export class RoleService {
     });
 
     await this.roleRepository.save(entity);
+
+    // 数据权限发生变化时，失效该角色关联用户的登录态（JWT tokenVersion）
+    if (oldRole && oldRole.dataScope !== (entity as any).dataScope) {
+      const relations = await this.userRoleRepository.find({ where: { roleId: roleId } });
+      const userIds = relations.map((r) => r.userId?.toString()).filter(Boolean);
+      await this.invalidateUsersSessions(userIds);
+    }
     return true;
   }
 
@@ -368,7 +375,6 @@ export class RoleService {
   /**
    * 获取角色的数据权限列表
    *
-   * 与 youlai-boot 的 RoleServiceImpl.getRoleDataScopes 方法对齐
    * 支持多角色数据权限，返回每个角色的数据权限信息
    *
    * @param roleCodes 角色编码列表

@@ -1,4 +1,4 @@
-import { RoleDataScope } from "../../../common/models/role-data-scope.model";
+import type { RoleDataScope } from "../../../common/models/role-data-scope.model";
 
 /**
  * 用户认证信息接口
@@ -48,7 +48,7 @@ export interface UserAuthInfo {
 
   /**
    * 多角色数据权限列表
-   * 支持多角色并集策略，与 youlai-boot 对齐
+   * 支持多角色并集策略
    */
   dataScopes: RoleDataScope[];
 }

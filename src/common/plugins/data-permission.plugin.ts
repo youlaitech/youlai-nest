@@ -1,6 +1,8 @@
 import { SelectQueryBuilder } from "typeorm";
-import { RequestContext, DataPermissionConfig } from "../context/request-context";
-import { RoleDataScope, DataScopeUtils } from "../models/role-data-scope.model";
+import { RequestContext } from "../context/request-context";
+import type { DataPermissionConfig } from "../context/request-context";
+import { DataScopeUtils } from "../models/role-data-scope.model";
+import type { RoleDataScope } from "../models/role-data-scope.model";
 import { DataScopeEnum } from "../enums/data-scope.enum";
 
 /**
@@ -9,7 +11,10 @@ import { DataScopeEnum } from "../enums/data-scope.enum";
  */
 export class DataPermissionHandler {
   /** 应用数据权限过滤 */
-  static applyDataPermission<T>(qb: SelectQueryBuilder<T>, config: DataPermissionConfig | null): void {
+  static applyDataPermission<T>(
+    qb: SelectQueryBuilder<T>,
+    config: DataPermissionConfig | null
+  ): void {
     if (!config) return;
 
     const userId = RequestContext.getUserId();
@@ -138,8 +143,12 @@ export class DataPermissionHandler {
 export function initDataPermissionPlugin(): void {
   const originalGetMany = (SelectQueryBuilder as any).prototype.getMany;
   const originalGetOne = (SelectQueryBuilder as any).prototype.getOne;
+  const originalGetManyAndCount = (SelectQueryBuilder as any).prototype.getManyAndCount;
+  const originalGetCount = (SelectQueryBuilder as any).prototype.getCount;
 
-  (SelectQueryBuilder as any).prototype.getMany = function <T>(this: SelectQueryBuilder<T>): Promise<T[]> {
+  (SelectQueryBuilder as any).prototype.getMany = function <T>(
+    this: SelectQueryBuilder<T>
+  ): Promise<T[]> {
     const config = RequestContext.getDataPermissionConfig();
     if (config) {
       DataPermissionHandler.applyDataPermission(this, config);
@@ -147,12 +156,34 @@ export function initDataPermissionPlugin(): void {
     return originalGetMany.apply(this, arguments);
   };
 
-  (SelectQueryBuilder as any).prototype.getOne = function <T>(this: SelectQueryBuilder<T>): Promise<T | undefined> {
+  (SelectQueryBuilder as any).prototype.getOne = function <T>(
+    this: SelectQueryBuilder<T>
+  ): Promise<T | undefined> {
     const config = RequestContext.getDataPermissionConfig();
     if (config) {
       DataPermissionHandler.applyDataPermission(this, config);
     }
     return originalGetOne.apply(this, arguments);
+  };
+
+  (SelectQueryBuilder as any).prototype.getManyAndCount = function <T>(
+    this: SelectQueryBuilder<T>
+  ): Promise<[T[], number]> {
+    const config = RequestContext.getDataPermissionConfig();
+    if (config) {
+      DataPermissionHandler.applyDataPermission(this, config);
+    }
+    return originalGetManyAndCount.apply(this, arguments);
+  };
+
+  (SelectQueryBuilder as any).prototype.getCount = function <T>(
+    this: SelectQueryBuilder<T>
+  ): Promise<number> {
+    const config = RequestContext.getDataPermissionConfig();
+    if (config) {
+      DataPermissionHandler.applyDataPermission(this, config);
+    }
+    return originalGetCount.apply(this, arguments);
   };
 }
 

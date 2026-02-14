@@ -31,6 +31,7 @@ import { EmailUpdateDto } from "./dto/email-update.dto";
 import { PasswordVerifyDto } from "./dto/password-verify.dto";
 import { UserProfileDto } from "./dto/user-profile.dto";
 import { Permissions } from "src/common/decorators/public.decorator";
+import { DataPermission } from "src/common/decorators/data-permission.decorator";
 import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
@@ -89,6 +90,12 @@ export class UserController {
   @ApiOperation({ summary: "导出用户" })
   @Get("export")
   @Permissions("sys:user:export")
+  @DataPermission({
+    deptAlias: "user",
+    deptIdColumnName: "deptId",
+    userAlias: "user",
+    userIdColumnName: "createBy",
+  })
   @SetMetadata("skipResponseTransform", true)
   async exportUsers(@Query() query: UserQueryDto, @Res() res: Response) {
     const list = await this.userService.listExportUsers(
@@ -265,6 +272,12 @@ export class UserController {
   @ApiOperation({ summary: "用户分页列表" })
   @Get()
   @Permissions("sys:user:list")
+  @DataPermission({
+    deptAlias: "user",
+    deptIdColumnName: "deptId",
+    userAlias: "user",
+    userIdColumnName: "createBy",
+  })
   async getUserPage(@Query() query: UserQueryDto) {
     this.logger.info("获取用户分页列表", {
       context: "UserController",

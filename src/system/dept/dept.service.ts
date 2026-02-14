@@ -43,10 +43,10 @@ export class DeptService {
    * 查询部门下拉树形列表
    */
   async findAllOptions() {
-    const depts = await this.deptRepository.find({
-      where: { isDeleted: 0 },
-      order: { sort: "ASC" },
-    });
+    const qb = this.deptRepository.createQueryBuilder("dept");
+    qb.where("dept.isDeleted = :isDeleted", { isDeleted: 0 });
+    qb.orderBy("dept.sort", "ASC");
+    const depts = await qb.getMany();
     return this.buildOptionsTree(depts);
   }
 
