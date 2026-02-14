@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
-import { tap } from "rxjs/operators";
+import { finalize } from "rxjs/operators";
 import { RequestContext, DataPermissionConfig } from "../context/request-context";
 
 export const DATA_PERMISSION_KEY = "data_permission";
@@ -36,11 +36,7 @@ export class DataPermissionInterceptor implements NestInterceptor {
 
     RequestContext.setDataPermissionConfig(config || null);
 
-    return next.handle().pipe(
-      tap(() => {
-        RequestContext.setDataPermissionConfig(null);
-      })
-    );
+    return next.handle().pipe(finalize(() => RequestContext.setDataPermissionConfig(null)));
   }
 }
 

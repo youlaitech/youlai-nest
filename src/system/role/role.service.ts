@@ -267,9 +267,23 @@ export class RoleService {
    * 根据 ID 查询角色
    */
   async getRoleForm(id: string) {
-    return await this.roleRepository.findOne({
+    const role = await this.roleRepository.findOne({
       where: { id: id.toString(), isDeleted: 0 },
     });
+    if (!role) {
+      return null;
+    }
+
+    // 自定义数据权限时回显部门ID列表
+    if (role.dataScope === DataScopeEnum.CUSTOM) {
+      const deptIds = await this.getRoleDeptIds(role.id);
+      return {
+        ...(role as any),
+        deptIds,
+      };
+    }
+
+    return role;
   }
 
   /**

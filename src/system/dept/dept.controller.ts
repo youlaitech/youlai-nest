@@ -34,12 +34,6 @@ export class DeptController {
   @ApiOperation({ summary: "部门下拉列表" })
   @Get("options")
   @SetMetadata("resource", "sys_dept")
-  @DataPermission({
-    deptAlias: "",
-    deptIdColumnName: "id",
-    userAlias: "",
-    userIdColumnName: "createBy",
-  })
   async getOptions() {
     return await this.deptService.findAllOptions();
   }
@@ -51,7 +45,7 @@ export class DeptController {
     deptAlias: "dept",
     deptIdColumnName: "id",
     userAlias: "dept",
-    userIdColumnName: "createBy",
+    userIdColumnName: "create_by",
   })
   async findAll(@Query("keywords") keywords?: string, @Query("status") status?: string) {
     return await this.deptService.findAll(keywords, status);

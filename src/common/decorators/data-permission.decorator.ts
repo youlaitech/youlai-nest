@@ -16,11 +16,15 @@ export interface DataPermissionConfig {
 
 /** 数据权限装饰器 */
 export function DataPermission(config?: DataPermissionConfig): MethodDecorator & ClassDecorator {
-  return (target: any, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => {
+  return (
+    target: any,
+    propertyKey?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<any>
+  ) => {
     const finalConfig: DataPermissionConfig = {
-      deptAlias: config?.deptAlias ?? "",
+      deptAlias: config?.deptAlias,
       deptIdColumnName: config?.deptIdColumnName ?? "dept_id",
-      userAlias: config?.userAlias ?? "",
+      userAlias: config?.userAlias,
       userIdColumnName: config?.userIdColumnName ?? "create_by",
     };
 

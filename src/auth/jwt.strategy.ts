@@ -62,6 +62,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const roles: string[] = payload.roles || [];
 
+    // 获取角色的数据权限列表
+    const dataScopes = await this.roleService.getRoleDataScopes(roles);
+
     const userSessionKey = `auth:user:jwt_session:${userId}`;
     const cachedSession = await this.redisCacheService.get<any>(userSessionKey);
 
@@ -81,7 +84,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           userId,
           username: payload.username,
           deptId: payload.deptId,
-          dataScope: payload.dataScope,
+          dataScopes,
           deptTreePath: payload.deptTreePath,
           roles,
           perms,
@@ -96,7 +99,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       roles,
       perms,
       deptId: payload.deptId,
-      dataScope: payload.dataScope,
+      dataScopes,
       deptTreePath: payload.deptTreePath,
     };
   }

@@ -92,9 +92,9 @@ export class UserController {
   @Permissions("sys:user:export")
   @DataPermission({
     deptAlias: "user",
-    deptIdColumnName: "deptId",
+    deptIdColumnName: "dept_id",
     userAlias: "user",
-    userIdColumnName: "createBy",
+    userIdColumnName: "create_by",
   })
   @SetMetadata("skipResponseTransform", true)
   async exportUsers(@Query() query: UserQueryDto, @Res() res: Response) {
@@ -274,9 +274,9 @@ export class UserController {
   @Permissions("sys:user:list")
   @DataPermission({
     deptAlias: "user",
-    deptIdColumnName: "deptId",
+    deptIdColumnName: "dept_id",
     userAlias: "user",
-    userIdColumnName: "createBy",
+    userIdColumnName: "create_by",
   })
   async getUserPage(@Query() query: UserQueryDto) {
     this.logger.info("获取用户分页列表", {

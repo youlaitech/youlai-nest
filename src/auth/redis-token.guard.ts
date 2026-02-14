@@ -1,5 +1,4 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { Observable } from "rxjs";
 import { RedisService } from "src/shared/redis/redis.service";
 import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
@@ -8,7 +7,7 @@ import { ErrorCode } from "src/common/enums/error-code.enum";
  * Redis 会话模式下的认证守卫
  *
  * - 从 Authorization: Bearer <accessToken> 中获取访问令牌
- * - 使用 Redis 映射 auth:token:access:{accessToken} -> OnlineUser
+ * - 使用 Redis 映射 auth:token:access:{accessToken} -> UserSession
  * - 未命中则视为未登录
  */
 @Injectable()
@@ -24,14 +23,14 @@ export class RedisTokenAuthGuard implements CanActivate {
     }
 
     const accessToken = authHeader.substring("Bearer ".length);
-    const onlineUser = await this.redisCacheService.get<any>(`auth:token:access:${accessToken}`);
+    const userSession = await this.redisCacheService.get<any>(`auth:token:access:${accessToken}`);
 
-    if (!onlineUser) {
+    if (!userSession) {
       throw new BusinessException(ErrorCode.ACCESS_TOKEN_INVALID);
     }
 
     // 挂载到 request.user，供后续控制器 / 守卫使用
-    request.user = onlineUser;
+    request.user = userSession;
     return true;
   }
 }

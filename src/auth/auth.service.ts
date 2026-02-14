@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { JwtService } from "@nestjs/jwt";
 import { v4 as uuidv4 } from "uuid";
@@ -99,18 +99,18 @@ export class AuthService {
     const accessTtl = this.config.expiresIn;
     const refreshTtl = this.config.expiresIn * 10;
 
-    const onlineUser = {
+    const userSession = {
       userId: userId,
       username: user.username,
       deptId: user.deptId,
-      dataScope: user.dataScope,
+      dataScopes: user.dataScopes,
       roles: user.roles,
       perms: user.perms,
     };
 
     // access/refresh 双 token + userId 反向索引，方便注销/踢下线时快速定位并清理
-    await this.redisCacheService.set(`auth:token:access:${accessToken}`, onlineUser, accessTtl);
-    await this.redisCacheService.set(`auth:token:refresh:${refreshToken}`, onlineUser, refreshTtl);
+    await this.redisCacheService.set(`auth:token:access:${accessToken}`, userSession, accessTtl);
+    await this.redisCacheService.set(`auth:token:refresh:${refreshToken}`, userSession, refreshTtl);
     await this.redisCacheService.set(`auth:user:access:${userId}`, accessToken, accessTtl);
     await this.redisCacheService.set(`auth:user:refresh:${userId}`, refreshToken, refreshTtl);
 
@@ -128,7 +128,7 @@ export class AuthService {
       return null;
     }
     if (await bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user;
+      const { password: _password, ...result } = user;
       return result;
     }
     return null;
@@ -246,17 +246,17 @@ export class AuthService {
       }
     }
 
-    const onlineUser = await this.redisCacheService.get<any>(`auth:token:refresh:${refreshToken}`);
-    if (!onlineUser) {
+    const userSession = await this.redisCacheService.get<any>(`auth:token:refresh:${refreshToken}`);
+    if (!userSession) {
       throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
     }
 
     const accessToken = uuidv4();
     const accessTtl = this.config.expiresIn;
 
-    await this.redisCacheService.set(`auth:token:access:${accessToken}`, onlineUser, accessTtl);
+    await this.redisCacheService.set(`auth:token:access:${accessToken}`, userSession, accessTtl);
     await this.redisCacheService.set(
-      `auth:user:access:${onlineUser.userId}`,
+      `auth:user:access:${userSession.userId}`,
       accessToken,
       accessTtl
     );

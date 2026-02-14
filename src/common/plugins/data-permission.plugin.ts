@@ -10,12 +10,52 @@ import { DataScopeEnum } from "../enums/data-scope.enum";
  * 支持多角色数据权限合并（OR连接各角色条件）
  */
 export class DataPermissionHandler {
+  private static hasAlias<T>(qb: SelectQueryBuilder<T>, alias?: string): boolean {
+    const aliasName = alias?.trim();
+    if (!aliasName) return true;
+    const aliases = (qb as any)?.expressionMap?.aliases;
+    // 如果无法读取 QueryBuilder 的 alias 列表，则为安全起见跳过注入（避免跨查询污染）
+    if (!Array.isArray(aliases)) return false;
+    return aliases.some((a: any) => a?.name === aliasName);
+  }
+
+  private static isMainAliasMatched<T>(
+    qb: SelectQueryBuilder<T>,
+    config: DataPermissionConfig
+  ): boolean {
+    const mainAliasName = (qb as any)?.expressionMap?.mainAlias?.name;
+    if (!mainAliasName) return false;
+
+    const deptAlias = config.deptAlias?.trim();
+    const userAlias = config.userAlias?.trim();
+
+    // 如果配置了别名，则要求本次查询的主表别名命中其中之一
+    if (deptAlias || userAlias) {
+      return mainAliasName === deptAlias || mainAliasName === userAlias;
+    }
+
+    return true;
+  }
+
   /** 应用数据权限过滤 */
   static applyDataPermission<T>(
     qb: SelectQueryBuilder<T>,
     config: DataPermissionConfig | null
   ): void {
     if (!config) return;
+
+    // 必须显式指定别名，否则不注入
+    if (!config.deptAlias?.trim() && !config.userAlias?.trim()) {
+      return;
+    }
+
+    if (!this.isMainAliasMatched(qb, config)) {
+      return;
+    }
+
+    if (!this.hasAlias(qb, config.deptAlias) || !this.hasAlias(qb, config.userAlias)) {
+      return;
+    }
 
     const userId = RequestContext.getUserId();
     if (!userId) return;

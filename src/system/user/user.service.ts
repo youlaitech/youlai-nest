@@ -24,6 +24,7 @@ import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as XLSX from "xlsx";
 import { RoleDataScope } from "../../common/models/role-data-scope.model";
 import { DataScopeUtils } from "../../common/models/role-data-scope.model";
+import { RequestContext } from "src/common/context/request-context";
 
 /**
  * 用户服务
@@ -99,14 +100,41 @@ export class UserService {
       .skip((pageNumSafe - 1) * pageSizeSafe)
       .take(pageSizeSafe)
       .getManyAndCount();
+
+    // 角色名称单独回填
+    const userIds = list.map((u) => u.id).filter(Boolean);
+    const roleRows = userIds.length
+      ? await this.userRoleRepository
+          .createQueryBuilder("ur")
+          .innerJoin("sys_role", "r", "ur.role_id = r.id")
+          .select("ur.user_id", "userId")
+          .addSelect("r.name", "roleName")
+          .where("ur.user_id IN (:...userIds)", { userIds })
+          .andWhere("r.is_deleted = :isDeleted", { isDeleted: 0 })
+          .getRawMany<{ userId: string; roleName: string }>()
+      : [];
+
+    const userRoleNamesMap = new Map<string, string[]>();
+    for (const row of roleRows) {
+      const uid = row.userId?.toString();
+      if (!uid) continue;
+      if (!userRoleNamesMap.has(uid)) userRoleNamesMap.set(uid, []);
+      if (row.roleName) userRoleNamesMap.get(uid)!.push(row.roleName);
+    }
+
     // 部门名称单独回填
     const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean))) as string[];
+
+    const prevConfig = RequestContext.getDataPermissionConfig();
+    RequestContext.setDataPermissionConfig(null);
     const depts = await this.deptService.findByIds(deptIds);
+    RequestContext.setDataPermissionConfig(prevConfig);
     const deptMap = new Map<string, string>();
     depts.forEach((d) => deptMap.set(d.id, d.name));
 
     const data = list.map((u) => {
       const deptIdStr = u.deptId?.toString() ?? null;
+      const roleNames = (userRoleNamesMap.get(u.id?.toString()) || []).join(",");
       return {
         id: u.id,
         username: u.username,
@@ -117,6 +145,7 @@ export class UserService {
         email: u.email || "",
         deptId: deptIdStr,
         deptName: deptIdStr ? deptMap.get(deptIdStr) || null : null,
+        roleNames,
         createTime: u.createTime
           ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
               u.createTime.getDate()
@@ -185,6 +214,27 @@ export class UserService {
 
     const list = await queryBuilder.orderBy("user.createTime", "DESC").getMany();
 
+    // 角色名称单独回填
+    const userIds = list.map((u) => u.id).filter(Boolean);
+    const roleRows = userIds.length
+      ? await this.userRoleRepository
+          .createQueryBuilder("ur")
+          .innerJoin("sys_role", "r", "ur.role_id = r.id")
+          .select("ur.user_id", "userId")
+          .addSelect("r.name", "roleName")
+          .where("ur.user_id IN (:...userIds)", { userIds })
+          .andWhere("r.is_deleted = :isDeleted", { isDeleted: 0 })
+          .getRawMany<{ userId: string; roleName: string }>()
+      : [];
+
+    const userRoleNamesMap = new Map<string, string[]>();
+    for (const row of roleRows) {
+      const uid = row.userId?.toString();
+      if (!uid) continue;
+      if (!userRoleNamesMap.has(uid)) userRoleNamesMap.set(uid, []);
+      if (row.roleName) userRoleNamesMap.get(uid)!.push(row.roleName);
+    }
+
     const deptIds = Array.from(new Set(list.map((u) => u.deptId).filter(Boolean))) as string[];
     const depts = await this.deptService.findByIds(deptIds);
     const deptMap = new Map<string, string>();
@@ -192,6 +242,7 @@ export class UserService {
 
     return list.map((u) => {
       const deptIdStr = u.deptId?.toString() ?? null;
+      const roleNames = (userRoleNamesMap.get(u.id?.toString()) || []).join(",");
       return {
         id: u.id,
         username: u.username,
@@ -202,6 +253,7 @@ export class UserService {
         email: u.email || "",
         deptId: deptIdStr,
         deptName: deptIdStr ? deptMap.get(deptIdStr) || null : null,
+        roleNames,
         createTime: u.createTime
           ? `${u.createTime.getFullYear()}-${String(u.createTime.getMonth() + 1).padStart(2, "0")}-${String(
               u.createTime.getDate()

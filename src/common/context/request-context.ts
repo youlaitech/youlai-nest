@@ -33,22 +33,32 @@ export interface DataPermissionConfig {
 
 /** 请求上下文，基于 AsyncLocalStorage 实现请求级隔离 */
 export class RequestContext {
-  private static asyncLocalStorage = new AsyncLocalStorage<CurrentUserContext>();
-  private static currentDataPermissionConfig: DataPermissionConfig | null = null;
+  private static asyncLocalStorage = new AsyncLocalStorage<{
+    user: CurrentUserContext;
+    dataPermissionConfig: DataPermissionConfig | null;
+  }>();
 
   static setCurrentUser(user: CurrentUserContext | null): void {
     const store = RequestContext.asyncLocalStorage.getStore();
     if (store) {
-      Object.assign(store, user || {});
+      store.user = user || ({
+        userId: "",
+        deptId: null,
+        deptTreePath: null,
+        dataScopes: [],
+        roles: [],
+        perms: [],
+        isRoot: false,
+      } as CurrentUserContext);
     }
   }
 
   static getCurrentUser(): CurrentUserContext | null {
     const store = RequestContext.asyncLocalStorage.getStore();
-    if (!store || !store.userId) {
+    if (!store?.user || !store.user.userId) {
       return null;
     }
-    return store;
+    return store.user;
   }
 
   static getUserId(): string | null {
@@ -68,30 +78,38 @@ export class RequestContext {
   }
 
   static setDataPermissionConfig(config: DataPermissionConfig | null): void {
-    RequestContext.currentDataPermissionConfig = config;
+    const store = RequestContext.asyncLocalStorage.getStore();
+    if (store) {
+      store.dataPermissionConfig = config;
+    }
   }
 
   static getDataPermissionConfig(): DataPermissionConfig | null {
-    return RequestContext.currentDataPermissionConfig;
+    return RequestContext.asyncLocalStorage.getStore()?.dataPermissionConfig ?? null;
   }
 
   static run<T>(callback: () => T): T {
-    const emptyContext: CurrentUserContext = {
-      userId: "",
-      deptId: null,
-      deptTreePath: null,
-      dataScopes: [],
-      roles: [],
-      perms: [],
-      isRoot: false,
-    };
-    return RequestContext.asyncLocalStorage.run(emptyContext, callback);
+    return RequestContext.asyncLocalStorage.run(
+      {
+        user: {
+          userId: "",
+          deptId: null,
+          deptTreePath: null,
+          dataScopes: [],
+          roles: [],
+          perms: [],
+          isRoot: false,
+        },
+        dataPermissionConfig: null,
+      },
+      callback
+    );
   }
 
   static initUserContext(user: CurrentUserContext): void {
     const store = RequestContext.asyncLocalStorage.getStore();
     if (store) {
-      Object.assign(store, user);
+      store.user = user;
     }
   }
 }
