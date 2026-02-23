@@ -8,8 +8,10 @@ import * as session from "express-session";
 import type { ValidationError } from "class-validator";
 import { BusinessException } from "./common/exceptions/business.exception";
 import { ErrorCode } from "./common/enums/error-code.enum";
+import { Logger } from "@nestjs/common";
 
 async function bootstrap() {
+  const logger = new Logger("Bootstrap");
   // Ensure BigInt is always JSON-serializable (and matches Java Long/BigInteger -> string strategy)
 
   if (typeof (BigInt.prototype as any).toJSON !== "function") {
@@ -89,7 +91,7 @@ async function bootstrap() {
   // Session 配置
   app.use(
     session({
-      secret: configService.get("JWT_SECRET_KEY"),
+      secret: configService.getOrThrow<string>("jwt.secretKey"),
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -102,8 +104,8 @@ async function bootstrap() {
   const portRaw = configService.get("APP_PORT") ?? configService.get("SERVER_PORT") ?? 8000;
   const port = Number(portRaw) || 8000;
   await app.listen(port);
-  console.log(`应用已启动: http://localhost:${port}`);
-  console.log(`接口文档: http://localhost:${port}/api-docs`);
+  logger.log(`应用已启动: http://localhost:${port}`);
+  logger.log(`接口文档: http://localhost:${port}/api-docs`);
 }
 
 void bootstrap();

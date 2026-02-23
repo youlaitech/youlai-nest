@@ -43,7 +43,11 @@ export class RoleDataScope {
     };
   }
 
-  static fromJSON(json: { roleCode: string; dataScope: number; customDeptIds?: number[] }): RoleDataScope {
+  static fromJSON(json: {
+    roleCode: string;
+    dataScope: number;
+    customDeptIds?: number[];
+  }): RoleDataScope {
     return new RoleDataScope(json.roleCode, json.dataScope, json.customDeptIds);
   }
 }

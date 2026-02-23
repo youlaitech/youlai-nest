@@ -20,10 +20,10 @@ import { ToolsService } from "../common/utils/service/tools.service";
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
-        secret: config.get("JWT_SECRET_KEY"),
+        secret: config.getOrThrow<string>("jwt.secretKey"),
         signOptions: {
-          expiresIn: config.get("JWT_EXPIRES_IN"),
-          issuer: config.get("JWT_ISSUER"),
+          expiresIn: config.get<number>("jwt.expiresIn"),
+          issuer: config.get<string>("jwt.issuer"),
         },
       }),
       inject: [ConfigService],

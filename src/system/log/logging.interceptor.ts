@@ -22,7 +22,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const req: any = http.getRequest();
 
     return next.handle().pipe(
-      tap(async (data) => {
+      tap(async (_data) => {
         try {
           const duration = Date.now() - now;
           const userAgent = (req.headers?.["user-agent"] as string) || "";
@@ -30,12 +30,8 @@ export class LoggingInterceptor implements NestInterceptor {
           const log = new SysLog();
           log.module = "SYSTEM";
           log.requestMethod = req.method;
-          // 仅记录 query 和 params
-          log.requestParams = this.safeStringify({
-            query: req.query,
-            params: req.params,
-          });
-          log.responseContent = this.safeStringify(data);
+          log.requestParams = null;
+          log.responseContent = null;
           const url: string = req.originalUrl || req.url;
           log.content = `${req.method} ${url}`;
           log.requestUri = url;
@@ -54,7 +50,7 @@ export class LoggingInterceptor implements NestInterceptor {
           log.createTime = new Date();
 
           await this.logRepository.save(log);
-        } catch (e) {
+        } catch (_e) {
           // swallow logging errors to avoid影响主流程
         }
       })

@@ -23,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
       ignoreExpiration: false, // 是否忽略令牌过期
-      secretOrKey: configService.get("JWT_SECRET_KEY"), // 用于验证签名的密钥
+      secretOrKey: configService.getOrThrow<string>("jwt.secretKey"), // 用于验证签名的密钥
     });
   }
 
@@ -76,7 +76,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         perms = await this.roleService.findPermsByRoleCodes(roles);
       }
 
-      const expiresIn = Number(this.configService.get("JWT_EXPIRES_IN"));
+      const expiresIn = this.configService.get<number>("jwt.expiresIn") ?? 0;
       const refreshTtl = Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn * 10 : undefined;
       await this.redisCacheService.set(
         userSessionKey,

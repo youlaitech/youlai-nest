@@ -1,14 +1,14 @@
 /**
  * WebSocket 用户会话注册表
- * 
+ *
  * 维护WebSocket连接的用户会话信息，支持多设备同时登录。
  * 采用双Map结构实现高效查询：
  * - userSessionsMap: 用户名 -> 会话ID集合（支持多设备）
  * - sessionDetailsMap: 会话ID -> 会话详情（快速定位用户）
  */
 
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { OnlineUserDto } from '../../auth/models/user-session.model';
+import { Injectable, OnModuleDestroy } from "@nestjs/common";
+import { OnlineUserDto } from "../../auth/models/user-session.model";
 
 /**
  * 会话详情（内部使用）
@@ -40,7 +40,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
 
   /**
    * 用户上线（建立WebSocket连接）
-   * 
+   *
    * @param username 用户名
    * @param sessionId WebSocket会话ID
    */
@@ -59,7 +59,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
   /**
    * 用户下线（断开所有WebSocket连接）
    * 移除该用户的所有会话信息
-   * 
+   *
    * @param username 用户名
    */
   userDisconnected(username: string): void {
@@ -75,7 +75,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
   /**
    * 移除指定会话（单设备下线）
    * 当用户某一设备断开连接时调用，保留其他设备的会话
-   * 
+   *
    * @param sessionId WebSocket会话ID
    */
   removeSession(sessionId: string): void {
@@ -97,7 +97,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
 
   /**
    * 获取在线用户数量
-   * 
+   *
    * @returns 当前在线用户数（非会话数）
    */
   getOnlineUserCount(): number {
@@ -106,7 +106,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
 
   /**
    * 获取指定用户的会话数量
-   * 
+   *
    * @param username 用户名
    * @returns 该用户的WebSocket会话数量（多设备登录时大于1）
    */
@@ -117,7 +117,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
 
   /**
    * 获取在线会话总数
-   * 
+   *
    * @returns 所有WebSocket会话的总数（包含多设备）
    */
   getTotalSessionCount(): number {
@@ -126,7 +126,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
 
   /**
    * 检查用户是否在线
-   * 
+   *
    * @param username 用户名
    * @returns 是否在线（至少有一个活跃会话）
    */
@@ -137,7 +137,7 @@ export class UserSessionRegistry implements OnModuleDestroy {
 
   /**
    * 获取所有在线用户列表
-   * 
+   *
    * @returns 在线用户信息列表
    */
   getOnlineUsers(): OnlineUserDto[] {

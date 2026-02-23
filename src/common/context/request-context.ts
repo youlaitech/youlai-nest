@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "async_hooks";
-import { RoleDataScope } from "../models/role-data-scope.model";
+import type { RoleDataScope } from "../models/role-data-scope.model";
 
 /** 当前用户上下文 */
 export interface CurrentUserContext {
@@ -41,15 +41,17 @@ export class RequestContext {
   static setCurrentUser(user: CurrentUserContext | null): void {
     const store = RequestContext.asyncLocalStorage.getStore();
     if (store) {
-      store.user = user || ({
-        userId: "",
-        deptId: null,
-        deptTreePath: null,
-        dataScopes: [],
-        roles: [],
-        perms: [],
-        isRoot: false,
-      } as CurrentUserContext);
+      store.user =
+        user ||
+        ({
+          userId: "",
+          deptId: null,
+          deptTreePath: null,
+          dataScopes: [],
+          roles: [],
+          perms: [],
+          isRoot: false,
+        } as CurrentUserContext);
     }
   }
 

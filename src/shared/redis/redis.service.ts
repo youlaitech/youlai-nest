@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { RedisService as LiaoliaRedisService } from "@liaoliaots/nestjs-redis";
 import type { Redis } from "ioredis";
 
@@ -8,6 +8,7 @@ import type { Redis } from "ioredis";
 @Injectable()
 export class RedisService {
   private readonly client: Redis;
+  private readonly logger = new Logger(RedisService.name);
 
   constructor(private redisService: LiaoliaRedisService) {
     this.client = this.redisService.getOrThrow();
@@ -23,7 +24,7 @@ export class RedisService {
       }
       return true;
     } catch (err) {
-      console.error("Redis set error:", err);
+      this.logger.error("Redis set error", err);
       return false;
     }
   }
@@ -33,7 +34,7 @@ export class RedisService {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
     } catch (err) {
-      console.error("Redis get error:", err);
+      this.logger.error("Redis get error", err);
       return null;
     }
   }
@@ -43,7 +44,7 @@ export class RedisService {
       const result = await this.client.del(key);
       return result === 1;
     } catch (err) {
-      console.error("Redis delete error:", err);
+      this.logger.error("Redis delete error", err);
       return false;
     }
   }
@@ -53,7 +54,7 @@ export class RedisService {
       if (keys.length === 0) return 0;
       return await this.client.del(...keys);
     } catch (err) {
-      console.error("Redis bulk delete error:", err);
+      this.logger.error("Redis bulk delete error", err);
       return 0;
     }
   }
@@ -64,7 +65,7 @@ export class RedisService {
       if (keys.length === 0) return 0;
       return this.delMultiple(keys);
     } catch (err) {
-      console.error("Redis pattern delete error:", err);
+      this.logger.error("Redis pattern delete error", err);
       return 0;
     }
   }
@@ -74,7 +75,7 @@ export class RedisService {
       const result = await this.client.exists(key);
       return result === 1;
     } catch (err) {
-      console.error("Redis exists check error:", err);
+      this.logger.error("Redis exists check error", err);
       return false;
     }
   }
