@@ -69,6 +69,25 @@ export class DeptService {
   }
 
   /**
+   * 根据部门编码或名称查找部门（导入时使用，支持编码或名称匹配）
+   */
+  async findByCodeOrName(codeOrName: string): Promise<SysDept | null> {
+    const value = codeOrName?.trim();
+    if (!value) return null;
+
+    // 先按编码查
+    const deptByCode = await this.deptRepository.findOne({
+      where: { code: value, isDeleted: 0 },
+    });
+    if (deptByCode) return deptByCode;
+
+    // 再按名称查
+    return await this.deptRepository.findOne({
+      where: { name: value, isDeleted: 0 },
+    });
+  }
+
+  /**
    * 创建部门
    */
   async create(createDeptDto: CreateDeptDto) {

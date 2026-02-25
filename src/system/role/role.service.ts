@@ -80,6 +80,37 @@ export class RoleService {
     return roles.map((r) => r.id);
   }
 
+  /**
+   * 根据角色编码或名称查找角色ID（导入时使用，支持编码或名称匹配）
+   */
+  async findRoleIdsByCodesOrNames(codesOrNames: string[]): Promise<string[]> {
+    const items = (codesOrNames || []).map((c) => (c ?? "").trim()).filter(Boolean);
+    if (!items.length) return [];
+
+    // 先按编码查
+    const rolesByCode = await this.roleRepository.find({
+      where: { code: In(items), isDeleted: 0 },
+      select: ["id", "code"],
+    });
+
+    const foundCodes = new Set(rolesByCode.map((r) => r.code));
+    const remaining = items.filter((it) => !foundCodes.has(it));
+
+    // 未匹配的按名称查
+    if (remaining.length) {
+      const rolesByName = await this.roleRepository.find({
+        where: { name: In(remaining), isDeleted: 0 },
+        select: ["id"],
+      });
+      return [...rolesByCode.map((r) => r.id), ...rolesByName.map((r) => r.id)];
+    }
+
+    return rolesByCode.map((r) => r.id);
+  }
+
+  /**
+   * 保存角色（新增或更新）
+   */
   async saveRole(
     roleForm: Partial<CreateRoleDto> & Partial<UpdateRoleDto> & { id?: string | number }
   ) {
@@ -167,8 +198,21 @@ export class RoleService {
     queryBuilder.take(pageSizeSafe);
 
     const [list, total] = await queryBuilder.getManyAndCount();
+
+    const dataScopeLabelMap: Record<number, string> = {
+      [DataScopeEnum.ALL]: "全部数据",
+      [DataScopeEnum.DEPT_AND_SUB]: "部门及子部门数据",
+      [DataScopeEnum.DEPT]: "本部门数据",
+      [DataScopeEnum.SELF]: "本人数据",
+      [DataScopeEnum.CUSTOM]: "自定义部门数据",
+    };
+
+    const data = list.map((item) => ({
+      ...(item as any),
+      dataScopeLabel: dataScopeLabelMap[item.dataScope] ?? "",
+    }));
     return {
-      data: list,
+      data,
       page: {
         pageNum: pageNumSafe,
         pageSize: pageSizeSafe,

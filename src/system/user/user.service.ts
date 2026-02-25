@@ -743,7 +743,7 @@ export class UserService {
             .filter(Boolean)
         : [];
 
-      const roleIds = await this.roleService.findRoleIdsByCodes(roleCodes);
+      const roleIds = await this.roleService.findRoleIdsByCodesOrNames(roleCodes);
       if (!roleIds.length) {
         excelResult.invalidCount++;
         excelResult.messageList.push(`第${line}行：角色不存在或为空`);
@@ -752,7 +752,7 @@ export class UserService {
 
       let deptId: string | undefined;
       if (deptCode) {
-        const dept = await this.deptService.findByCode(deptCode);
+        const dept = await this.deptService.findByCodeOrName(deptCode);
         if (!dept) {
           excelResult.invalidCount++;
           excelResult.messageList.push(`第${line}行：部门不存在`);
