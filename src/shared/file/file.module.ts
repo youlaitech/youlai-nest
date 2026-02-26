@@ -1,9 +1,10 @@
 import { Module } from "@nestjs/common";
-import { OssModule } from "src/shared/oss/oss.module";
+import { FileService } from "./file.service";
 import { FileController } from "./file.controller";
 
 @Module({
-  imports: [OssModule],
   controllers: [FileController],
+  providers: [FileService],
+  exports: [FileService],
 })
 export class FileModule {}

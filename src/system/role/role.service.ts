@@ -295,16 +295,7 @@ export class RoleService {
    * 创建角色
    */
   async create(createRoleDto: CreateRoleDto) {
-    const existRole = await this.roleRepository.findOne({
-      where: { name: createRoleDto.name, isDeleted: 0 },
-    });
-
-    if (existRole) {
-      throw new BusinessException("角色已存在");
-    }
-
-    const role = this.roleRepository.create(createRoleDto);
-    return await this.roleRepository.save(role);
+    return await this.saveRole(createRoleDto);
   }
 
   /**
@@ -334,7 +325,7 @@ export class RoleService {
    * 更新角色
    */
   async update(id: string, updateRoleDto: UpdateRoleDto) {
-    return await this.roleRepository.update(id.toString(), updateRoleDto);
+    return await this.saveRole({ ...updateRoleDto, id });
   }
 
   async updateRoleStatus(roleId: string, status: number): Promise<boolean> {

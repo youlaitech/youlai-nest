@@ -1,10 +1,19 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
 
+/**
+ * 系统日志实体
+ * 日志只需记录创建信息，不需要更新和逻辑删除
+ */
 @Entity("sys_log")
 export class SysLog {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id: string;
 
+  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
+  createBy?: string | null;
+
+  @CreateDateColumn({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
+  createTime: Date;
   @Column({ type: "varchar", length: 50, comment: "日志模块" })
   module: string;
 
@@ -58,10 +67,4 @@ export class SysLog {
 
   @Column({ type: "varchar", length: 100, nullable: true, comment: "终端系统" })
   os: string | null;
-
-  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
-  createBy: string | null;
-
-  @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
-  createTime: Date | null;
 }

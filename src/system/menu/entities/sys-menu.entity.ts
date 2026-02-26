@@ -1,5 +1,17 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
+/**
+ * 系统菜单实体
+ * 
+ * 菜单属于系统元数据，不需要审计字段（create_by/update_by）和逻辑删除，
+ * 因此不继承 BaseEntity，独立定义基础字段。
+ */
 @Entity("sys_menu")
 export class SysMenu {
   @PrimaryGeneratedColumn({ type: "bigint" })
@@ -73,12 +85,12 @@ export class SysMenu {
   @Column({ length: 128, nullable: true, comment: "跳转路径" })
   redirect: string;
 
-  @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
-  createTime: Date;
-
-  @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
-  updateTime: Date;
-
   @Column({ length: 255, nullable: true, comment: "路由参数" })
   params: string;
+
+  @CreateDateColumn({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
+  createTime: Date;
+
+  @UpdateDateColumn({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
+  updateTime: Date;
 }

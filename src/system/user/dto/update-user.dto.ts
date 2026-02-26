@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsEmail } from "class-validator";
+import { IsOptional, IsString, IsNumber, IsArray, IsEmail, ValidateIf } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 
@@ -61,7 +61,8 @@ export class UpdateUserDto {
 
   @ApiProperty({ description: "邮箱" })
   @IsOptional()
-  @IsEmail()
+  @ValidateIf((o) => o.email && o.email.trim() !== "")
+  @IsEmail({}, { message: "邮箱格式不正确" })
   email?: string;
 
   @ApiProperty({ description: "角色ID集合" })

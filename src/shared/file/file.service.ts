@@ -14,10 +14,10 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * 对象存储服务
+ * 文件服务（OSS/MinIO/本地存储）
  */
 @Injectable()
-export class OssService {
+export class FileService {
   /** 当前 OSS 类型：aliyun | minio | local */
   private readonly ossType: "aliyun" | "minio" | "local";
 

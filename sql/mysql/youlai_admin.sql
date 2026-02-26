@@ -540,7 +540,7 @@ CREATE TABLE `sys_user_notice` (
                                    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'id',
                                    `notice_id` bigint NOT NULL COMMENT '公共通知id',
                                    `user_id` bigint NOT NULL COMMENT '用户id',
-                                   `is_read` bigint DEFAULT '0' COMMENT '读取状态（0: 未读, 1: 已读）',
+                                   `is_read` tinyint DEFAULT '0' COMMENT '读取状态（0: 未读, 1: 已读）',
                                    `read_time` datetime COMMENT '阅读时间',
                                    `create_time` datetime NOT NULL COMMENT '创建时间',
                                    `update_time` datetime COMMENT '更新时间',

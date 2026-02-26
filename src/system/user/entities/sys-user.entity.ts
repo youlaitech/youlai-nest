@@ -1,11 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  JoinTable,
+} from "typeorm";
 import { SysRole } from "../../role/entities/sys-role.entity";
+import { BaseEntity } from "../../../common/entities";
 
 @Entity("sys_user")
-export class SysUser {
-  @PrimaryGeneratedColumn({ type: "bigint" })
-  id: string;
-
+export class SysUser extends BaseEntity {
   @Column({ length: 64, comment: "用户名" })
   username: string;
 
@@ -32,26 +35,6 @@ export class SysUser {
 
   @Column({ length: 128, nullable: true, comment: "用户邮箱" })
   email: string;
-
-  @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
-  createTime: Date;
-
-  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "创建人ID" })
-  createBy?: string | null;
-
-  @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
-  updateTime: Date;
-
-  @Column({ name: "update_by", type: "bigint", nullable: true, comment: "修改人ID" })
-  updateBy?: string | null;
-
-  @Column({
-    name: "is_deleted",
-    type: "tinyint",
-    default: 0,
-    comment: "逻辑删除标识(0-未删除 1-已删除)",
-  })
-  isDeleted: number;
 
   @ManyToMany(() => SysRole)
   @JoinTable({

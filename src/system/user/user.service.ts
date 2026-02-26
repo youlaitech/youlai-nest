@@ -96,6 +96,9 @@ export class UserService {
       });
     }
 
+    // 按创建时间倒序排列，最新用户在前面
+    queryBuilder.orderBy("user.createTime", "DESC");
+
     const [list, total] = await queryBuilder
       .skip((pageNumSafe - 1) * pageSizeSafe)
       .take(pageSizeSafe)
@@ -449,11 +452,11 @@ export class UserService {
    * 新增用户
    */
   async create(createUserDto: CreateUserDto): Promise<SysUser> {
-    const { username, password = DEFAULT_PASSWORD } = createUserDto;
+    const { username, password = DEFAULT_PASSWORD, roleIds } = createUserDto;
 
     // 检查用户名是否已存在
     const existingUser = await this.userRepository.findOne({
-      where: { username, isDeleted: 0 },
+      where: { username },
     });
     if (existingUser) {
       throw new BusinessException("用户名已存在");
@@ -470,8 +473,21 @@ export class UserService {
       password: hashedPassword,
     });
 
-    // 新增用户场景仅负责创建用户记录，不涉及会话失效逻辑
-    return await this.userRepository.save(user);
+    // 保存用户
+    const savedUser = await this.userRepository.save(user);
+
+    // 保存用户角色关联
+    if (roleIds && roleIds.length > 0) {
+      const relations = this.userRoleRepository.create(
+        roleIds.map((roleId) => ({
+          userId: savedUser.id,
+          roleId: roleId.toString(),
+        }))
+      );
+      await this.userRoleRepository.save(relations);
+    }
+
+    return savedUser;
   }
 
   async updateUserStatus(userId: string, status: number): Promise<boolean> {

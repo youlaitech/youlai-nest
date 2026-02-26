@@ -9,6 +9,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
+    const isDuplicateEntryError = (ex: unknown): boolean => {
+      if (!ex || typeof ex !== "object") return false;
+      const anyEx = ex as any;
+      const code = anyEx.code;
+      const errno = anyEx.errno;
+      const message = anyEx.message;
+      // MySQL: ER_DUP_ENTRY / errno: 1062
+      if (code === "ER_DUP_ENTRY" || errno === 1062) return true;
+      if (typeof message === "string" && message.includes("Duplicate entry")) return true;
+      return false;
+    };
+
     const normalizeMsg = (value: unknown): string => {
       if (Array.isArray(value)) {
         const items = value
@@ -86,6 +98,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return response
         .status(status || HttpStatus.BAD_REQUEST)
         .json(buildResponseBody(ErrorCode.SYSTEM_ERROR.code, msg));
+    }
+
+    // 数据库唯一约束冲突等（TypeORM QueryFailedError 通常会落到这里）
+    if (isDuplicateEntryError(exception)) {
+      return response
+        .status(HttpStatus.BAD_REQUEST)
+        .json(buildResponseBody(ErrorCode.INTEGRITY_CONSTRAINT_VIOLATION.code, "数据已存在"));
     }
 
     // 处理其他未捕获异常

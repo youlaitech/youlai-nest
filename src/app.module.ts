@@ -18,9 +18,9 @@ import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式�
 import { RedisSharedModule } from "./shared/redis/redis.module";
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
-import { WebsocketModule } from "./platform/websocket/websocket.module";
-import { CodegenModule } from "./platform/codegen/codegen.module";
-import { FileModule } from "./platform/file/file.module";
+import { WebsocketModule } from "./shared/websocket/websocket.module";
+import { CodegenModule } from "./shared/codegen/codegen.module";
+import { FileModule } from "./shared/file/file.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 import { StatisticsModule } from "./system/statistics/statistics.module";
@@ -42,6 +42,7 @@ import { DataScopeGuard } from "./common/guards/data-scope.guard";
 import { PermissionGuard } from "src/common/guards/permission.guard";
 import { DataPermissionInterceptor } from "./common/interceptors/data-permission.interceptor";
 import { initDataPermissionPlugin } from "./common/plugins/data-permission.plugin";
+import { AuditSubscriber } from "./common/subscribers/audit.subscriber";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 
@@ -56,6 +57,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
         ...config.get("typeorm"),
+        subscribers: [AuditSubscriber],
       }),
       inject: [ConfigService],
     }),

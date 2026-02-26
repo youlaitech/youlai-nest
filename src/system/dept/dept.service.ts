@@ -91,6 +91,28 @@ export class DeptService {
    * 创建部门
    */
   async create(createDeptDto: CreateDeptDto) {
+    // 检查部门编码是否已存在
+    if (createDeptDto.code) {
+      const existDept = await this.deptRepository.findOne({
+        where: { code: createDeptDto.code, isDeleted: 0 },
+        select: ["id", "name"],
+      });
+      if (existDept) {
+        throw new BusinessException(`部门编码【${createDeptDto.code}】已存在`);
+      }
+    }
+
+    // 检查部门名称是否已存在
+    if (createDeptDto.name) {
+      const existName = await this.deptRepository.findOne({
+        where: { name: createDeptDto.name, isDeleted: 0 },
+        select: ["id", "name"],
+      });
+      if (existName) {
+        throw new BusinessException(`部门名称【${createDeptDto.name}】已存在`);
+      }
+    }
+
     const treePath = await this.buildTreePath(createDeptDto.parentId);
     const dept = this.deptRepository.create({
       ...createDeptDto,
@@ -125,6 +147,28 @@ export class DeptService {
 
     if (!dept) {
       return null;
+    }
+
+    // 检查部门编码是否已存在（排除当前部门）
+    if (updateDeptDto.code) {
+      const existCode = await this.deptRepository.findOne({
+        where: { code: updateDeptDto.code, isDeleted: 0 },
+        select: ["id", "name"],
+      });
+      if (existCode && existCode.id !== idStr) {
+        throw new BusinessException(`部门编码【${updateDeptDto.code}】已存在`);
+      }
+    }
+
+    // 检查部门名称是否已存在（排除当前部门）
+    if (updateDeptDto.name) {
+      const existName = await this.deptRepository.findOne({
+        where: { name: updateDeptDto.name, isDeleted: 0 },
+        select: ["id", "name"],
+      });
+      if (existName && existName.id !== idStr) {
+        throw new BusinessException(`部门名称【${updateDeptDto.name}】已存在`);
+      }
     }
 
     // 构建更新数据对象

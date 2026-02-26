@@ -1,5 +1,17 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
+/**
+ * 用户通知关联实体
+ * 
+ * 用户-通知关联表由系统自动生成，不需要记录创建人/修改人，
+ * 因此不继承 BaseEntity，独立定义基础字段。
+ */
 @Entity("sys_user_notice")
 export class SysUserNotice {
   @PrimaryGeneratedColumn({ type: "bigint" })
@@ -17,10 +29,10 @@ export class SysUserNotice {
   @Column({ name: "read_time", type: "datetime", nullable: true, comment: "阅读时间" })
   readTime: Date;
 
-  @Column({ name: "create_time", type: "datetime", comment: "创建时间" })
+  @CreateDateColumn({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;
 
-  @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
+  @UpdateDateColumn({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;
 
   @Column({
