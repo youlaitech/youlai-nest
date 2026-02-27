@@ -40,7 +40,7 @@
 
 | 文档名称           | 访问地址                                                                   |
 | ------------------ | -------------------------------------------------------------------------- |
-| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-nest](https://www.youlai.tech/youlai-nest) |
+| 项目介绍与使用指南 | [https://www.youlai.tech/docs/admin/backend/node/](https://www.youlai.tech/docs/admin/backend/node/) |
 
 ## 📁 项目目录
 
