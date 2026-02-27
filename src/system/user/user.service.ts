@@ -454,9 +454,9 @@ export class UserService {
   async create(createUserDto: CreateUserDto): Promise<SysUser> {
     const { username, password = DEFAULT_PASSWORD, roleIds } = createUserDto;
 
-    // 检查用户名是否已存在
+    // 检查用户名是否已存在（排除已删除用户）
     const existingUser = await this.userRepository.findOne({
-      where: { username },
+      where: { username, isDeleted: 0 },
     });
     if (existingUser) {
       throw new BusinessException("用户名已存在");
