@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional } from "class-validator";
+﻿import { IsString, IsNumber, IsOptional } from "class-validator";
 
 /**
  * 角色创建参数

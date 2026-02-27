@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Optional } from "@nestjs/common";
+﻿import { Injectable, NotFoundException, BadRequestException, Optional } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SysConfig } from "./entities/sys-config.entity";

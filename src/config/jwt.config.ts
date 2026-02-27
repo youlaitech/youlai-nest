@@ -1,4 +1,4 @@
-import { registerAs } from "@nestjs/config";
+﻿import { registerAs } from "@nestjs/config";
 
 const jwtConfig = registerAs("jwt", () => ({
   secretKey: process.env.JWT_SECRET_KEY,

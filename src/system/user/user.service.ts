@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
+﻿import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { BusinessException } from "../../common/exceptions/business.exception";
@@ -24,7 +24,7 @@ import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as XLSX from "xlsx";
 import { RoleDataScope } from "../../common/models/role-data-scope.model";
 import { DataScopeUtils } from "../../common/models/role-data-scope.model";
-import { RequestContext } from "src/common/context/request-context";
+import { RequestContext } from "src/core/context/request-context";
 
 /**
  * 用户服务
@@ -910,10 +910,12 @@ export class UserService {
 
     if (rolesChanged) {
       await this.userRoleRepository.delete({ userId: userIdStr });
-      const userRoles = nextRoleIds.map((roleId) => ({
-        userId: userIdStr,
-        roleId,
-      }));
+      const userRoles = this.userRoleRepository.create(
+        nextRoleIds.map((roleId) => ({
+          userId: userIdStr,
+          roleId,
+        }))
+      );
       await this.userRoleRepository.save(userRoles);
     }
 

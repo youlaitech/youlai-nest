@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsArray, IsEmail, ValidateIf } from "class-validator";
+﻿import { IsNotEmpty, IsOptional, IsString, IsNumber, IsArray, IsEmail, ValidateIf } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 
@@ -68,8 +68,22 @@ export class CreateUserDto {
   @IsArray()
   @Transform(({ value }) => {
     if (value === undefined || value === null || value === "") return undefined;
-    if (Array.isArray(value)) return value.map((v) => String(v));
-    return [String(value)];
+    const normalize = (v: unknown): string[] => {
+      const s = String(v);
+      if (s.includes(",")) {
+        return s
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean);
+      }
+      return [s];
+    };
+
+    if (Array.isArray(value)) {
+      return value.flatMap((v) => normalize(v));
+    }
+
+    return normalize(value);
   })
   @IsString({ each: true })
   roleIds?: string[];

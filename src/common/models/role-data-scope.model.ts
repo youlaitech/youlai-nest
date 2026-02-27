@@ -1,4 +1,4 @@
-import { DataScopeEnum } from "../enums/data-scope.enum";
+﻿import { DataScopeEnum } from "../enums/data-scope.enum";
 
 /** 角色数据权限 */
 export class RoleDataScope {

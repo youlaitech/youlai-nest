@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
+﻿import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
 
 /**
  * 系统日志实体

@@ -1,4 +1,4 @@
-// MenuItem 接口
+﻿// MenuItem 接口
 export interface MenuItem {
   parentId: string;
   name: string;

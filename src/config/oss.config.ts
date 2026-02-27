@@ -1,4 +1,4 @@
-import { registerAs } from "@nestjs/config";
+﻿import { registerAs } from "@nestjs/config";
 
 // OSS 对象存储配置
 // 支持 aliyun、minio、local 三种类型，通过 OSS_TYPE 切换

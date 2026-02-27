@@ -1,4 +1,4 @@
-import { SetMetadata } from "@nestjs/common";
+﻿import { SetMetadata } from "@nestjs/common";
 
 export const DATA_PERMISSION_KEY = "data_permission";
 

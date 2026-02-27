@@ -1,4 +1,4 @@
-import { PartialType } from "@nestjs/swagger";
+﻿import { PartialType } from "@nestjs/swagger";
 import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 /**

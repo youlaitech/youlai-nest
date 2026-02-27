@@ -1,4 +1,4 @@
-declare module "velocityjs" {
+﻿declare module "velocityjs" {
   export function render(template: string, context: any, macro?: any): string;
 }
 

@@ -1,4 +1,4 @@
-import type { RoleDataScope } from "../../../common/models/role-data-scope.model";
+﻿import type { RoleDataScope } from "../../../common/models/role-data-scope.model";
 
 /**
  * 用户认证信息接口

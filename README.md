@@ -54,8 +54,11 @@ youlai-nest/
 │  ├─ app.module.ts          # 根模块
 │  ├─ auth/                  # 认证与鉴权模块
 │  ├─ system/                # 系统核心模块（用户/角色/菜单等）
-│  ├─ shared/                # 通用服务（Redis/Logger等）
-│  └─ common/                # 公共能力（拦截器/守卫等）
+│  ├─ core/                  # 框架核心（守卫/过滤器/拦截器/中间件等）
+│  ├─ shared/                # 共享服务模块（Redis/Logger/WebSocket等）
+│  ├─ platform/              # 平台能力模块（代码生成/文件管理等）
+│  ├─ common/                # 公共能力（常量/枚举/异常/工具类等）
+│  └─ config/                # 配置文件
 ├─ sql/                      # 数据库脚本
 ├─ .env                      # 基础环境配置
 ├─ .env.dev                  # 开发环境配置

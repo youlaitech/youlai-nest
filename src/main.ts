@@ -1,8 +1,8 @@
-import { NestFactory, Reflector } from "@nestjs/core";
+﻿import { NestFactory, Reflector } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ValidationPipe, HttpStatus } from "@nestjs/common";
-import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
+import { ResponseInterceptor } from "./core/interceptors/response.interceptor";
 import { ConfigService } from "@nestjs/config";
 import * as session from "express-session";
 import type { ValidationError } from "class-validator";

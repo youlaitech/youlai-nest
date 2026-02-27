@@ -1,4 +1,4 @@
-export type DateFormatOptions = {
+﻿export type DateFormatOptions = {
   format?: string; // currently supports 'yyyy-MM-dd HH:mm:ss' pattern
   timeZone?: string; // IANA time zone string like 'Asia/Shanghai'
 };

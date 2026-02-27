@@ -1,4 +1,4 @@
-import { registerAs } from "@nestjs/config";
+﻿import { registerAs } from "@nestjs/config";
 
 // TypeORM 数据源配置
 

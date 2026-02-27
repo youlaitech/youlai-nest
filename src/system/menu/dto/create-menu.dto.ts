@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
+﻿import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
 import { Transform } from "class-transformer";
 
 /**

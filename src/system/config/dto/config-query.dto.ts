@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+﻿import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
 
 import { BaseQueryDto } from "src/common/dto/base-query.dto";

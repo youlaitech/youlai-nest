@@ -1,4 +1,4 @@
-import {
+﻿import {
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -19,8 +19,8 @@ import { RedisSharedModule } from "./shared/redis/redis.module";
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
 import { WebsocketModule } from "./shared/websocket/websocket.module";
-import { CodegenModule } from "./shared/codegen/codegen.module";
-import { FileModule } from "./shared/file/file.module";
+import { CodegenModule } from "./platform/codegen/codegen.module";
+import { FileModule } from "./platform/file/file.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 import { StatisticsModule } from "./system/statistics/statistics.module";
@@ -28,21 +28,21 @@ import { StatisticsModule } from "./system/statistics/statistics.module";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { LoggerMiddleware } from "./shared/logger/logger.middleware";
-import { RequestContextMiddleware } from "./common/middleware/request-context.middleware";
-import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
-import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
-import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { RequestContextMiddleware } from "./core/middleware/request-context.middleware";
+import { HttpExceptionFilter } from "./core/filters/http-exception.filter";
+import { XRequestInterceptor } from "./core/interceptors/request.interceptor";
+import { JwtAuthGuard } from "./core/guards/jwt-auth.guard";
 import { RedisTokenAuthGuard } from "./auth/redis-token.guard";
 
 import jwtConfig from "./config/jwt.config";
 import typeormConfig from "./config/typeorm.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
-import { DataScopeGuard } from "./common/guards/data-scope.guard";
-import { PermissionGuard } from "src/common/guards/permission.guard";
-import { DataPermissionInterceptor } from "./common/interceptors/data-permission.interceptor";
-import { initDataPermissionPlugin } from "./common/plugins/data-permission.plugin";
-import { AuditSubscriber } from "./common/subscribers/audit.subscriber";
+import { DataScopeGuard } from "./core/guards/data-scope.guard";
+import { PermissionGuard } from "src/core/guards/permission.guard";
+import { DataPermissionInterceptor } from "./core/interceptors/data-permission.interceptor";
+import { initDataPermissionPlugin } from "./core/plugins/data-permission.plugin";
+import { AuditSubscriber } from "./core/subscribers/audit.subscriber";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 

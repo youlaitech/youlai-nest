@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from "@nestjs/common";
+﻿import { HttpException, HttpStatus } from "@nestjs/common";
 import { ErrorCode } from "../enums/error-code.enum";
 
 // 增强类型定义

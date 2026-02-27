@@ -1,10 +1,11 @@
-import { Injectable, LoggerService } from "@nestjs/common";
+﻿import { Injectable, LoggerService } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Inject } from "@nestjs/common";
 import { Logger } from "winston";
 
 /**
  * 应用日志服务
+ * 封装 Winston，提供统一的日志接口
  */
 @Injectable()
 export class AppLogger implements LoggerService {

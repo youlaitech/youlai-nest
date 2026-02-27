@@ -1,4 +1,4 @@
-import { Column, Entity } from "typeorm";
+﻿import { Column, Entity } from "typeorm";
 import { BaseEntity } from "../../../common/entities";
 
 @Entity("sys_role")
