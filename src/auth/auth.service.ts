@@ -10,7 +10,7 @@ import { LoginResultDto } from "./dto/login-result.dto";
 import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as bcrypt from "bcrypt";
-import { RedisService } from "src/shared/redis/redis.service";
+import { RedisService } from "src/core/redis/redis.service";
 
 /**
  * 认证服务

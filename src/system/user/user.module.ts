@@ -7,7 +7,7 @@ import { SysUserRole } from "./entities/sys-user-role.entity";
 import { RoleModule } from "../role/role.module";
 import { DeptModule } from "../dept/dept.module";
 import { MenuModule } from "../menu/menu.module";
-import { RedisSharedModule } from "src/shared/redis/redis.module";
+import { RedisSharedModule } from "src/core/redis/redis.module";
 
 @Module({
   imports: [

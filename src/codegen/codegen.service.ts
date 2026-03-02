@@ -44,50 +44,50 @@ export class CodegenService {
   };
 
   private readonly templateConfigs: Record<TemplateName, TemplateConfig> = {
-    API: { templatePath: "codegen/api.ts.vm", subpackageName: "api", extension: ".ts" },
+    API: { templatePath: "frontend/api.ts.vm", subpackageName: "api", extension: ".ts" },
     API_TYPES: {
-      templatePath: "codegen/api-types.ts.vm",
+      templatePath: "frontend/api-types.ts.vm",
       subpackageName: "types",
       extension: ".ts",
     },
-    VIEW: { templatePath: "codegen/index.vue.vm", subpackageName: "views", extension: ".vue" },
+    VIEW: { templatePath: "frontend/index.vue.vm", subpackageName: "views", extension: ".vue" },
     Controller: {
-      templatePath: "codegen/controller.ts.vm",
+      templatePath: "backend/controller.ts.vm",
       subpackageName: "",
       extension: ".ts",
     },
     Service: {
-      templatePath: "codegen/service.ts.vm",
+      templatePath: "backend/service.ts.vm",
       subpackageName: "",
       extension: ".ts",
     },
     Module: {
-      templatePath: "codegen/module.ts.vm",
+      templatePath: "backend/module.ts.vm",
       subpackageName: "",
       extension: ".ts",
     },
     Entity: {
-      templatePath: "codegen/entity.ts.vm",
+      templatePath: "backend/entity.ts.vm",
       subpackageName: "entities",
       extension: ".ts",
     },
     DtoQuery: {
-      templatePath: "codegen/dto-query.ts.vm",
+      templatePath: "backend/dto-query.ts.vm",
       subpackageName: "dto",
       extension: ".ts",
     },
     DtoForm: {
-      templatePath: "codegen/dto-form.ts.vm",
+      templatePath: "backend/dto-form.ts.vm",
       subpackageName: "dto",
       extension: ".ts",
     },
     DtoCreate: {
-      templatePath: "codegen/dto-create.ts.vm",
+      templatePath: "backend/dto-create.ts.vm",
       subpackageName: "dto",
       extension: ".ts",
     },
     DtoUpdate: {
-      templatePath: "codegen/dto-update.ts.vm",
+      templatePath: "backend/dto-update.ts.vm",
       subpackageName: "dto",
       extension: ".ts",
     },
@@ -108,10 +108,10 @@ export class CodegenService {
       return templateConfig.templatePath;
     }
     if (templateName === "API") {
-      return "codegen/api.js.vm";
+      return "frontend/api.js.vm";
     }
     if (templateName === "VIEW") {
-      return "codegen/index.js.vue.vm";
+      return "frontend/index.js.vue.vm";
     }
     return templateConfig.templatePath;
   }
@@ -568,9 +568,9 @@ export class CodegenService {
     let effectivePath = templatePath;
     if (templateName === "VIEW" && pageType === "curd") {
       if (effectivePath.endsWith("index.js.vue.vm")) {
-        effectivePath = effectivePath.replace("index.js.vue.vm", "index.curd.js.vue.vm");
+        effectivePath = effectivePath.replace("frontend/index.js.vue.vm", "frontend/index.curd.js.vue.vm");
       } else if (effectivePath.endsWith("index.vue.vm")) {
-        effectivePath = effectivePath.replace("index.vue.vm", "index.curd.vue.vm");
+        effectivePath = effectivePath.replace("frontend/index.vue.vm", "frontend/index.curd.vue.vm");
       }
     }
 

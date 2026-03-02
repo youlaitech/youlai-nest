@@ -2,7 +2,7 @@
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigService } from "@nestjs/config";
-import { RedisService } from "src/shared/redis/redis.service";
+import { RedisService } from "src/core/redis/redis.service";
 import { RoleService } from "src/system/role/role.service";
 import { ROOT_ROLE_CODE } from "src/common/constants";
 

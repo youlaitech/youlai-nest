@@ -8,7 +8,7 @@
  */
 
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
-import { OnlineUserDto } from "../../auth/models/user-session.model";
+import { OnlineUserDto } from "../auth/models/user-session.model";
 
 /**
  * 会话详情（内部使用）

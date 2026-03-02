@@ -19,7 +19,7 @@ import { Public } from "../common/decorators/public.decorator";
 import { ToolsService } from "../common/utils/service/tools.service";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
-import { RedisService } from "../shared/redis/redis.service";
+import { RedisService } from "../core/redis/redis.service";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 
 /**

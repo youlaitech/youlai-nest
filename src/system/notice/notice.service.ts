@@ -6,7 +6,7 @@ import { SysUserNotice } from "./entities/sys-user-notice.entity";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
-import { WebsocketGateway } from "src/shared/websocket/websocket.gateway";
+import { WebsocketGateway } from "src/websocket/websocket.gateway";
 
 /**
  * 通知公告服务

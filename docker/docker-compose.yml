@@ -1,0 +1,55 @@
+# 有来后台管理系统(Nest.js) Docker Compose 配置
+# 使用方法：在 docker 目录下执行 docker-compose up -d
+
+networks:
+  youlai-nest:
+    driver: bridge
+
+services:
+  # MongoDB 数据库
+  mongodb:
+    image: mongo:7.0
+    container_name: youlai-nest-mongodb
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./mongodb/data:/data/db
+    ports:
+      - 27017:27017
+    networks:
+      - youlai-nest
+
+  # Redis 缓存
+  redis:
+    image: redis:7.2.3
+    container_name: youlai-nest-redis
+    restart: unless-stopped
+    command: redis-server --requirepass 123456 --appendonly no
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./redis/data:/data
+    ports:
+      - 6379:6379
+    networks:
+      - youlai-nest
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:RELEASE.2024-07-16T23-46-41Z
+    container_name: youlai-nest-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - TZ=Asia/Shanghai
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - ./minio/data:/data
+      - ./minio/config:/root/.minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    networks:
+      - youlai-nest

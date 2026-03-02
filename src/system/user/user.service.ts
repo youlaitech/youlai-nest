@@ -11,7 +11,7 @@ import { DEFAULT_PASSWORD, ROOT_ROLE_CODE } from "src/common/constants";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Not } from "typeorm";
 import { ConfigService } from "@nestjs/config";
-import { RedisService } from "src/shared/redis/redis.service";
+import { RedisService } from "src/core/redis/redis.service";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import * as bcrypt from "bcrypt";

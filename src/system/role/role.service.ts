@@ -11,7 +11,7 @@ import { MenuService } from "../menu/menu.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
 import { ROOT_ROLE_CODE } from "src/common/constants";
-import { RedisService } from "src/shared/redis/redis.service";
+import { RedisService } from "src/core/redis/redis.service";
 import { RoleDataScope } from "../../common/models/role-data-scope.model";
 import { DataScopeEnum } from "../../common/enums/data-scope.enum";
 

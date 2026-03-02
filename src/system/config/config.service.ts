@@ -4,7 +4,7 @@ import { Repository } from "typeorm";
 import { SysConfig } from "./entities/sys-config.entity";
 import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
-import { RedisService } from "src/shared/redis/redis.service";
+import { RedisService } from "src/core/redis/redis.service";
 
 /**
  * 系统配置服务

@@ -7,7 +7,7 @@ import { SysRoleMenu } from "./entities/sys-role-menu.entity";
 import { SysRoleDept } from "./entities/sys-role-dept.entity";
 import { MenuModule } from "../menu/menu.module";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
-import { RedisSharedModule } from "src/shared/redis/redis.module";
+import { RedisSharedModule } from "src/core/redis/redis.module";
 
 @Module({
   imports: [

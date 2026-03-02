@@ -36,3 +36,7 @@ lerna-debug.log*
 
 .history
 .env.youlai
+
+# Docker 数据目录
+docker/*/data
+docker/*/config

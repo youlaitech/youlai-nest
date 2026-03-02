@@ -7,8 +7,8 @@ import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtStrategy } from "./jwt.strategy";
-import { RedisSharedModule } from "../shared/redis/redis.module";
-import { RedisService } from "../shared/redis/redis.service";
+import { RedisSharedModule } from "../core/redis/redis.module";
+import { RedisService } from "../core/redis/redis.service";
 import { ToolsService } from "../common/utils/service/tools.service";
 
 @Module({
