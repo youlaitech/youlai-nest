@@ -246,7 +246,7 @@ export class CodegenService {
         id: String(config.id),
         tableName: config.table_name,
         moduleName: config.module_name,
-        packageName: config.package_name,
+        packageName: this.codegenConfig.defaultPackageName,
         businessName: config.business_name,
         entityName: config.entity_name,
         author: config.author,
@@ -338,7 +338,7 @@ export class CodegenService {
     );
 
     const moduleName = body.moduleName || this.codegenConfig.defaultModuleName;
-    const packageName = body.packageName || this.codegenConfig.defaultPackageName;
+    const packageName = this.codegenConfig.defaultPackageName;
     const businessName = body.businessName || tableName;
     const entityName = body.entityName || toPascalCase(tableName);
     const author = body.author || this.codegenConfig.defaultAuthor;
