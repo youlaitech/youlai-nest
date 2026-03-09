@@ -38,13 +38,9 @@ export class UserQueryDto extends BaseQueryDto {
   @IsString({ each: true })
   roleIds?: string[];
 
-  @ApiProperty({ description: "创建开始时间", required: false })
+  @ApiProperty({ description: "创建时间范围", required: false, type: [String] })
   @IsOptional()
-  @IsString()
-  startTime?: string;
-
-  @ApiProperty({ description: "创建结束时间", required: false })
-  @IsOptional()
-  @IsString()
-  endTime?: string;
+  @IsArray()
+  @IsString({ each: true })
+  createTime?: string[];
 }

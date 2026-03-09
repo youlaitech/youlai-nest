@@ -10,7 +10,6 @@
   Delete,
 } from "@nestjs/common";
 
-import { Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/login-request.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
@@ -73,7 +72,7 @@ export class AuthController {
 
   @ApiOperation({ summary: "注销登录" })
   @Delete("logout")
-  async logout(@Req() req: Request) {
+  async logout(@Req() req: any) {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring("Bearer ".length);

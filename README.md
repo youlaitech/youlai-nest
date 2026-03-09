@@ -38,14 +38,11 @@
 
 ## 📚 项目文档
 
-| 文档名称           | 访问地址                                                                   |
-| ------------------ | -------------------------------------------------------------------------- |
+| 文档名称           | 访问地址                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
 | 项目介绍与使用指南 | [https://www.youlai.tech/docs/admin/backend/node/](https://www.youlai.tech/docs/admin/backend/node/) |
 
 ## 📁 项目目录
-
-<details>
-<summary> 目录结构 </summary>
 
 ```text
 youlai-nest/
@@ -55,18 +52,18 @@ youlai-nest/
 │  ├─ auth/                  # 认证与鉴权模块
 │  ├─ system/                # 系统核心模块（用户/角色/菜单等）
 │  ├─ core/                  # 框架核心（守卫/过滤器/拦截器/中间件等）
-│  ├─ shared/                # 共享服务模块（Redis/Logger/WebSocket等）
-│  ├─ platform/              # 平台能力模块（代码生成/文件管理等）
+│  ├─ codegen/               # 代码生成模块
+│  ├─ file/                  # 文件管理模块
+│  ├─ websocket/             # WebSocket 模块
 │  ├─ common/                # 公共能力（常量/枚举/异常/工具类等）
-│  └─ config/                # 配置文件
+│  ├─ config/                # 配置文件
+│  └─ typings/               # 类型定义
 ├─ sql/                      # 数据库脚本
 ├─ .env                      # 基础环境配置
 ├─ .env.dev                  # 开发环境配置
 ├─ .env.prod                 # 生产环境配置
 └─ package.json              # 项目配置与脚本
 ```
-
-</details>
 
 ## 🚀 快速启动
 
@@ -144,6 +141,9 @@ docker compose up -d --build
 
 ## 💖 技术交流
 
-- **问题反馈**：[Gitee Issues](https://gitee.com/youlaiorg/youlai-nest/issues)
-- **技术交流群**：[QQ 群：950387562](https://qm.qq.com/cgi-bin/qm/qr?k=U57IDw7ufwuzMA4qQ7BomwZ44hpHGkLg)
-- **博客教程**：[https://www.youlai.tech](https://www.youlai.tech)
+① 关注「有来技术」公众号，点击菜单 **交流群** 获取加群二维码（此举防止广告进群，
+感谢理解和支持）。
+
+② 直接添加微信 **`haoxianrui`** 备注「前端/后端/全栈」。
+
+![有来技术公众号](https://foruda.gitee.com/images/1737108820762592766/3390ed0d_716974.png)

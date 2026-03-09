@@ -4,14 +4,15 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 import { ConfigService } from "@nestjs/config";
 import { RedisService } from "src/core/redis/redis.service";
 import { RoleService } from "src/system/role/role.service";
-import { ROOT_ROLE_CODE } from "src/common/constants";
+import { RedisConstants } from "src/common/constants/redis.constants";
 
 /**
  * JWT 认证策略
  *
- * 解析并验证 JWT 令牌
- * 将令牌载荷转换为标准化的用户对象
+ * 解析并验证 JWT 令牌，将令牌载荷转换为标准化的用户对象
  * 处理令牌过期、签名有效性等底层验证
+ *
+ * 注意：权限标识（perms）不在此处获取，而是在权限守卫中从角色权限缓存动态读取
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -21,9 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly roleService: RoleService
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Authorization Header 提取 Bearer Token
-      ignoreExpiration: false, // 是否忽略令牌过期
-      secretOrKey: configService.getOrThrow<string>("jwt.secretKey"), // 用于验证签名的密钥
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: configService.getOrThrow<string>("jwt.secretKey"),
     });
   }
 
@@ -42,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // 校验 Token 版本号
     const tokenVersion: number = payload.tokenVersion ?? 0;
-    const versionKey = `auth:user:token_version:${userId}`;
+    const versionKey = `${RedisConstants.Auth.USER_TOKEN_VERSION}:${userId}`;
     const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
     const currentVersion = currentVersionRaw ?? 0;
 
@@ -53,7 +54,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // 校验黑名单
     const jti: string | undefined = payload.jti;
     if (jti) {
-      const blacklistKey = `auth:token:blacklist:${jti}`;
+      const blacklistKey = `${RedisConstants.Auth.TOKEN_BLACKLIST}:${jti}`;
       const inBlacklist = await this.redisCacheService.hasKey(blacklistKey);
       if (inBlacklist) {
         throw new UnauthorizedException("Token 已失效，请重新登录");
@@ -65,39 +66,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // 获取角色的数据权限列表
     const dataScopes = await this.roleService.getRoleDataScopes(roles);
 
-    const userSessionKey = `auth:user:jwt_session:${userId}`;
-    const cachedSession = await this.redisCacheService.get<any>(userSessionKey);
-
-    let perms: string[] = Array.isArray(cachedSession?.perms) ? cachedSession.perms : [];
-    if (perms.length === 0) {
-      if (roles.includes(ROOT_ROLE_CODE)) {
-        perms = await this.roleService.findAllPerms();
-      } else {
-        perms = await this.roleService.findPermsByRoleCodes(roles);
-      }
-
-      const expiresIn = this.configService.get<number>("jwt.expiresIn") ?? 0;
-      const refreshTtl = Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn * 10 : undefined;
-      await this.redisCacheService.set(
-        userSessionKey,
-        {
-          userId,
-          username: payload.username,
-          deptId: payload.deptId,
-          dataScopes,
-          deptTreePath: payload.deptTreePath,
-          roles,
-          perms,
-        },
-        refreshTtl
-      );
-    }
-
     return {
       userId,
       username: payload.username,
       roles,
-      perms,
       deptId: payload.deptId,
       dataScopes,
       deptTreePath: payload.deptTreePath,

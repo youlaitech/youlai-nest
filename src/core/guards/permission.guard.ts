@@ -1,22 +1,33 @@
-﻿import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
+﻿import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 
 import { ROOT_ROLE_CODE } from "../../common/constants";
 import { METADATA } from "../../common/constants/metadata.constant";
 import { IS_PUBLIC_KEY } from "../../common/decorators/public.decorator";
+import { RolePermService } from "../../system/role/role-perm.service";
 
-@Injectable()
 /**
  * RBAC 权限守卫
  *
- * - Public 装饰器标记的接口直接放行
- * - Permissions 装饰器标记的接口，根据 request.user.perms 判断是否具备任一权限
- * - 角色包含 ROOT_ROLE_CODE 视为超级管理员，跳过权限校验
+ * 权限校验流程：
+ * 1. Public 装饰器标记的接口直接放行
+ * 2. 超级管理员（ROOT_ROLE_CODE）直接放行
+ * 3. 未声明权限要求的接口放行
+ * 4. 从角色权限缓存中获取用户权限，校验是否具备所需权限
  */
+@Injectable()
 export class PermissionGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly rolePermService: RolePermService
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     // Public 接口不做权限校验
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -28,10 +39,10 @@ export class PermissionGuard implements CanActivate {
     }
 
     // 读取控制器/方法上声明的权限标识
-    const requiredPerms = this.reflector.getAllAndOverride<string[]>(METADATA.PERMISSIONS, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPerms = this.reflector.getAllAndOverride<string[]>(
+      METADATA.PERMISSIONS,
+      [context.getHandler(), context.getClass()]
+    );
 
     // 未声明权限则视为不需要鉴权
     if (!requiredPerms?.length) {
@@ -47,8 +58,10 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const perms: string[] = Array.isArray(user?.perms) ? user.perms : [];
+    // 从角色权限缓存获取用户权限
+    const perms = await this.rolePermService.getPermsByRoleCodes(roles);
 
+    // 校验是否具备任一所需权限
     const hasPerm = requiredPerms.some((perm) => perms.includes(perm));
     if (!hasPerm) {
       throw new ForbiddenException("权限不足");

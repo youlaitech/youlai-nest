@@ -1,8 +1,8 @@
 {
   "name": "youlai-nest",
-  "version": "4.2.0",
-  "description": "",
-  "author": "youlai",
+  "version": "4.2.1",
+  "description": "🌈 基于 Node.js、NestJS、TypeORM、Vite 构建的企业级权限管理后端，是 vue3-element-admin 配套的官方 Node.js 实现。",
+  "author": "youlaitech",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -41,6 +41,7 @@
     "@nestjs/swagger": "^11.2.5",
     "@nestjs/typeorm": "^11.0.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/ws": "^8.18.1",
     "ali-oss": "^6.23.0",
     "bcrypt": "^6.0.0",
     "chalk": "^4.1.2",
@@ -60,7 +61,6 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.14",
     "rxjs": "^7.8.2",
-    "ws": "^8.18.3",
     "svg-captcha": "^1.4.0",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.28",
@@ -68,6 +68,7 @@
     "velocityjs": "^2.1.5",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
+    "ws": "^8.19.0",
     "xlsx": "^0.18.5",
     "xmcommon": "^1.1.0"
   },

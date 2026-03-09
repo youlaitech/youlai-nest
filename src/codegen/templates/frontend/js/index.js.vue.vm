@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
-    <div class="search-container">
-      <el-form ref="queryFormRef" :model="queryParams" :inline="true">
+    <div class="filter-section">
+      <el-form ref="queryFormRef" :model="queryParams" :inline="true" label-width="auto">
         #foreach($fieldConfig in $fieldConfigs)
           #if($fieldConfig.isShowInQuery == 1)
             <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
@@ -95,29 +95,34 @@
       </el-form>
     </div>
 
-    <el-card shadow="never">
-      <div class="mb-10px">
-        <el-button
-            v-hasPerm="['${moduleName}:${entityKebab}:create']"
-            type="success"
-            icon="plus"
-            @click="handleOpenDialog()"
-        >新增</el-button>
-        <el-button
-            v-hasPerm="['${moduleName}:${entityKebab}:delete']"
-            type="danger"
-            :disabled="removeIds.length === 0"
-            icon="delete"
-            @click="handleDelete()"
-        >删除</el-button>
+    <el-card shadow="hover" class="table-section">
+      <div class="table-section__toolbar">
+        <div class="table-section__toolbar--actions">
+          <el-button
+              v-hasPerm="['${moduleName}:${entityKebab}:create']"
+              type="success"
+              icon="plus"
+              @click="handleCreateClick()"
+          >新增</el-button>
+          <el-button
+              v-hasPerm="['${moduleName}:${entityKebab}:delete']"
+              type="danger"
+              :disabled="!hasSelection"
+              icon="delete"
+              @click="handleDelete()"
+          >删除</el-button>
+        </div>
       </div>
 
       <el-table
         ref="dataTableRef"
         v-loading="loading"
         :data="pageData"
-        highlight-current-row
         border
+        stripe
+        highlight-current-row
+        class="table-section__content"
+        row-key="id"
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" align="center" />
@@ -126,7 +131,7 @@
             #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
               <el-table-column label="$fieldConfig.fieldComment" width="150" align="center">
                 <template #default="scope">
-                  <DictLabel v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+                  <DictTag v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
                 </template>
               </el-table-column>
             #else
@@ -148,7 +153,7 @@
                 size="small"
                 link
                 icon="edit"
-                @click="handleOpenDialog(String(scope.row.id))"
+                @click="handleEditClick(String(scope.row.id))"
             >
               编辑
             </el-button>
@@ -171,7 +176,7 @@
           v-model:total="total"
           v-model:page="queryParams.pageNum"
           v-model:limit="queryParams.pageSize"
-          @pagination="handleQuery()"
+          @pagination="fetchList"
       />
     </el-card>
 
@@ -180,7 +185,7 @@
         v-model="dialog.visible"
         :title="dialog.title"
         width="500px"
-        @close="handleCloseDialog"
+        @close="closeDialog"
     >
       <el-form ref="dataFormRef" :model="formData" :rules="rules" label-width="100px">
           #foreach($fieldConfig in $fieldConfigs)
@@ -193,7 +198,7 @@
                       />
                     #elseif($fieldConfig.formType == "SELECT")
                         #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <Dict v-model="formData.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+                          <DictSelect v-model="formData.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
                         #else
                           <el-select v-model="formData.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
                             <el-option :value="0" label="选项一"/>
@@ -202,7 +207,7 @@
                         #end
                     #elseif($fieldConfig.formType == "RADIO")
                         #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <Dict v-model="formData.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
+                          <DictSelect v-model="formData.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
                         #else
                           <el-radio-group v-model="formData.$fieldConfig.fieldName">
                             <el-radio :value="0">选项一</el-radio>
@@ -211,7 +216,7 @@
                         #end
                     #elseif($fieldConfig.formType == "CHECK_BOX")
                         #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <Dict v-model="formData.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
+                          <DictSelect v-model="formData.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
                         #else
                           <el-checkbox-group v-model="formData.$fieldConfig.fieldName">
                             <el-checkbox :value="0">选项一</el-checkbox>
@@ -260,7 +265,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="handleSubmit()">确定</el-button>
-          <el-button @click="handleCloseDialog()">取消</el-button>
+          <el-button @click="closeDialog()">取消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -268,18 +273,20 @@
 </template>
 
 <script setup>
+  import { onMounted, reactive, ref } from "vue";
+  import { ElMessage, ElMessageBox } from "element-plus";
+  import { useTableSelection } from "@/composables";
+  import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
+
   defineOptions({
     name: "${entityName}",
     inheritAttrs: false,
   });
 
-  import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
-
   const queryFormRef = ref();
   const dataFormRef = ref();
 
   const loading = ref(false);
-  const removeIds = ref([]);
   const total = ref(0);
 
   const queryParams = reactive({
@@ -290,7 +297,6 @@
   // $!{businessName}表格数据
   const pageData = ref([]);
 
-  // 弹窗
   const dialog = reactive({
     title: "",
     visible: false,
@@ -310,42 +316,57 @@
       #end
   });
 
+  const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection();
+
+  async function fetchList() {
+    loading.value = true;
+    try {
+      const data = await ${entityName}API.getPage(queryParams);
+      pageData.value = data.list;
+      total.value = data.total ?? 0;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** 查询$!{businessName} */
   function handleQuery() {
-    loading.value = true;
-          ${entityName}API.getPage(queryParams)
-        .then((data) => {
-          pageData.value = data.list;
-          total.value = data.total ?? 0;
-        })
-        .finally(() => {
-          loading.value = false;
-        });
+    queryParams.pageNum = 1;
+    fetchList();
   }
 
   /** 重置$!{businessName}查询 */
   function handleResetQuery() {
     queryFormRef.value?.resetFields();
-    queryParams.pageNum = 1;
     handleQuery();
   }
 
-  /** 行复选框选中记录选中ID集合 */
-  function handleSelectionChange(selection) {
-    removeIds.value = selection.map((item) => String(item.id));
+  function openDialog() {
+    dialog.visible = true;
   }
 
-  /** 打开$!{businessName}弹窗 */
-  function handleOpenDialog(id) {
-    dialog.visible = true;
-    if (id) {
-      dialog.title = "修改$!{businessName}";
-            ${entityName}API.getFormData(id).then((data) => {
-        Object.assign(formData, data);
-      });
-    } else {
-      dialog.title = "新增$!{businessName}";
-    }
+  function closeDialog() {
+    dialog.visible = false;
+    resetForm();
+  }
+
+  function resetForm() {
+    dataFormRef.value?.resetFields();
+    dataFormRef.value?.clearValidate();
+    formData.id = undefined;
+  }
+
+  async function handleCreateClick() {
+    dialog.title = "新增$!{businessName}";
+    openDialog();
+  }
+
+  async function handleEditClick(id) {
+    dialog.title = "修改$!{businessName}";
+          ${entityName}API.getFormData(id).then((data) => {
+      Object.assign(formData, data);
+      openDialog();
+    });
   }
 
   /** 提交$!{businessName}表单 */
@@ -358,7 +379,7 @@
                 ${entityName}API.update(id, formData)
               .then(() => {
                 ElMessage.success("修改成功");
-                handleCloseDialog();
+                closeDialog();
                 handleResetQuery();
               })
               .finally(() => (loading.value = false));
@@ -366,7 +387,7 @@
                 ${entityName}API.create(formData)
               .then(() => {
                 ElMessage.success("新增成功");
-                handleCloseDialog();
+                closeDialog();
                 handleResetQuery();
               })
               .finally(() => (loading.value = false));
@@ -375,17 +396,9 @@
     });
   }
 
-  /** 关闭$!{businessName}弹窗 */
-  function handleCloseDialog() {
-    dialog.visible = false;
-    dataFormRef.value?.resetFields();
-    dataFormRef.value?.clearValidate();
-    formData.id = undefined;
-  }
-
   /** 删除$!{businessName} */
   function handleDelete(id) {
-    const ids = [id || removeIds.value].join(",");
+    const ids = [id || selectedIds.value].join(",");
     if (!ids) {
       ElMessage.warning("请勾选删除项");
       return;

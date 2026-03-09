@@ -1,11 +1,4 @@
-﻿import {
-  Controller,
-  Delete,
-  Post,
-  Query,
-  UploadedFile,
-  UseInterceptors,
-} from "@nestjs/common";
+﻿import { Controller, Delete, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { FileService } from "./file.service";

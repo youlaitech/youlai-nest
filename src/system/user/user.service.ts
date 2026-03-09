@@ -4,6 +4,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { RoleService } from "../role/role.service";
 import { DeptService } from "../dept/dept.service";
+import { RolePermService } from "../role/role-perm.service";
 import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
@@ -23,7 +24,6 @@ import type { UserProfileDto } from "./dto/user-profile.dto";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as XLSX from "xlsx";
 import { RoleDataScope } from "../../common/models/role-data-scope.model";
-import { DataScopeUtils } from "../../common/models/role-data-scope.model";
 import { RequestContext } from "src/core/context/request-context";
 
 /**
@@ -36,6 +36,8 @@ export class UserService {
     private readonly roleService: RoleService,
     @Inject(forwardRef(() => DeptService))
     private readonly deptService: DeptService,
+    @Inject(forwardRef(() => RolePermService))
+    private readonly rolePermService: RolePermService,
     @InjectRepository(SysUser)
     private userRepository: Repository<SysUser>,
     @InjectRepository(SysUserRole)
@@ -53,8 +55,7 @@ export class UserService {
     deptId?: string,
     keywords?: string,
     status?: number,
-    startTime?: string,
-    endTime?: string
+    createTime?: string[]
   ) {
     const pageNumSafe = Number(pageNum) > 0 ? Number(pageNum) : 1;
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
@@ -89,11 +90,24 @@ export class UserService {
       queryBuilder.andWhere("user.status = :status", { status });
     }
 
-    if (startTime && endTime) {
-      queryBuilder.andWhere("user.createTime BETWEEN :startTime AND :endTime", {
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-      });
+    // 日期筛选：createTime 数组 [startTime, endTime]
+    if (createTime && createTime.length >= 1) {
+      const startTime = createTime[0];
+      if (startTime) {
+        queryBuilder.andWhere("user.createTime >= :startTime", {
+          startTime: new Date(startTime),
+        });
+      }
+    }
+    if (createTime && createTime.length >= 2) {
+      const endTime = createTime[1];
+      if (endTime) {
+        const endDate = new Date(endTime);
+        endDate.setHours(23, 59, 59, 999);
+        queryBuilder.andWhere("user.createTime <= :endTime", {
+          endTime: endDate,
+        });
+      }
     }
 
     // 按创建时间倒序排列，最新用户在前面
@@ -176,8 +190,7 @@ export class UserService {
     deptId?: string,
     keywords?: string,
     status?: number,
-    startTime?: string,
-    endTime?: string
+    createTime?: string[]
   ) {
     const queryBuilder = this.userRepository.createQueryBuilder("user");
     queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
@@ -208,11 +221,24 @@ export class UserService {
       queryBuilder.andWhere("user.status = :status", { status });
     }
 
-    if (startTime && endTime) {
-      queryBuilder.andWhere("user.createTime BETWEEN :startTime AND :endTime", {
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-      });
+    // 日期筛选：createTime 数组 [startTime, endTime]
+    if (createTime && createTime.length >= 1) {
+      const startTime = createTime[0];
+      if (startTime) {
+        queryBuilder.andWhere("user.createTime >= :startTime", {
+          startTime: new Date(startTime),
+        });
+      }
+    }
+    if (createTime && createTime.length >= 2) {
+      const endTime = createTime[1];
+      if (endTime) {
+        const endDate = new Date(endTime);
+        endDate.setHours(23, 59, 59, 999);
+        queryBuilder.andWhere("user.createTime <= :endTime", {
+          endTime: endDate,
+        });
+      }
     }
 
     const list = await queryBuilder.orderBy("user.createTime", "DESC").getMany();
@@ -270,8 +296,11 @@ export class UserService {
 
   /**
    * 获取用户认证凭证信息
+   *
+   * 用于登录认证阶段，返回用户的基本信息和权限相关数据
+   * 权限标识（perms）不在此处获取，而是在权限校验时从角色权限缓存动态读取
    */
-  async getAuthCredentialsByUsername(username: string): Promise<UserAuthInfo> {
+  async getAuthCredentialsByUsername(username: string): Promise<UserAuthInfo | null> {
     const user = await this.userRepository.findOne({
       where: { username, isDeleted: 0 },
       relations: ["roles"],
@@ -288,37 +317,36 @@ export class UserService {
     // 获取多角色数据权限列表
     const dataScopes = await this.roleService.getRoleDataScopes(roleCodes);
 
-    // 兼容旧版本：取最大权限
-    const dataScope = DataScopeUtils.getMaxDataScope(dataScopes);
-
-    let perms: string[] = [];
-    if (roleCodes.includes(ROOT_ROLE_CODE)) {
-      perms = await this.roleService.findAllPerms();
-    } else {
-      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+    // 获取部门树路径
+    let deptTreePath = "";
+    if (user.deptId) {
+      const depts = await this.deptService.findByIds([user.deptId]);
+      deptTreePath = depts?.[0]?.treePath || "";
     }
 
     return {
       id: user.id.toString(),
       username: user.username,
+      nickname: user.nickname,
       password: user.password,
       status: user.status,
       deptId: user.deptId?.toString() || "",
+      deptTreePath,
       roles: roleCodes,
-      perms,
-      dataScope,
       dataScopes,
     };
   }
 
+  /**
+   * 根据手机号获取用户认证信息（短信登录）
+   */
   async findByMobile(mobile: string): Promise<{
     id: string;
     username: string;
     status: number;
     deptId: string;
+    deptTreePath: string;
     roles: string[];
-    perms: string[];
-    dataScope: number;
     dataScopes: RoleDataScope[];
   } | null> {
     const mobileSafe = mobile?.trim();
@@ -337,14 +365,11 @@ export class UserService {
     // 获取多角色数据权限列表
     const dataScopes = await this.roleService.getRoleDataScopes(roleCodes);
 
-    // 兼容旧版本：取最大权限
-    const dataScope = DataScopeUtils.getMaxDataScope(dataScopes);
-
-    let perms: string[] = [];
-    if (roleCodes.includes(ROOT_ROLE_CODE)) {
-      perms = await this.roleService.findAllPerms();
-    } else {
-      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+    // 获取部门树路径
+    let deptTreePath = "";
+    if (user.deptId) {
+      const depts = await this.deptService.findByIds([user.deptId]);
+      deptTreePath = depts?.[0]?.treePath || "";
     }
 
     return {
@@ -352,15 +377,16 @@ export class UserService {
       username: user.username,
       status: user.status,
       deptId: user.deptId?.toString() || "",
+      deptTreePath,
       roles: roleCodes,
-      perms,
-      dataScope,
       dataScopes,
     };
   }
 
   /**
    * 获取当前用户信息
+   *
+   * 返回用户的基本信息和权限标识，权限从角色权限缓存中获取
    */
   async findMe(currentUserInfo: CurrentUserInfo): Promise<CurrentUserDto> {
     const userId = currentUserInfo?.userId;
@@ -400,11 +426,12 @@ export class UserService {
     const roles = await this.roleService.findRolesByIds(roleIds);
     const roleCodes = roles.map((r) => r.code);
 
+    // 从角色权限缓存获取权限标识
     let perms: string[] = [];
     if (roleCodes.includes(ROOT_ROLE_CODE)) {
-      perms = await this.roleService.findAllPerms();
+      perms = await this.rolePermService.getAllPerms();
     } else {
-      perms = await this.roleService.findPermsByRoleCodes(roleCodes);
+      perms = await this.rolePermService.getPermsByRoleCodes(roleCodes);
     }
 
     return {

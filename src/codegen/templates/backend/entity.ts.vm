@@ -1,15 +1,13 @@
 /**
  * ${businessName} 实体
  */
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity } from "typeorm";
+import { BaseEntity } from "src/common/entities";
 
 @Entity("${tableName}")
-export class ${entityName} {
+export class ${entityName} extends BaseEntity {
 #foreach($fieldConfig in $fieldConfigs)
-  #if($fieldConfig.fieldName == "id")
-  @PrimaryGeneratedColumn({ type: "bigint" })
-  id: string;
-  #else
+  #if($fieldConfig.fieldName != "id" && $fieldConfig.fieldName != "createBy" && $fieldConfig.fieldName != "createTime" && $fieldConfig.fieldName != "updateBy" && $fieldConfig.fieldName != "updateTime" && $fieldConfig.fieldName != "isDeleted")
   @Column({
     #if($fieldConfig.columnName && $fieldConfig.columnName != $fieldConfig.fieldName)
     name: "${fieldConfig.columnName}",

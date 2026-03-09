@@ -15,12 +15,13 @@ import { WinstonModule } from "nest-winston";
 import { RedisModule as LiaoliaRedisModule } from "@liaoliaots/nestjs-redis";
 
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
+import { RoleModule } from "./system/role/role.module"; // 角色模块（提供 RolePermService）
 import { RedisSharedModule } from "./core/redis/redis.module";
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
 import { WebsocketModule } from "./websocket/websocket.module";
-import { CodegenModule } from "./platform/codegen/codegen.module";
-import { FileModule } from "./platform/file/file.module";
+import { CodegenModule } from "./codegen/codegen.module";
+import { FileModule } from "./file/file.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 import { StatisticsModule } from "./system/statistics/statistics.module";
@@ -98,6 +99,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
       ],
     }),
     AuthModule,
+    RoleModule,
     RedisSharedModule,
     DictModule,
     SystemConfigModule,

@@ -11,9 +11,12 @@ import { BusinessException } from "src/common/exceptions/business.exception";
 import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as bcrypt from "bcrypt";
 import { RedisService } from "src/core/redis/redis.service";
+import { RedisConstants } from "src/common/constants/redis.constants";
 
 /**
  * 认证服务
+ *
+ * 负责用户登录认证、令牌签发与刷新、登出等核心功能
  */
 @Injectable()
 export class AuthService {
@@ -26,22 +29,33 @@ export class AuthService {
     private readonly configService: ConfigService
   ) {}
 
-  private getJwtUserSessionKey(userId: string) {
-    return `auth:user:jwt_session:${userId}`;
+  /**
+   * 获取用户 JWT 会话缓存键
+   */
+  private getJwtUserSessionKey(userId: string): string {
+    return `${RedisConstants.Auth.USER_JWT_SESSION}:${userId}`;
   }
 
+  /**
+   * 签发令牌
+   *
+   * 根据会话类型配置采用不同的令牌策略：
+   * - jwt: JWT 自包含模式，用户信息存储在 Token 中
+   * - redis-token: Redis 索引模式，Token 仅作为索引，用户会话存储在 Redis
+   */
   private async issueTokens(user: any): Promise<LoginResultDto> {
-    // SESSION_TYPE=jwt：令牌自包含；SESSION_TYPE=redis-token：令牌只做索引，用户会话存 Redis
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
 
-    // JWT
+    // JWT 模式：令牌自包含用户信息
     if (sessionType === "jwt") {
       const userId = user.id;
-      // 用于按用户维度统一让历史 Token 失效（例如：重置密码、禁用账号后）
-      const versionKey = `auth:user:token_version:${userId}`;
+
+      // Token 版本控制，用于批量失效历史 Token
+      const versionKey = `${RedisConstants.Auth.USER_TOKEN_VERSION}:${userId}`;
       const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
       const tokenVersion = currentVersionRaw ?? 0;
 
+      // 缓存用户会话（不包含 perms，权限从角色权限缓存动态获取）
       const refreshTtl = this.config.expiresIn * 10;
       await this.redisCacheService.set(
         this.getJwtUserSessionKey(userId),
@@ -49,20 +63,20 @@ export class AuthService {
           userId,
           username: user.username,
           deptId: user.deptId,
-          dataScope: user.dataScope,
+          dataScopes: user.dataScopes,
           deptTreePath: user.deptTreePath,
           roles: user.roles,
-          perms: user.perms,
         },
         refreshTtl
       );
 
+      // 构建 JWT payload
       const jti = uuidv4();
       const payload = {
         sub: userId,
         username: user.username,
         deptId: user.deptId,
-        dataScope: user.dataScope,
+        dataScopes: user.dataScopes,
         deptTreePath: user.deptTreePath,
         roles: user.roles,
         tokenVersion,
@@ -91,7 +105,7 @@ export class AuthService {
       };
     }
 
-    // redis-token
+    // Redis-Token 模式：Token 仅作为索引
     const userId = user.id;
     const accessToken = uuidv4();
     const refreshToken = uuidv4();
@@ -99,20 +113,36 @@ export class AuthService {
     const accessTtl = this.config.expiresIn;
     const refreshTtl = this.config.expiresIn * 10;
 
+    // 用户会话（不包含 perms）
     const userSession = {
       userId: userId,
       username: user.username,
       deptId: user.deptId,
       dataScopes: user.dataScopes,
       roles: user.roles,
-      perms: user.perms,
     };
 
-    // access/refresh 双 token + userId 反向索引，方便注销/踢下线时快速定位并清理
-    await this.redisCacheService.set(`auth:token:access:${accessToken}`, userSession, accessTtl);
-    await this.redisCacheService.set(`auth:token:refresh:${refreshToken}`, userSession, refreshTtl);
-    await this.redisCacheService.set(`auth:user:access:${userId}`, accessToken, accessTtl);
-    await this.redisCacheService.set(`auth:user:refresh:${userId}`, refreshToken, refreshTtl);
+    // 存储 access/refresh 双 Token 及 userId 反向索引
+    await this.redisCacheService.set(
+      `auth:token:access:${accessToken}`,
+      userSession,
+      accessTtl
+    );
+    await this.redisCacheService.set(
+      `auth:token:refresh:${refreshToken}`,
+      userSession,
+      refreshTtl
+    );
+    await this.redisCacheService.set(
+      `auth:user:access:${userId}`,
+      accessToken,
+      accessTtl
+    );
+    await this.redisCacheService.set(
+      `auth:user:refresh:${userId}`,
+      refreshToken,
+      refreshTtl
+    );
 
     return {
       tokenType: "Bearer",
@@ -122,6 +152,9 @@ export class AuthService {
     };
   }
 
+  /**
+   * 验证用户凭证
+   */
   async validateUser(username: string, password: string): Promise<any> {
     const user = await this.userService.getAuthCredentialsByUsername(username);
     if (!user) {
@@ -150,6 +183,9 @@ export class AuthService {
     return await this.issueTokens(user);
   }
 
+  /**
+   * 发送短信登录验证码
+   */
   async sendSmsLoginCode(mobile: string) {
     if (!mobile) {
       throw new BusinessException(ErrorCode.REQUEST_REQUIRED_PARAMETER_IS_EMPTY);
@@ -158,12 +194,17 @@ export class AuthService {
     await this.redisCacheService.set(`captcha:sms_login:${mobile}`, code, 300);
   }
 
+  /**
+   * 短信验证码登录
+   */
   async loginBySms(mobile: string, code: string) {
     if (!mobile || !code) {
       throw new BusinessException(ErrorCode.REQUEST_REQUIRED_PARAMETER_IS_EMPTY);
     }
 
-    const cacheCode = await this.redisCacheService.get<string>(`captcha:sms_login:${mobile}`);
+    const cacheCode = await this.redisCacheService.get<string>(
+      `captcha:sms_login:${mobile}`
+    );
     if (!cacheCode) {
       throw new BusinessException(ErrorCode.USER_VERIFICATION_CODE_EXPIRED);
     }
@@ -181,6 +222,9 @@ export class AuthService {
     return await this.issueTokens(user);
   }
 
+  /**
+   * 刷新访问令牌
+   */
   async refreshToken(refreshToken: string) {
     if (!refreshToken) {
       throw new BusinessException(ErrorCode.REQUEST_REQUIRED_PARAMETER_IS_EMPTY);
@@ -188,6 +232,7 @@ export class AuthService {
 
     const sessionType = this.configService.get<string>("SESSION_TYPE") || "jwt";
 
+    // JWT 模式
     if (sessionType === "jwt") {
       try {
         const payload: any = await this.jwtService.verifyAsync(refreshToken, {
@@ -201,30 +246,33 @@ export class AuthService {
 
         const userId = payload.sub;
 
+        // 校验 Token 版本
         const tokenVersion: number = payload.tokenVersion ?? 0;
-        const versionKey = `auth:user:token_version:${userId}`;
+        const versionKey = `${RedisConstants.Auth.USER_TOKEN_VERSION}:${userId}`;
         const currentVersionRaw = await this.redisCacheService.get<number>(versionKey);
         const currentVersion = currentVersionRaw ?? 0;
         if (tokenVersion < currentVersion) {
           throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
+        // 校验黑名单
         const jti: string | undefined = payload.jti;
         if (jti) {
-          const blacklistKey = `auth:token:blacklist:${jti}`;
+          const blacklistKey = `${RedisConstants.Auth.TOKEN_BLACKLIST}:${jti}`;
           const inBlacklist = await this.redisCacheService.hasKey(blacklistKey);
           if (inBlacklist) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
           }
         }
 
+        // 签发新的访问令牌
         const newJti = uuidv4();
         const newAccessToken = await this.jwtService.signAsync(
           {
             sub: payload.sub,
             username: payload.username,
             deptId: payload.deptId,
-            dataScope: payload.dataScope,
+            dataScopes: payload.dataScopes,
             deptTreePath: payload.deptTreePath,
             roles: payload.roles,
             tokenVersion: tokenVersion,
@@ -246,7 +294,10 @@ export class AuthService {
       }
     }
 
-    const userSession = await this.redisCacheService.get<any>(`auth:token:refresh:${refreshToken}`);
+    // Redis-Token 模式
+    const userSession = await this.redisCacheService.get<any>(
+      `auth:token:refresh:${refreshToken}`
+    );
     if (!userSession) {
       throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
     }
@@ -254,7 +305,11 @@ export class AuthService {
     const accessToken = uuidv4();
     const accessTtl = this.config.expiresIn;
 
-    await this.redisCacheService.set(`auth:token:access:${accessToken}`, userSession, accessTtl);
+    await this.redisCacheService.set(
+      `auth:token:access:${accessToken}`,
+      userSession,
+      accessTtl
+    );
     await this.redisCacheService.set(
       `auth:user:access:${userSession.userId}`,
       accessToken,
@@ -278,7 +333,7 @@ export class AuthService {
   }
 
   /**
-   * 根据原始 JWT 令牌将其加入黑名单
+   * 将 JWT 令牌加入黑名单
    *
    * @param token Bearer Token 或裸 Token
    */
@@ -287,7 +342,7 @@ export class AuthService {
       return;
     }
 
-    // 如果带有 Bearer 前缀，先剥离
+    // 剥离 Bearer 前缀
     if (token.startsWith("Bearer ")) {
       token = token.substring("Bearer ".length);
     }
@@ -298,7 +353,7 @@ export class AuthService {
     }
 
     const jti: string | undefined = decoded["jti"];
-    const exp: number | undefined = decoded["exp"]; // 秒级时间戳
+    const exp: number | undefined = decoded["exp"];
 
     if (!jti || !exp) {
       return;
@@ -310,7 +365,7 @@ export class AuthService {
       return;
     }
 
-    const blacklistKey = `auth:token:blacklist:${jti}`;
+    const blacklistKey = `${RedisConstants.Auth.TOKEN_BLACKLIST}:${jti}`;
     await this.redisCacheService.set(blacklistKey, true, remaining);
   }
 }

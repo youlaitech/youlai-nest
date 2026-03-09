@@ -44,13 +44,13 @@ export class CodegenService {
   };
 
   private readonly templateConfigs: Record<TemplateName, TemplateConfig> = {
-    API: { templatePath: "frontend/api.ts.vm", subpackageName: "api", extension: ".ts" },
+    API: { templatePath: "frontend/ts/api.ts.vm", subpackageName: "api", extension: ".ts" },
     API_TYPES: {
-      templatePath: "frontend/api-types.ts.vm",
+      templatePath: "frontend/ts/api-types.ts.vm",
       subpackageName: "types",
       extension: ".ts",
     },
-    VIEW: { templatePath: "frontend/index.vue.vm", subpackageName: "views", extension: ".vue" },
+    VIEW: { templatePath: "frontend/ts/index.vue.vm", subpackageName: "views", extension: ".vue" },
     Controller: {
       templatePath: "backend/controller.ts.vm",
       subpackageName: "",
@@ -108,10 +108,10 @@ export class CodegenService {
       return templateConfig.templatePath;
     }
     if (templateName === "API") {
-      return "frontend/api.js.vm";
+      return "frontend/js/api.js.vm";
     }
     if (templateName === "VIEW") {
-      return "frontend/index.js.vue.vm";
+      return "frontend/js/index.js.vue.vm";
     }
     return templateConfig.templatePath;
   }
@@ -568,9 +568,15 @@ export class CodegenService {
     let effectivePath = templatePath;
     if (templateName === "VIEW" && pageType === "curd") {
       if (effectivePath.endsWith("index.js.vue.vm")) {
-        effectivePath = effectivePath.replace("frontend/index.js.vue.vm", "frontend/index.curd.js.vue.vm");
+        effectivePath = effectivePath.replace(
+          "frontend/js/index.js.vue.vm",
+          "frontend/js/index.curd.js.vue.vm"
+        );
       } else if (effectivePath.endsWith("index.vue.vm")) {
-        effectivePath = effectivePath.replace("frontend/index.vue.vm", "frontend/index.curd.vue.vm");
+        effectivePath = effectivePath.replace(
+          "frontend/ts/index.vue.vm",
+          "frontend/ts/index.curd.vue.vm"
+        );
       }
     }
 
@@ -694,7 +700,7 @@ export class CodegenService {
 function resolveBootTemplatePath(templatePath: string) {
   // Use the local repo templates directory only. Templates should be placed at:
   //   <project-root>/src/platform/codegen/templates/<templatePath>
-  const p = path.resolve(process.cwd(), "src", "platform", "codegen", "templates", templatePath);
+  const p = path.resolve(process.cwd(), "src", "codegen", "templates", templatePath);
 
   if (fs.existsSync(p)) {
     return p;
@@ -702,7 +708,7 @@ function resolveBootTemplatePath(templatePath: string) {
 
   throw new Error(
     `Codegen template not found: '${templatePath}'. Expected location:\n  - ${p}\n\n` +
-      `Please place templates under 'src/platform/codegen/templates'.`
+      `Please place templates under 'src/codegen/templates'.`
   );
 }
 

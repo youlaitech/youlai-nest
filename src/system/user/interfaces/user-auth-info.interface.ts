@@ -1,8 +1,10 @@
 ﻿import type { RoleDataScope } from "../../../common/models/role-data-scope.model";
 
 /**
- * 用户认证信息接口
- * 用于认证过程中获取用户的关键信息，例如登录时需要的用户名、密码以及权限等。
+ * 用户认证信息
+ *
+ * 用于登录认证阶段的用户信息承载，包含用户名、密码、状态、角色等与认证相关的数据。
+ * 权限标识（perms）不在此接口中存储，而是在需要时从角色权限缓存中动态获取。
  */
 export interface UserAuthInfo {
   /**
@@ -11,29 +13,24 @@ export interface UserAuthInfo {
   id: string;
 
   /**
-   * 用户名，用于登录和唯一标识用户
+   * 用户名
    */
   username: string;
 
   /**
-   * 密码
+   * 昵称
+   */
+  nickname?: string;
+
+  /**
+   * 密码（加密后）
    */
   password: string;
 
   /**
-   * 用户状态（1 正常，0 禁用）
+   * 状态（1:启用 其它:禁用）
    */
   status: number;
-
-  /**
-   * 角色列表，包含用户所属的所有角色编码
-   */
-  roles: string[];
-
-  /**
-   * 权限标识列表（按钮权限）
-   */
-  perms: string[];
 
   /**
    * 部门ID
@@ -41,14 +38,19 @@ export interface UserAuthInfo {
   deptId: string;
 
   /**
-   * 数据范围（兼容旧版本）
-   * 取所有角色中最大权限
+   * 部门树路径
    */
-  dataScope: number;
+  deptTreePath?: string;
 
   /**
-   * 多角色数据权限列表
-   * 支持多角色并集策略
+   * 角色编码集合
+   */
+  roles: string[];
+
+  /**
+   * 数据权限列表
+   *
+   * 存储用户所有角色的数据权限范围，用于实现多角色权限合并（并集策略）
    */
   dataScopes: RoleDataScope[];
 }

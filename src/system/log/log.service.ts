@@ -35,11 +35,19 @@ export class LogService {
       );
     }
 
-    if (createTime && createTime.length === 2) {
-      qb.andWhere("log.create_time BETWEEN :start AND :end", {
-        start: createTime[0],
-        end: createTime[1],
-      });
+    if (createTime && createTime.length >= 1) {
+      const startTime = createTime[0];
+      if (startTime) {
+        qb.andWhere("log.create_time >= :start", { start: startTime });
+      }
+    }
+    if (createTime && createTime.length >= 2) {
+      const endTime = createTime[1];
+      if (endTime) {
+        // 结束日期拼接 23:59:59，包含当天所有数据
+        const endDateTime = endTime.length === 10 ? `${endTime} 23:59:59` : endTime;
+        qb.andWhere("log.create_time <= :end", { end: endDateTime });
+      }
     }
 
     const allowedSortBy = new Set([

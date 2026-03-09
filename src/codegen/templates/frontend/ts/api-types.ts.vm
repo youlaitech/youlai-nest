@@ -1,16 +1,16 @@
 /**
- * ${entityName} $!{businessName} 类型定义
+ * ${entityName} $!{businessName}类型定义
  */
 
-/** $!{businessName}分页查询参数 */
-export interface ${entityName}PageQuery extends PageQuery {
+ import type { BaseQueryParams } from "./common";
+
+/** $!{businessName}查询参数 */
+export interface ${entityName}QueryParams extends BaseQueryParams {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInQuery)
-#set($desc = $fieldConfig.fieldComment)
-#if("$!desc" == "")
-#set($desc = $fieldConfig.fieldName)
-#end
-  /** $desc */
+    #if("$!fieldConfig.fieldComment" != "")
+  /** ${fieldConfig.fieldComment} */
+    #end
     #if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
       #if($fieldConfig.queryType == "BETWEEN")
   ${fieldConfig.fieldName}?: [string, string];
@@ -28,28 +28,25 @@ export interface ${entityName}PageQuery extends PageQuery {
 export interface ${entityName}Form {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInForm)
-#set($desc = $fieldConfig.fieldComment)
-#if("$!desc" == "")
-#set($desc = $fieldConfig.fieldName)
-#end
-  /** $desc */
+    #if("$!fieldConfig.fieldComment" != "")
+  /** ${fieldConfig.fieldComment} */
+    #end
   ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
   #end
 #end
 }
 
-/** $!{businessName}分页对象 */
-export interface ${entityName}PageVo {
+/** $!{businessName}详情对象 */
+export type ${entityName}Detail = ${entityName}Item & ${entityName}Form;
+
+/** $!{businessName}列表项 */
+export interface ${entityName}Item {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInList)
-#set($desc = $fieldConfig.fieldComment)
-#if("$!desc" == "")
-#set($desc = $fieldConfig.fieldName)
-#end
-  /** $desc */
+    #if("$!fieldConfig.fieldComment" != "")
+  /** ${fieldConfig.fieldComment} */
+    #end
   ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
   #end
 #end
 }
-
-

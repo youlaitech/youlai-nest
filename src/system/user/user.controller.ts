@@ -15,7 +15,7 @@
   UseInterceptors,
   Inject,
 } from "@nestjs/common";
-import type { Response } from "express";
+import type { Response as ExpressResponse } from "express";
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -71,7 +71,7 @@ export class UserController {
   @ApiOperation({ summary: "用户导入模板下载" })
   @Get("template")
   @SetMetadata("skipResponseTransform", true)
-  async downloadTemplate(@Res() res: Response) {
+  async downloadTemplate(@Res() res: ExpressResponse) {
     const headers = ["用户名", "昵称", "性别", "手机号码", "邮箱", "角色", "部门"];
     const worksheet = XLSX.utils.aoa_to_sheet([headers]);
     const workbook = XLSX.utils.book_new();
@@ -97,13 +97,12 @@ export class UserController {
     userIdColumnName: "create_by",
   })
   @SetMetadata("skipResponseTransform", true)
-  async exportUsers(@Query() query: UserQueryDto, @Res() res: Response) {
+  async exportUsers(@Query() query: UserQueryDto, @Res() res: ExpressResponse) {
     const list = await this.userService.listExportUsers(
       query.deptId,
       query.keywords,
       query.status,
-      query.startTime,
-      query.endTime
+      query.createTime
     );
 
     const headers = [
@@ -294,8 +293,7 @@ export class UserController {
       query.deptId,
       query.keywords,
       query.status,
-      query.startTime,
-      query.endTime
+      query.createTime
     );
   }
 }

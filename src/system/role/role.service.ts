@@ -1,13 +1,13 @@
-﻿import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
+﻿import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, In, Brackets, DataSource } from "typeorm";
+import { Repository, In, Brackets } from "typeorm";
 import { SysRole } from "./entities/sys-role.entity";
 import { SysRoleMenu } from "./entities/sys-role-menu.entity";
 import { SysRoleDept } from "./entities/sys-role-dept.entity";
-import { MenuService } from "../menu/menu.service";
+import { RolePermService } from "./role-perm.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
 import { ROOT_ROLE_CODE } from "src/common/constants";
@@ -20,8 +20,6 @@ import { DataScopeEnum } from "../../common/enums/data-scope.enum";
  */
 @Injectable()
 export class RoleService {
-  private readonly logger = new Logger(RoleService.name);
-
   constructor(
     @InjectRepository(SysRole)
     private roleRepository: Repository<SysRole>,
@@ -31,11 +29,10 @@ export class RoleService {
     private userRoleRepository: Repository<SysUserRole>,
     @InjectRepository(SysRoleDept)
     private roleDeptRepository: Repository<SysRoleDept>,
-    @Inject(forwardRef(() => MenuService))
-    private readonly menuService: MenuService,
+    @Inject(forwardRef(() => RolePermService))
+    private readonly rolePermService: RolePermService,
     private readonly configService: ConfigService,
-    private readonly redisCacheService: RedisService,
-    private readonly dataSource: DataSource
+    private readonly redisCacheService: RedisService
   ) {}
 
   private async invalidateUsersSessions(userIds: string[]): Promise<void> {
@@ -241,37 +238,6 @@ export class RoleService {
   }
 
   /**
-   * 根据角色编码查询权限标识集合
-   */
-  async findPermsByRoleCodes(roles: string[]): Promise<string[]> {
-    try {
-      if (!roles?.length) return [];
-
-      const roleEntities = await this.roleRepository.find({
-        where: { code: In(roles), status: 1 },
-        select: ["id"],
-      });
-
-      if (!roleEntities?.length) return [];
-
-      const roleIds = roleEntities.map((role) => role.id);
-
-      const roleMenus = await this.roleMenuRepository.find({
-        where: { roleId: In(roleIds) },
-      });
-
-      if (!roleMenus?.length) return [];
-
-      const menuIds = [...new Set(roleMenus.map((rm) => rm.menuId.toString()))];
-
-      return await this.menuService.findPermsByMenuIds(menuIds);
-    } catch (error) {
-      this.logger.error("获取角色权限失败", (error as any)?.stack ?? String(error));
-      return [];
-    }
-  }
-
-  /**
    * 角色下拉列表
    */
   async getRoleOptions() {
@@ -345,11 +311,24 @@ export class RoleService {
 
   /**
    * 更新角色菜单
+   *
+   * 更新后需要：
+   * 1. 刷新该角色的权限缓存
+   * 2. 使已登录用户的会话失效（触发重新加载权限）
    */
   async updateMenus(roleId: string, menuIds: string[]) {
     const roleIdStr = roleId.toString();
+
+    // 获取角色编码（用于刷新权限缓存）
+    const role = await this.roleRepository.findOne({
+      where: { id: roleIdStr, isDeleted: 0 },
+      select: ["id", "code"],
+    });
+
+    // 删除旧的菜单关联
     await this.roleMenuRepository.delete({ roleId: roleIdStr });
 
+    // 添加新的菜单关联
     const roleMenus = menuIds.map((menuId) => ({
       roleId: roleIdStr,
       menuId: menuId.toString(),
@@ -357,6 +336,12 @@ export class RoleService {
 
     const saved = await this.roleMenuRepository.save(roleMenus);
 
+    // 刷新角色权限缓存
+    if (role?.code) {
+      await this.rolePermService.refreshRolePermsCache(role.code);
+    }
+
+    // 使已登录用户的会话失效
     const relations = await this.userRoleRepository.find({ where: { roleId: roleIdStr } });
     const userIds = relations.map((r) => r.userId?.toString()).filter(Boolean);
     await this.invalidateUsersSessions(userIds);
@@ -400,6 +385,9 @@ export class RoleService {
 
       await this.roleMenuRepository.delete({ roleId });
       await this.roleRepository.update(roleId, { isDeleted: 1 });
+
+      // 刷新角色权限缓存（删除角色编码对应的缓存）
+      await this.rolePermService.refreshRolePermsCache(role.code);
     }
   }
 
@@ -412,13 +400,6 @@ export class RoleService {
       where: { id: In(ids), isDeleted: 0 },
       select: ["code", "dataScope"],
     });
-  }
-
-  /**
-   * 获取所有权限标识
-   */
-  async findAllPerms(): Promise<string[]> {
-    return await this.menuService.findALLButtons();
   }
 
   /**

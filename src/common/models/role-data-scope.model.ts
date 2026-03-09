@@ -15,22 +15,27 @@ export class RoleDataScope {
     this.customDeptIds = customDeptIds;
   }
 
+  /** 全部数据权限 */
   static all(roleCode: string): RoleDataScope {
     return new RoleDataScope(roleCode, DataScopeEnum.ALL);
   }
 
+  /** 本部门及子部门数据权限 */
   static deptAndSub(roleCode: string): RoleDataScope {
     return new RoleDataScope(roleCode, DataScopeEnum.DEPT_AND_SUB);
   }
 
+  /** 本部门数据权限 */
   static dept(roleCode: string): RoleDataScope {
     return new RoleDataScope(roleCode, DataScopeEnum.DEPT);
   }
 
+  /** 仅本人数据权限 */
   static self(roleCode: string): RoleDataScope {
     return new RoleDataScope(roleCode, DataScopeEnum.SELF);
   }
 
+  /** 自定义部门数据权限 */
   static custom(roleCode: string, deptIds: number[]): RoleDataScope {
     return new RoleDataScope(roleCode, DataScopeEnum.CUSTOM, deptIds);
   }
@@ -56,23 +61,5 @@ export class RoleDataScope {
 export class DataScopeUtils {
   static hasAllDataScope(dataScopes: RoleDataScope[]): boolean {
     return dataScopes.some((ds) => ds.dataScope === DataScopeEnum.ALL);
-  }
-
-  static getMaxDataScope(dataScopes: RoleDataScope[]): number {
-    if (!dataScopes || dataScopes.length === 0) {
-      return DataScopeEnum.SELF;
-    }
-    return Math.min(...dataScopes.map((ds) => ds.dataScope));
-  }
-
-  static mergeDataScopes(dataScopes: RoleDataScope[]): RoleDataScope[] {
-    const map = new Map<string, RoleDataScope>();
-    for (const ds of dataScopes) {
-      const existing = map.get(ds.roleCode);
-      if (!existing || ds.dataScope < existing.dataScope) {
-        map.set(ds.roleCode, ds);
-      }
-    }
-    return Array.from(map.values());
   }
 }

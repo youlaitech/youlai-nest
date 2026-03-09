@@ -3,7 +3,7 @@
 import * as Client from "ali-oss";
 import * as dayjs from "dayjs";
 import { ConfigType } from "@nestjs/config";
-import ossConfig from "../../config/oss.config";
+import ossConfig from "../config/oss.config";
 import OSS from "ali-oss";
 import * as Minio from "minio";
 import * as $OpenApi from "@alicloud/openapi-client";

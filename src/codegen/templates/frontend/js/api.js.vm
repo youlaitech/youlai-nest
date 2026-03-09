@@ -1,6 +1,3 @@
-/**
- * ${businessName} 接口
- */
 import request from "@/utils/request";
 
 const ${entityUpperSnake}_BASE_URL = "/api/v1/${entityKebab}";
@@ -9,7 +6,7 @@ const ${entityName}API = {
   /** 获取${businessName}分页数据 */
   getPage(queryParams) {
     return request({
-      url: ${entityUpperSnake}_BASE_URL,
+      url: \`\${${entityUpperSnake}_BASE_URL}\`,
       method: "get",
       params: queryParams,
     });
@@ -17,11 +14,11 @@ const ${entityName}API = {
 
   /**
    * 获取${businessName}表单数据
-   * @param {number} id ${businessName}ID
+   * @param {string} id ${businessName}ID
    */
   getFormData(id) {
     return request({
-      url: ${entityUpperSnake}_BASE_URL + "/" + id + "/form",
+      url: \`\${${entityUpperSnake}_BASE_URL}/\${id}/form\`,
       method: "get",
     });
   },
@@ -32,7 +29,7 @@ const ${entityName}API = {
    */
   create(data) {
     return request({
-      url: ${entityUpperSnake}_BASE_URL,
+      url: \`\${${entityUpperSnake}_BASE_URL}\`,
       method: "post",
       data,
     });
@@ -45,7 +42,7 @@ const ${entityName}API = {
    */
   update(id, data) {
     return request({
-      url: ${entityUpperSnake}_BASE_URL + "/" + id,
+      url: \`\${${entityUpperSnake}_BASE_URL}/\${id}\`,
       method: "put",
       data,
     });
@@ -57,7 +54,7 @@ const ${entityName}API = {
    */
   deleteByIds(ids) {
     return request({
-      url: ${entityUpperSnake}_BASE_URL + "/" + ids,
+      url: \`\${${entityUpperSnake}_BASE_URL}/\${ids}\`,
       method: "delete",
     });
   },

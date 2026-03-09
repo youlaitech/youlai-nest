@@ -1,17 +1,12 @@
-﻿import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  SetMetadata,
-} from "@nestjs/common";
+﻿import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { finalize } from "rxjs/operators";
 import { RequestContext, DataPermissionConfig } from "../context/request-context";
-
-export const DATA_PERMISSION_KEY = "data_permission";
-export const SKIP_DATA_PERMISSION_KEY = "skip_data_permission";
+import {
+  DATA_PERMISSION_KEY,
+  SKIP_DATA_PERMISSION_KEY,
+} from "../../common/decorators/data-permission.decorator";
 
 /** 数据权限拦截器 */
 @Injectable()
@@ -38,9 +33,4 @@ export class DataPermissionInterceptor implements NestInterceptor {
 
     return next.handle().pipe(finalize(() => RequestContext.setDataPermissionConfig(null)));
   }
-}
-
-/** 跳过数据权限装饰器 */
-export function SkipDataPermission(): MethodDecorator {
-  return SetMetadata(SKIP_DATA_PERMISSION_KEY, true);
 }
