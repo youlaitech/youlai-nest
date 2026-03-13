@@ -91,4 +91,8 @@ export class CreateMenuDto {
   @IsOptional()
   @IsBoolean()
   createTab?: boolean;
+
+  /** 路由参数 */
+  @IsOptional()
+  params?: Record<string, any>;
 }

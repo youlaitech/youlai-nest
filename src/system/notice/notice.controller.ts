@@ -16,7 +16,7 @@ import { NoticeService } from "./notice.service";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 
-@ApiTags("09.通知公告")
+@ApiTags("08.通知公告")
 @Controller("notices")
 export class NoticeController {
   private readonly noticeService: NoticeService;

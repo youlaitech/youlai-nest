@@ -1,6 +1,8 @@
 ﻿import { Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
+import { WechatMiniappAuthService } from "./wechat-miniapp-auth.service";
+import { WechatMiniappAuthController } from "./wechat-miniapp-auth.controller";
 import { UserModule } from "../system/user/user.module";
 import { RoleModule } from "../system/role/role.module";
 import { PassportModule } from "@nestjs/passport";
@@ -10,12 +12,16 @@ import { JwtStrategy } from "./jwt.strategy";
 import { RedisSharedModule } from "../core/redis/redis.module";
 import { RedisService } from "../core/redis/redis.service";
 import { ToolsService } from "../common/utils/service/tools.service";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { SysUser } from "../system/user/entities/sys-user.entity";
+import { SysUserSocial } from "../system/user/entities/sys-user-social.entity";
 
 @Module({
   imports: [
     UserModule,
     RoleModule,
     RedisSharedModule,
+    TypeOrmModule.forFeature([SysUser, SysUserSocial]),
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -29,8 +35,8 @@ import { ToolsService } from "../common/utils/service/tools.service";
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RedisService, ToolsService],
-  exports: [AuthService],
+  controllers: [AuthController, WechatMiniappAuthController],
+  providers: [AuthService, WechatMiniappAuthService, JwtStrategy, RedisService, ToolsService],
+  exports: [AuthService, WechatMiniappAuthService],
 })
 export class AuthModule {}

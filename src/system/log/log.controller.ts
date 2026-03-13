@@ -6,7 +6,7 @@ import { LogQueryDto } from "./dto/log-query.dto";
 /**
  * 日志接口控制器
  */
-@ApiTags("10.日志接口")
+@ApiTags("09.日志接口")
 @Controller("logs")
 export class LogController {
   constructor(private readonly logService: LogService) {}

@@ -226,9 +226,22 @@ export class MenuService {
    * 获取菜单表单
    */
   async getMenuForm(id: string | number) {
-    return await this.menuRepository.findOne({
+    const menu = await this.menuRepository.findOne({
       where: { id: id.toString() },
     });
+    if (!menu) return null;
+
+    // params: {k: v} -> [{key: k, value: v}]
+    const result: any = { ...menu };
+    if (menu.params && typeof menu.params === "object") {
+      result.params = Object.entries(menu.params).map(([key, value]) => ({
+        key,
+        value: String(value),
+      }));
+    } else {
+      result.params = null;
+    }
+    return result;
   }
 
   /**

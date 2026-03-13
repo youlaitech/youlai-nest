@@ -24,7 +24,7 @@ import { ErrorCode } from "src/common/enums/error-code.enum";
 /**
  * 认证接口控制器
  */
-@ApiTags("01.认证接口")
+@ApiTags("01.认证中心")
 @Controller("auth")
 export class AuthController {
   constructor(

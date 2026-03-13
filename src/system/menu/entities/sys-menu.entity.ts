@@ -85,8 +85,8 @@ export class SysMenu {
   @Column({ length: 128, nullable: true, comment: "跳转路径" })
   redirect: string;
 
-  @Column({ length: 255, nullable: true, comment: "路由参数" })
-  params: string;
+  @Column({ type: "json", nullable: true, comment: "路由参数" })
+  params: object;
 
   @CreateDateColumn({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;

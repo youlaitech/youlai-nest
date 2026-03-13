@@ -18,7 +18,7 @@ import { TableQueryDto } from "./dto/table-query.dto";
 /**
  * 代码生成接口控制器
  */
-@ApiTags("12.代码生成")
+@ApiTags("11.代码生成")
 @Controller("codegen")
 export class CodegenController {
   constructor(private readonly codegenService: CodegenService) {}
