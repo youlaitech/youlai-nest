@@ -71,7 +71,7 @@ export class DictService {
    * 创建字典
    */
   async createDict(dictFormDto: DictFormDto) {
-    const { dictCode, name, status } = dictFormDto;
+    const { dictCode, name, status, remark } = dictFormDto;
 
     const existDict = await this.dictRepository.findOne({
       where: { dictCode, isDeleted: 0 },
@@ -85,6 +85,7 @@ export class DictService {
       dictCode,
       name,
       status,
+      remark,
     });
 
     return await this.dictRepository.save(dict);
@@ -107,6 +108,7 @@ export class DictService {
       name: dict.name,
       dictCode: dict.dictCode,
       status: dict.status,
+      remark: dict.remark,
     };
   }
 
@@ -280,6 +282,8 @@ export class DictService {
       value: dictItem.value,
       sort: dictItem.sort,
       status: dictItem.status,
+      tagType: dictItem.tagType,
+      remark: dictItem.remark,
     };
   }
 
