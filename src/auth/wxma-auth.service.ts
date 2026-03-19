@@ -8,7 +8,7 @@ import axios from "axios";
 
 import { SysUser } from "../system/user/entities/sys-user.entity";
 import { SysUserSocial, SocialPlatform } from "../system/user/entities/sys-user-social.entity";
-import { WechatMiniappLoginResultDto } from "./dto/wechat-miniapp-login-result.dto";
+import { WxMaLoginResultDto } from "./dto/wxma-login-result.dto";
 import { LoginResultDto } from "./dto/login-result.dto";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { ErrorCode } from "../common/enums/error-code.enum";
@@ -46,8 +46,8 @@ interface WechatTokenResponse {
 }
 
 @Injectable()
-export class WechatMiniappAuthService {
-  private readonly logger = new Logger(WechatMiniappAuthService.name);
+export class WxMaAuthService {
+  private readonly logger = new Logger(WxMaAuthService.name);
 
   private readonly appId: string;
   private readonly appSecret: string;
@@ -68,12 +68,15 @@ export class WechatMiniappAuthService {
     this.appSecret = this.configService.get<string>("WX_MINIAPP_APP_SECRET") || "";
   }
 
-  async silentLogin(code: string): Promise<WechatMiniappLoginResultDto> {
+  async silentLogin(code: string): Promise<WxMaLoginResultDto> {
     const session = await this.getJsCodeSession(code);
     const openId = session.openid;
 
     if (!openId) {
-      throw new BusinessException({ ...ErrorCode.USER_LOGIN_EXCEPTION, msg: "微信登录失败：无法获取用户标识" });
+      throw new BusinessException({
+        ...ErrorCode.USER_LOGIN_EXCEPTION,
+        msg: "微信登录失败：无法获取用户标识",
+      });
     }
 
     const social = await this.socialRepository.findOne({
@@ -130,8 +133,13 @@ export class WechatMiniappAuthService {
       const data = response.data;
 
       if (data.errcode && data.errcode !== 0) {
-        this.logger.error(`获取微信会话信息失败：code=${code}, errcode=${data.errcode}, errmsg=${data.errmsg}`);
-        throw new BusinessException({ ...ErrorCode.USER_LOGIN_EXCEPTION, msg: `微信登录失败：${data.errmsg}` });
+        this.logger.error(
+          `获取微信会话信息失败：code=${code}, errcode=${data.errcode}, errmsg=${data.errmsg}`
+        );
+        throw new BusinessException({
+          ...ErrorCode.USER_LOGIN_EXCEPTION,
+          msg: `微信登录失败：${data.errmsg}`,
+        });
       }
 
       return data;
@@ -139,7 +147,10 @@ export class WechatMiniappAuthService {
       if (error instanceof BusinessException) throw error;
       const errMsg = error instanceof Error ? error.message : String(error);
       this.logger.error(`获取微信会话信息失败：code=${code}, error=${errMsg}`);
-      throw new BusinessException({ ...ErrorCode.USER_LOGIN_EXCEPTION, msg: `微信登录失败：${errMsg}` });
+      throw new BusinessException({
+        ...ErrorCode.USER_LOGIN_EXCEPTION,
+        msg: `微信登录失败：${errMsg}`,
+      });
     }
   }
 
@@ -152,8 +163,13 @@ export class WechatMiniappAuthService {
       const data = response.data;
 
       if (data.errcode !== 0) {
-        this.logger.error(`获取微信手机号失败：phoneCode=${phoneCode}, errcode=${data.errcode}, errmsg=${data.errmsg}`);
-        throw new BusinessException({ ...ErrorCode.USER_LOGIN_EXCEPTION, msg: `获取手机号失败：${data.errmsg}` });
+        this.logger.error(
+          `获取微信手机号失败：phoneCode=${phoneCode}, errcode=${data.errcode}, errmsg=${data.errmsg}`
+        );
+        throw new BusinessException({
+          ...ErrorCode.USER_LOGIN_EXCEPTION,
+          msg: `获取手机号失败：${data.errmsg}`,
+        });
       }
 
       return data.phone_info?.phoneNumber || "";
@@ -161,7 +177,10 @@ export class WechatMiniappAuthService {
       if (error instanceof BusinessException) throw error;
       const errMsg = error instanceof Error ? error.message : String(error);
       this.logger.error(`获取微信手机号失败：phoneCode=${phoneCode}, error=${errMsg}`);
-      throw new BusinessException({ ...ErrorCode.USER_LOGIN_EXCEPTION, msg: `获取手机号失败：${errMsg}` });
+      throw new BusinessException({
+        ...ErrorCode.USER_LOGIN_EXCEPTION,
+        msg: `获取手机号失败：${errMsg}`,
+      });
     }
   }
 
@@ -179,7 +198,10 @@ export class WechatMiniappAuthService {
     const data = response.data;
 
     if (data.errcode && data.errcode !== 0) {
-      throw new BusinessException({ ...ErrorCode.USER_LOGIN_EXCEPTION, msg: `获取微信AccessToken失败：${data.errmsg}` });
+      throw new BusinessException({
+        ...ErrorCode.USER_LOGIN_EXCEPTION,
+        msg: `获取微信AccessToken失败：${data.errmsg}`,
+      });
     }
 
     const expiresIn = Math.max((data.expires_in || 7200) - 300, 60);
@@ -212,7 +234,10 @@ export class WechatMiniappAuthService {
       await queryRunner.manager.save(newUser);
 
       // 分配 GUEST 角色（角色ID=3）
-      await queryRunner.query("INSERT INTO sys_user_role (user_id, role_id) VALUES (?, ?)", [newUser.id, 3]);
+      await queryRunner.query("INSERT INTO sys_user_role (user_id, role_id) VALUES (?, ?)", [
+        newUser.id,
+        3,
+      ]);
 
       await queryRunner.commitTransaction();
       this.logger.log(`微信小程序登录：创建新用户，mobile=${mobile}, userId=${newUser.id}`);

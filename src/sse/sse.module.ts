@@ -1,8 +1,9 @@
-﻿import { Module } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { WebsocketGateway } from "./websocket.gateway";
-import { UserSessionRegistry } from "./user-session-registry";
+import { SseService } from "./sse.service";
+import { SseController } from "./sse.controller";
+import { SseSessionRegistry } from "./sse-session-registry";
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { UserSessionRegistry } from "./user-session-registry";
       inject: [ConfigService],
     }),
   ],
-  providers: [WebsocketGateway, UserSessionRegistry],
-  exports: [WebsocketGateway, UserSessionRegistry],
+  providers: [SseService, SseSessionRegistry],
+  controllers: [SseController],
+  exports: [SseService, SseSessionRegistry],
 })
-export class WebsocketModule {}
+export class SseModule {}

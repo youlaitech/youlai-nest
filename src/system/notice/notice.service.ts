@@ -6,7 +6,7 @@ import { SysUserNotice } from "./entities/sys-user-notice.entity";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
-import { WebsocketGateway } from "src/websocket/websocket.gateway";
+import { SseService } from "src/sse/sse.service";
 
 /**
  * 通知公告服务
@@ -20,7 +20,7 @@ export class NoticeService {
     private readonly userNoticeRepository: Repository<SysUserNotice>,
     @InjectRepository(SysUser)
     private readonly userRepository: Repository<SysUser>,
-    private readonly websocketGateway: WebsocketGateway
+    private readonly sseService: SseService
   ) {}
 
   async getNoticePage(query: NoticeQueryDto) {
@@ -224,12 +224,23 @@ export class NoticeService {
     }
 
     // 发布后立刻推送给在线用户
-    this.websocketGateway.broadcastNotification({
-      id: notice.id,
-      title: notice.title,
-      type: notice.type,
-      level: notice.level,
-      publishTime: notice.publishTime,
+    const onlineUsers = this.sseService.getOnlineUsers();
+    const onlineUsernames = onlineUsers.map((u) => u.username);
+    const targetUsernames = (
+      await this.userRepository.find({
+        where: targetUserIds.map((id) => ({ id })),
+      })
+    ).map((u) => u.username);
+    const onlineReceivers = targetUsernames.filter((name) => onlineUsernames.includes(name));
+
+    onlineReceivers.forEach((username) => {
+      this.sseService.sendToUser(username, "notice", {
+        id: notice.id,
+        title: notice.title,
+        type: notice.type,
+        level: notice.level,
+        publishTime: notice.publishTime,
+      });
     });
 
     return true;
@@ -245,6 +256,13 @@ export class NoticeService {
     notice.revokeTime = new Date();
     notice.updateTime = new Date();
     await this.noticeRepository.save(notice);
+
+    // 通知前端移除该通知
+    const onlineUsers = this.sseService.getOnlineUsers();
+    onlineUsers.forEach((u) => {
+      this.sseService.sendToUser(u.username, "notice-revoke", { id: notice.id });
+    });
+
     return true;
   }
 

@@ -415,7 +415,6 @@ export class RoleService {
       return [];
     }
 
-    // 1. 查询角色的数据权限信息
     const roles = await this.roleRepository
       .createQueryBuilder("role")
       .select(["role.code", "role.dataScope"])
@@ -428,16 +427,13 @@ export class RoleService {
       return [];
     }
 
-    // 2. 获取自定义权限角色的ID
     const customRoleCodes = roles
       .filter((r) => r.dataScope === DataScopeEnum.CUSTOM)
       .map((r) => r.code);
 
-    // 3. 查询自定义角色的部门ID
     const customDeptIdsMap = new Map<string, number[]>();
 
     if (customRoleCodes.length > 0) {
-      // 先获取自定义角色的ID
       const customRoles = await this.roleRepository.find({
         where: { code: In(customRoleCodes), isDeleted: 0 },
         select: ["id", "code"],

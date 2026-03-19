@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In } from "typeorm";
 import { SysMenu } from "./entities/sys-menu.entity";
 import { UserService } from "../user/user.service";
+import { RolePermService } from "../role/role-perm.service";
 import { Route } from "./interface/menu.type";
 
 /**
@@ -16,7 +17,9 @@ export class MenuService {
     @InjectRepository(SysMenu)
     private menuRepository: Repository<SysMenu>,
     @Inject(forwardRef(() => UserService))
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    @Inject(forwardRef(() => RolePermService))
+    private readonly rolePermService: RolePermService
   ) {}
 
   async findAll() {
@@ -105,7 +108,6 @@ export class MenuService {
   async getMenus(keyword: string) {
     const queryBuilder = this.menuRepository.createQueryBuilder("menu");
 
-    // 如果有关键字，先找出所有匹配的菜单
     let matchedMenus: SysMenu[] = [];
     if (keyword) {
       matchedMenus = await this.menuRepository
@@ -114,7 +116,6 @@ export class MenuService {
         .orderBy("menu.sort", "ASC")
         .getMany();
     } else {
-      // 没有关键字时返回所有菜单
       matchedMenus = await this.menuRepository
         .createQueryBuilder("menu")
         .orderBy("menu.sort", "ASC")
@@ -126,18 +127,15 @@ export class MenuService {
       return [];
     }
 
-    // 收集所有匹配菜单的父级ID
     const allMenuIds = new Set<string>();
     matchedMenus.forEach((menu) => {
       allMenuIds.add(menu.id);
-      // 解析 treePath 获取所有父级ID
       if (menu.treePath) {
         const parentIds = menu.treePath.split(",").filter(Boolean);
         parentIds.forEach((id) => allMenuIds.add(id));
       }
     });
 
-    // 查询所有需要的菜单（匹配的菜单 + 其父级菜单）
     const allMenus = await this.menuRepository
       .createQueryBuilder("menu")
       .where("menu.id IN (:...ids)", { ids: Array.from(allMenuIds) })
@@ -301,6 +299,9 @@ export class MenuService {
       await this.updateChildrenTreePath(idStr, newTreePath);
     }
 
+    // 刷新角色权限缓存
+    await this.rolePermService.refreshAllRolePermsCache();
+
     return true;
   }
 
@@ -347,6 +348,9 @@ export class MenuService {
 
     // 批量删除
     await this.menuRepository.delete(Array.from(idsToDelete));
+
+    // 刷新角色权限缓存
+    await this.rolePermService.refreshAllRolePermsCache();
 
     return true;
   }

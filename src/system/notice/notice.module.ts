@@ -5,10 +5,10 @@ import { NoticeController } from "./notice.controller";
 import { SysNotice } from "./entities/sys-notice.entity";
 import { SysUserNotice } from "./entities/sys-user-notice.entity";
 import { SysUser } from "../user/entities/sys-user.entity";
-import { WebsocketModule } from "src/websocket/websocket.module";
+import { SseModule } from "src/sse/sse.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SysNotice, SysUserNotice, SysUser]), WebsocketModule],
+  imports: [TypeOrmModule.forFeature([SysNotice, SysUserNotice, SysUser]), SseModule],
   controllers: [NoticeController],
   providers: [NoticeService],
   exports: [NoticeService],

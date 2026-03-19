@@ -8,6 +8,7 @@ import { DictFormDto } from "./dto/create-dict.dto";
 import { UpdateDictDto } from "./dto/update-dict.dto";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
 import { UpdateDictItemDto } from "./dto/update-dict-item.dto";
+import { SseService } from "src/sse/sse.service";
 
 /**
  * 字典服务
@@ -18,7 +19,8 @@ export class DictService {
     @InjectRepository(SysDict)
     private readonly dictRepository: Repository<SysDict>,
     @InjectRepository(SysDictItem)
-    private readonly dictItemRepository: Repository<SysDictItem>
+    private readonly dictItemRepository: Repository<SysDictItem>,
+    private readonly sseService: SseService
   ) {}
 
   /**
@@ -88,7 +90,9 @@ export class DictService {
       remark,
     });
 
-    return await this.dictRepository.save(dict);
+    const saved = await this.dictRepository.save(dict);
+    this.sseService.sendDictChange(dictCode);
+    return saved;
   }
 
   /**
@@ -129,6 +133,7 @@ export class DictService {
       ...(updateDictDto as any),
       updateBy: updateDictDto.updateBy?.toString(),
     });
+    this.sseService.sendDictChange(dict.dictCode);
     return true;
   }
 
@@ -151,6 +156,7 @@ export class DictService {
       updateTime: new Date(),
     });
 
+    this.sseService.sendDictChange(dict.dictCode);
     return true;
   }
 
@@ -251,6 +257,7 @@ export class DictService {
     });
 
     const savedItem = await this.dictItemRepository.save(dictItem);
+    this.sseService.sendDictChange(dictCode);
 
     return {
       id: savedItem.id,
@@ -319,6 +326,7 @@ export class DictService {
       ...(updateData as any),
       updateBy: updateData.updateBy?.toString(),
     });
+    this.sseService.sendDictChange(dictItem.dictCode);
     return true;
   }
 
@@ -335,6 +343,7 @@ export class DictService {
     }
 
     await this.dictItemRepository.delete(id.toString());
+    this.sseService.sendDictChange(dictItem.dictCode);
     return true;
   }
 }

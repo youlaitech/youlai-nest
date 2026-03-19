@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { RedisService } from "../../core/redis/redis.service";
@@ -20,7 +20,7 @@ import { SysMenu } from "../menu/entities/sys-menu.entity";
  * - Value: 权限标识数组
  */
 @Injectable()
-export class RolePermService implements OnApplicationBootstrap {
+export class RolePermService {
   private readonly logger = new Logger(RolePermService.name);
   private readonly cacheKey = RedisConstants.System.ROLE_PERMS;
 
@@ -33,18 +33,6 @@ export class RolePermService implements OnApplicationBootstrap {
     private menuRepository: Repository<SysMenu>,
     private readonly redisService: RedisService
   ) {}
-
-  /**
-   * 应用启动时预热权限缓存
-   */
-  async onApplicationBootstrap() {
-    try {
-      await this.refreshAllRolePermsCache();
-      this.logger.log("角色权限缓存预热完成");
-    } catch (err) {
-      this.logger.error("角色权限缓存预热失败", err);
-    }
-  }
 
   /**
    * 刷新所有角色的权限缓存
@@ -124,7 +112,6 @@ export class RolePermService implements OnApplicationBootstrap {
     const perms: Set<string> = new Set();
     const missingRoleCodes: string[] = [];
 
-    // 1. 尝试从缓存批量获取
     const cachedPermsList = await this.redisService.hmget<string[]>(this.cacheKey, uniqueRoleCodes);
 
     for (let i = 0; i < uniqueRoleCodes.length; i++) {
@@ -132,19 +119,15 @@ export class RolePermService implements OnApplicationBootstrap {
       const roleCode = uniqueRoleCodes[i];
 
       if (cachedPerms === null) {
-        // 缓存未命中，记录需要回源的角色
         missingRoleCodes.push(roleCode);
       } else if (Array.isArray(cachedPerms)) {
-        // 缓存命中，合并权限
         cachedPerms.forEach((p) => perms.add(p));
       }
     }
 
-    // 2. 回源数据库并同步到缓存
     if (missingRoleCodes.length > 0) {
       for (const roleCode of missingRoleCodes) {
         const dbPerms = await this.getRolePermsByRoleCodeFromDB(roleCode);
-        // 写入缓存（空数组也写入，防止缓存穿透）
         await this.redisService.hset(this.cacheKey, roleCode, dbPerms);
         dbPerms.forEach((p) => perms.add(p));
       }

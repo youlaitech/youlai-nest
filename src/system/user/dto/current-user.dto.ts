@@ -14,6 +14,16 @@ export class CurrentUserDto {
 
   email?: string;
 
+  gender?: number;
+
+  deptId?: string;
+
+  deptName?: string;
+
+  roleNames?: string;
+
+  createTime?: string;
+
   roles: string[];
 
   perms: string[];

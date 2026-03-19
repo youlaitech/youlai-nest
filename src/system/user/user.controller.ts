@@ -35,6 +35,8 @@ import { DataPermission } from "src/common/decorators/data-permission.decorator"
 import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
+import { LogService } from "../log/log.service";
+import { UserEventQueryDto } from "../log/dto/user-event.dto";
 
 /**
  * 用户接口控制器
@@ -44,10 +46,16 @@ import { Logger as WinstonLogger } from "winston";
 export class UserController {
   private readonly userService: UserService;
   private readonly logger: WinstonLogger;
+  private readonly logService: LogService;
 
-  constructor(userService: UserService, @Inject(WINSTON_MODULE_PROVIDER) logger: WinstonLogger) {
+  constructor(
+    userService: UserService,
+    @Inject(WINSTON_MODULE_PROVIDER) logger: WinstonLogger,
+    logService: LogService
+  ) {
     this.userService = userService;
     this.logger = logger;
+    this.logService = logService;
   }
 
   @ApiOperation({ summary: "获取当前登录用户信息" })
@@ -295,5 +303,27 @@ export class UserController {
       query.status,
       query.createTime
     );
+  }
+
+  @ApiOperation({ summary: "用户事件列表" })
+  @Get("events")
+  async getUserEvents(@CurrentUser("userId") userId: string, @Query() query: UserEventQueryDto) {
+    if (query.pageNum && query.pageSize) {
+      return await this.logService.getUserEventPage(userId, query);
+    } else {
+      const list = await this.logService.getUserEventList(userId, query, 50);
+      return { data: list };
+    }
+  }
+
+  @ApiOperation({ summary: "登录设备列表" })
+  @Get("login-devices")
+  async getLoginDevices(
+    @CurrentUser("userId") userId: string,
+    @Query("days") days?: number,
+    @Query("limit") limit?: number
+  ) {
+    const devices = await this.logService.getLoginDevices(userId, days ?? 30, limit ?? 10);
+    return { data: devices };
   }
 }

@@ -1,5 +1,6 @@
 ﻿import { Controller, Get, Query, UsePipes, ValidationPipe } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Public } from "@/common/decorators/public.decorator";
 import { LogService } from "./log.service";
 import { LogQueryDto } from "./dto/log-query.dto";
 
@@ -16,5 +17,19 @@ export class LogController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: false }))
   async getLogPage(@Query() query: LogQueryDto) {
     return await this.logService.getLogPage(query);
+  }
+
+  @Public()
+  @ApiOperation({ summary: "访问趋势统计" })
+  @Get("views/trend")
+  async getVisitTrend(@Query("startDate") startDate: string, @Query("endDate") endDate: string) {
+    return await this.logService.getVisitTrend(startDate, endDate);
+  }
+
+  @Public()
+  @ApiOperation({ summary: "访问统计概览" })
+  @Get("views")
+  async getVisitOverview() {
+    return await this.logService.getVisitStats();
   }
 }

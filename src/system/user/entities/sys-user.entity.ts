@@ -1,9 +1,4 @@
-﻿import {
-  Column,
-  Entity,
-  ManyToMany,
-  JoinTable,
-} from "typeorm";
+﻿import { Column, Entity, ManyToMany, JoinTable } from "typeorm";
 import { SysRole } from "../../role/entities/sys-role.entity";
 import { BaseEntity } from "../../../common/entities";
 
@@ -28,13 +23,13 @@ export class SysUser extends BaseEntity {
   avatar: string;
 
   @Column({ length: 20, nullable: true, comment: "联系方式" })
-  mobile: string;
+  mobile?: string | null;
 
   @Column({ type: "tinyint", default: 1, comment: "状态(1-正常 0-禁用)" })
   status: number;
 
   @Column({ length: 128, nullable: true, comment: "用户邮箱" })
-  email: string;
+  email?: string | null;
 
   @ManyToMany(() => SysRole)
   @JoinTable({

@@ -1,14 +1,14 @@
 import { Controller, Post, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBody } from "@nestjs/swagger";
 
-import { WechatMiniappAuthService } from "./wechat-miniapp-auth.service";
-import { WechatMiniappLoginResultDto } from "./dto/wechat-miniapp-login-result.dto";
+import { WxMaAuthService } from "./wxma-auth.service";
+import { WxMaLoginResultDto } from "./dto/wxma-login-result.dto";
 import { LoginResultDto } from "./dto/login-result.dto";
 
 @ApiTags("13.微信小程序认证")
-@Controller("api/v1/wechat/miniapp/auth")
-export class WechatMiniappAuthController {
-  constructor(private readonly wechatMiniappAuthService: WechatMiniappAuthService) {}
+@Controller("api/v1/wxma/auth")
+export class WxMaAuthController {
+  constructor(private readonly wxMaAuthService: WxMaAuthService) {}
 
   @Post("silent-login")
   @ApiOperation({ summary: "静默登录" })
@@ -19,8 +19,8 @@ export class WechatMiniappAuthController {
       required: ["code"],
     },
   })
-  async silentLogin(@Body("code") code: string): Promise<WechatMiniappLoginResultDto> {
-    return this.wechatMiniappAuthService.silentLogin(code);
+  async silentLogin(@Body("code") code: string): Promise<WxMaLoginResultDto> {
+    return this.wxMaAuthService.silentLogin(code);
   }
 
   @Post("phone-login")
@@ -39,7 +39,7 @@ export class WechatMiniappAuthController {
     @Body("loginCode") loginCode: string,
     @Body("phoneCode") phoneCode: string
   ): Promise<LoginResultDto> {
-    return this.wechatMiniappAuthService.phoneLogin(loginCode, phoneCode);
+    return this.wxMaAuthService.phoneLogin(loginCode, phoneCode);
   }
 
   @Post("bind-mobile")
@@ -60,6 +60,6 @@ export class WechatMiniappAuthController {
     @Body("mobile") mobile: string,
     @Body("smsCode") smsCode: string
   ): Promise<LoginResultDto> {
-    return this.wechatMiniappAuthService.bindMobile(openId, mobile, smsCode);
+    return this.wxMaAuthService.bindMobile(openId, mobile, smsCode);
   }
 }

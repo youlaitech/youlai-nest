@@ -3,7 +3,7 @@ import { ApiProperty } from "@nestjs/swagger";
 /**
  * 微信小程序登录结果
  */
-export class WechatMiniappLoginResultDto {
+export class WxMaLoginResultDto {
   @ApiProperty({ description: "是否需要绑定手机号" })
   needBindMobile: boolean;
 

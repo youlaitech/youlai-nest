@@ -7,6 +7,7 @@ import { LogPageVo } from "./dto/log-page.vo";
 import { VisitTrendDto } from "./dto/visit-trend.dto";
 import { VisitStatsDto } from "./dto/visit-stats.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
+import { UserEventQueryDto, UserEventVo, LoginDeviceVo } from "./dto/user-event.dto";
 
 /**
  * 日志服务
@@ -30,7 +31,7 @@ export class LogService {
 
     if (keywords) {
       qb.andWhere(
-        "(log.content LIKE :kw OR log.request_uri LIKE :kw OR log.method LIKE :kw OR log.province LIKE :kw OR log.city LIKE :kw OR log.browser LIKE :kw OR log.os LIKE :kw)",
+        "(log.action_type LIKE :kw OR log.request_uri LIKE :kw OR log.request_method LIKE :kw OR log.province LIKE :kw OR log.city LIKE :kw OR log.browser LIKE :kw OR log.os LIKE :kw OR log.device LIKE :kw OR log.error_msg LIKE :kw)",
         { kw: `%${keywords}%` }
       );
     }
@@ -53,10 +54,11 @@ export class LogService {
     const allowedSortBy = new Set([
       "create_time",
       "execution_time",
-      "module",
+      "action_type",
       "request_uri",
       "request_method",
       "ip",
+      "status",
     ]);
 
     const normalizeOrder = (v?: string) => {
@@ -90,17 +92,18 @@ export class LogService {
 
     const list: LogPageVo[] = records.map((item) => ({
       id: item.id,
-      module: item.module,
-      content: item.content,
+      actionType: item.actionType,
+      status: item.status,
       requestUri: item.requestUri,
-      method: item.method,
+      requestMethod: item.requestMethod,
       ip: item.ip,
       region: [item.province, item.city].filter(Boolean).join(" ") || null,
+      device: item.device,
       browser: item.browser,
       os: item.os,
       executionTime: item.executionTime,
+      errorMsg: item.errorMsg,
       createBy: item.createBy,
-      // 时间统一成字符串
       createTime: item.createTime
         ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(
             item.createTime.getDate()
@@ -232,5 +235,124 @@ export class LogService {
       totalPvCount,
       pvGrowthRate,
     };
+  }
+
+  async getUserEventPage(userId: string, query: UserEventQueryDto) {
+    const { pageNum = 1, pageSize = 10, actionType, startDate, endDate } = query;
+
+    const qb = this.logRepository
+      .createQueryBuilder("log")
+      .where("log.create_by = :userId", { userId });
+
+    if (actionType) {
+      qb.andWhere("log.action_type = :actionType", { actionType });
+    }
+    if (startDate) {
+      qb.andWhere("log.create_time >= :startDate", { startDate });
+    }
+    if (endDate) {
+      const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
+      qb.andWhere("log.create_time <= :endDate", { endDate: endDateTime });
+    }
+
+    const [records, total] = await qb
+      .orderBy("log.create_time", "DESC")
+      .skip((pageNum - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    const list: UserEventVo[] = records.map((item) => ({
+      id: item.id,
+      actionType: item.actionType,
+      status: item.status,
+      device: item.device,
+      os: item.os,
+      browser: item.browser,
+      ip: item.ip,
+      region: [item.province, item.city].filter(Boolean).join(" ") || null,
+      createTime: item.createTime
+        ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(item.createTime.getDate()).padStart(2, "0")} ${String(item.createTime.getHours()).padStart(2, "0")}:${String(item.createTime.getMinutes()).padStart(2, "0")}:${String(item.createTime.getSeconds()).padStart(2, "0")}`
+        : null,
+    }));
+
+    return {
+      data: list,
+      page: { pageNum, pageSize, total },
+    };
+  }
+
+  async getUserEventList(
+    userId: string,
+    query: UserEventQueryDto,
+    limit: number
+  ): Promise<UserEventVo[]> {
+    const { actionType, startDate, endDate } = query;
+
+    const qb = this.logRepository
+      .createQueryBuilder("log")
+      .where("log.create_by = :userId", { userId });
+
+    if (actionType) {
+      qb.andWhere("log.action_type = :actionType", { actionType });
+    }
+    if (startDate) {
+      qb.andWhere("log.create_time >= :startDate", { startDate });
+    }
+    if (endDate) {
+      const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
+      qb.andWhere("log.create_time <= :endDate", { endDate: endDateTime });
+    }
+
+    const records = await qb.orderBy("log.create_time", "DESC").limit(limit).getMany();
+
+    return records.map((item) => ({
+      id: item.id,
+      actionType: item.actionType,
+      status: item.status,
+      device: item.device,
+      os: item.os,
+      browser: item.browser,
+      ip: item.ip,
+      region: [item.province, item.city].filter(Boolean).join(" ") || null,
+      createTime: item.createTime
+        ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(item.createTime.getDate()).padStart(2, "0")} ${String(item.createTime.getHours()).padStart(2, "0")}:${String(item.createTime.getMinutes()).padStart(2, "0")}:${String(item.createTime.getSeconds()).padStart(2, "0")}`
+        : null,
+    }));
+  }
+
+  async getLoginDevices(userId: string, days: number, limit: number): Promise<LoginDeviceVo[]> {
+    const startTime = new Date();
+    startTime.setDate(startTime.getDate() - days);
+
+    const rows = await this.logRepository
+      .createQueryBuilder("log")
+      .select("log.device", "device")
+      .addSelect("log.os", "os")
+      .addSelect("log.browser", "browser")
+      .addSelect("log.ip", "ip")
+      .addSelect("log.province", "province")
+      .addSelect("log.city", "city")
+      .addSelect("COUNT(*)", "loginCount")
+      .addSelect("MAX(log.create_time)", "lastLoginTime")
+      .where("log.create_by = :userId", { userId })
+      .andWhere("log.action_type = 'LOGIN'")
+      .andWhere("log.create_time >= :startTime", { startTime })
+      .groupBy("log.device, log.os, log.browser, log.ip, log.province, log.city")
+      .orderBy("lastLoginTime", "DESC")
+      .limit(limit)
+      .getRawMany();
+
+    return rows.map((row) => ({
+      device: row.device,
+      os: row.os,
+      browser: row.browser,
+      ip: row.ip,
+      region: `${row.province || ""} ${row.city || ""}`.trim() || null,
+      loginCount: Number(row.loginCount) || 0,
+      lastLoginTime:
+        row.lastLoginTime instanceof Date
+          ? `${row.lastLoginTime.getFullYear()}-${String(row.lastLoginTime.getMonth() + 1).padStart(2, "0")}-${String(row.lastLoginTime.getDate()).padStart(2, "0")} ${String(row.lastLoginTime.getHours()).padStart(2, "0")}:${String(row.lastLoginTime.getMinutes()).padStart(2, "0")}:${String(row.lastLoginTime.getSeconds()).padStart(2, "0")}`
+          : row.lastLoginTime,
+    }));
   }
 }

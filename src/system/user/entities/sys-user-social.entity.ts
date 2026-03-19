@@ -15,7 +15,6 @@ export class SysUserSocial extends BaseEntity {
   userId: string;
 
   @Column({
-    length: 20,
     type: "enum",
     enum: SocialPlatform,
     comment: "平台类型",

@@ -19,12 +19,11 @@ import { RoleModule } from "./system/role/role.module"; // 角色模块（提供
 import { RedisSharedModule } from "./core/redis/redis.module";
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
-import { WebsocketModule } from "./websocket/websocket.module";
+import { SseModule } from "./sse/sse.module";
 import { CodegenModule } from "./codegen/codegen.module";
 import { FileModule } from "./file/file.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
-import { StatisticsModule } from "./system/statistics/statistics.module";
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
@@ -103,12 +102,11 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     RedisSharedModule,
     DictModule,
     SystemConfigModule,
-    WebsocketModule,
+    SseModule,
     FileModule,
     CodegenModule,
     LogModule,
     NoticeModule,
-    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [

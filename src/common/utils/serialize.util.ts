@@ -38,19 +38,16 @@ function isPlainObject(value: any): boolean {
 export function transformDatesInObject<T>(obj: T, opts?: DateFormatOptions): T {
   if (obj === null || obj === undefined) return obj;
 
-  // Handle Date -> formatted string
   if (obj instanceof Date) {
     // @ts-ignore
     return formatDateToString(obj, opts) as any;
   }
 
-  // Handle primitive bigint -> string
   if (typeof obj === "bigint") {
     // @ts-ignore
     return obj.toString() as any;
   }
 
-  // Handle numbers that exceed JS safe integer range -> string
   if (typeof obj === "number") {
     if (!Number.isSafeInteger(obj)) {
       // @ts-ignore

@@ -28,42 +28,29 @@ export class LoggingInterceptor implements NestInterceptor {
           const userAgent = (req.headers?.["user-agent"] as string) || "";
 
           const log = new SysLog();
-          log.module = "SYSTEM";
+          log.actionType = "API";
           log.requestMethod = req.method;
-          log.requestParams = null;
-          log.responseContent = null;
           const url: string = req.originalUrl || req.url;
-          log.content = `${req.method} ${url}`;
           log.requestUri = url;
-          log.method = context.getHandler().name;
           const xff = (req.headers?.["x-forwarded-for"] as string) || "";
           const realIp = xff.split(",")[0].trim();
           log.ip = realIp || req.ip || req.connection?.remoteAddress || null;
           log.province = null;
           log.city = null;
-          log.executionTime = duration.toString();
-          // 防止超出 sys_log.browser 的字段长度（varchar(100)）
-          log.browser = userAgent ? userAgent.slice(0, 100) : null;
-          log.browserVersion = null;
+          log.device = null;
           log.os = null;
+          log.browser = userAgent ? userAgent.slice(0, 100) : null;
+          log.status = 1;
+          log.errorMsg = null;
+          log.executionTime = duration;
           log.createBy = req.user?.userId ?? null;
           log.createTime = new Date();
 
           await this.logRepository.save(log);
         } catch (_e) {
-          // swallow logging errors to avoid影响主流程
+          // 日志保存失败不影响主流程
         }
       })
     );
-  }
-
-  private safeStringify(payload: any): string | null {
-    try {
-      const str = JSON.stringify(payload);
-      // 响应体长度截断
-      return str.length > 2000 ? str.slice(0, 2000) + "..." : str;
-    } catch {
-      return null;
-    }
   }
 }

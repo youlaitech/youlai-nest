@@ -1,8 +1,8 @@
 ﻿import { Module } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
-import { WechatMiniappAuthService } from "./wechat-miniapp-auth.service";
-import { WechatMiniappAuthController } from "./wechat-miniapp-auth.controller";
+import { WxMaAuthService } from "./wxma-auth.service";
+import { WxMaAuthController } from "./wxma-auth.controller";
 import { UserModule } from "../system/user/user.module";
 import { RoleModule } from "../system/role/role.module";
 import { PassportModule } from "@nestjs/passport";
@@ -35,8 +35,8 @@ import { SysUserSocial } from "../system/user/entities/sys-user-social.entity";
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController, WechatMiniappAuthController],
-  providers: [AuthService, WechatMiniappAuthService, JwtStrategy, RedisService, ToolsService],
-  exports: [AuthService, WechatMiniappAuthService],
+  controllers: [AuthController, WxMaAuthController],
+  providers: [AuthService, WxMaAuthService, JwtStrategy, RedisService, ToolsService],
+  exports: [AuthService, WxMaAuthService],
 })
 export class AuthModule {}

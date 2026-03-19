@@ -385,8 +385,6 @@ export class UserService {
 
   /**
    * 获取当前用户信息
-   *
-   * 返回用户的基本信息和权限标识，权限从角色权限缓存中获取
    */
   async findMe(currentUserInfo: CurrentUserInfo): Promise<CurrentUserDto> {
     const userId = currentUserInfo?.userId;
@@ -394,44 +392,47 @@ export class UserService {
       throw new BusinessException(ErrorCode.ACCESS_TOKEN_INVALID);
     }
 
-    // 获取用户基本信息
     const user = await this.userRepository.findOne({
       where: { id: userId.toString(), isDeleted: 0 },
-      select: ["id", "username", "nickname", "mobile", "email", "avatar"],
+      select: [
+        "id",
+        "username",
+        "nickname",
+        "mobile",
+        "email",
+        "avatar",
+        "gender",
+        "deptId",
+        "createTime",
+      ],
     });
 
     if (!user) {
       throw new BusinessException("用户不存在");
     }
 
-    // 获取用户角色
     const userRoles = await this.userRoleRepository.find({
       where: { userId: userId.toString() },
     });
 
-    if (!userRoles?.length) {
-      return {
-        userId: user.id.toString(),
-        username: user.username,
-        nickname: user.nickname,
-        mobile: user.mobile,
-        email: user.email,
-        avatar: user.avatar,
-        roles: [],
-        perms: [],
-      };
+    const roleIds = userRoles?.map((ur) => ur.roleId) || [];
+    const roles = roleIds.length ? await this.roleService.findRolesByIds(roleIds) : [];
+    const roleCodes = roles.map((r) => r.code);
+    const roleNames = roles.map((r) => r.name).join(",");
+
+    let perms: string[] = [];
+    if (roleCodes.length) {
+      if (roleCodes.includes(ROOT_ROLE_CODE)) {
+        perms = await this.rolePermService.getAllPerms();
+      } else {
+        perms = await this.rolePermService.getPermsByRoleCodes(roleCodes);
+      }
     }
 
-    const roleIds = userRoles.map((ur) => ur.roleId);
-    const roles = await this.roleService.findRolesByIds(roleIds);
-    const roleCodes = roles.map((r) => r.code);
-
-    // 从角色权限缓存获取权限标识
-    let perms: string[] = [];
-    if (roleCodes.includes(ROOT_ROLE_CODE)) {
-      perms = await this.rolePermService.getAllPerms();
-    } else {
-      perms = await this.rolePermService.getPermsByRoleCodes(roleCodes);
+    let deptName: string | undefined;
+    if (user.deptId) {
+      const dept = await this.deptService.findByIds([user.deptId]);
+      deptName = dept?.[0]?.name;
     }
 
     return {
@@ -441,6 +442,17 @@ export class UserService {
       mobile: user.mobile,
       email: user.email,
       avatar: user.avatar,
+      gender: user.gender,
+      deptId: user.deptId?.toString(),
+      deptName,
+      roleNames,
+      createTime: user.createTime
+        ? `${user.createTime.getFullYear()}-${String(user.createTime.getMonth() + 1).padStart(2, "0")}-${String(
+            user.createTime.getDate()
+          ).padStart(2, "0")} ${String(user.createTime.getHours()).padStart(2, "0")}:${String(
+            user.createTime.getMinutes()
+          ).padStart(2, "0")}:${String(user.createTime.getSeconds()).padStart(2, "0")}`
+        : undefined,
       roles: roleCodes,
       perms,
     };
@@ -693,11 +705,14 @@ export class UserService {
       throw new BusinessException("当前密码错误");
     }
 
-    const result = await this.userRepository.update(
-      { id: userId.toString(), isDeleted: 0 },
-      { mobile: null as any }
-    );
-    return (result.affected ?? 0) > 0;
+    user.mobile = null;
+    await this.userRepository.save(user);
+
+    const persisted = await this.userRepository.findOne({
+      where: { id: userId.toString(), isDeleted: 0 },
+      select: ["mobile"],
+    });
+    return !persisted?.mobile;
   }
 
   async unbindEmail(userId: string, password: string): Promise<boolean> {
@@ -715,11 +730,14 @@ export class UserService {
       throw new BusinessException("当前密码错误");
     }
 
-    const result = await this.userRepository.update(
-      { id: userId.toString(), isDeleted: 0 },
-      { email: null as any }
-    );
-    return (result.affected ?? 0) > 0;
+    user.email = null;
+    await this.userRepository.save(user);
+
+    const persisted = await this.userRepository.findOne({
+      where: { id: userId.toString(), isDeleted: 0 },
+      select: ["email"],
+    });
+    return !persisted?.email;
   }
 
   async listUserOptions() {
@@ -993,17 +1011,14 @@ export class UserService {
 
     // 开启事务处理
     return await this.userRepository.manager.transaction(async (manager) => {
-      // 1. 删除用户角色关联
       await manager.delete(SysUserRole, { userId: idStr });
 
-      // 2. 逻辑删除用户
       const result = await manager.update(
         SysUser,
         { id: idStr, isDeleted: 0 },
         { isDeleted: 1, updateTime: new Date() as any }
       );
 
-      // 3. 失效会话
       await this.invalidateUserSessions(idStr);
 
       return (result.affected ?? 0) > 0;
