@@ -19,6 +19,13 @@ export class RedisService {
     this.client = this.redisService.getOrThrow();
   }
 
+  /**
+   * 获取原生 Redis 客户端（用于特殊操作如 incr/expire）
+   */
+  getClient(): Redis {
+    return this.client;
+  }
+
   // ==================== 基础 KV 操作 ====================
 
   async set(key: string, value: any, ttl?: number): Promise<boolean> {

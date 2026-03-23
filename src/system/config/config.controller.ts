@@ -1,5 +1,8 @@
 ﻿import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Log } from "src/common/decorators/log.decorator";
+import { ActionTypeValue } from "src/system/log/action-type.enum";
+import { LogModuleValue } from "src/system/log/log-module.enum";
 import { ConfigService } from "./config.service";
 import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
@@ -47,6 +50,7 @@ export class ConfigController {
   }
 
   @ApiOperation({ summary: "修改系统配置" })
+  @Log(LogModuleValue.CONFIG, ActionTypeValue.UPDATE)
   @Put(":id")
   async updateConfig(
     @Param("id") id: string,
@@ -58,6 +62,7 @@ export class ConfigController {
   }
 
   @ApiOperation({ summary: "删除系统配置" })
+  @Log(LogModuleValue.CONFIG, ActionTypeValue.DELETE)
   @Delete(":id")
   async deleteConfig(@Param("id") id: string) {
     await this.configService.deleteConfig(id);

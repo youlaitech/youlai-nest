@@ -29,6 +29,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { LoggerMiddleware } from "./core/logger/logger.middleware";
 import { RequestContextMiddleware } from "./core/middleware/request-context.middleware";
+import { RateLimitMiddleware } from "./core/middleware/rate-limit.middleware";
 import { HttpExceptionFilter } from "./core/filters/http-exception.filter";
 import { XRequestInterceptor } from "./core/interceptors/request.interceptor";
 import { JwtAuthGuard } from "./core/guards/jwt-auth.guard";
@@ -162,6 +163,7 @@ export class AppModule implements NestModule, OnModuleInit {
   configure(consumer: MiddlewareConsumer) {
     // 请求上下文中间件必须在最前面，确保 AsyncLocalStorage 正确初始化
     consumer.apply(RequestContextMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
+    consumer.apply(RateLimitMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
     consumer.apply(LoggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
   }
 }

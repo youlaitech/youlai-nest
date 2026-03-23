@@ -12,6 +12,9 @@
 } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { Permissions } from "../../common/decorators/public.decorator";
+import { Log } from "../../common/decorators/log.decorator";
+import { ActionTypeValue } from "../../system/log/action-type.enum";
+import { LogModuleValue } from "../../system/log/log-module.enum";
 import { RoleService } from "./role.service";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
@@ -67,6 +70,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: "删除角色" })
+  @Log(LogModuleValue.ROLE, ActionTypeValue.DELETE)
   @Delete(":ids")
   @Permissions("sys:role:delete")
   async deleteRoles(@Param("ids") ids: string) {
@@ -82,6 +86,7 @@ export class RoleController {
   }
 
   @ApiOperation({ summary: "角色分配权限" })
+  @Log(LogModuleValue.ROLE, ActionTypeValue.GRANT)
   @Put(":id/menus")
   @Permissions("sys:role:assign")
   async updateMenus(@Param("id") id: string, @Body() menuIds: (string | number)[]): Promise<any> {

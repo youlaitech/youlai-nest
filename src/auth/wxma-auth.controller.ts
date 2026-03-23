@@ -5,7 +5,7 @@ import { WxMaAuthService } from "./wxma-auth.service";
 import { WxMaLoginResultDto } from "./dto/wxma-login-result.dto";
 import { LoginResultDto } from "./dto/login-result.dto";
 
-@ApiTags("13.微信小程序认证")
+@ApiTags("12.微信小程序认证")
 @Controller("api/v1/wxma/auth")
 export class WxMaAuthController {
   constructor(private readonly wxMaAuthService: WxMaAuthService) {}

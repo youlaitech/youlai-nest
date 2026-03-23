@@ -13,6 +13,9 @@
 } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { IsCreateBy, IsUpdateBy, Permissions } from "../../common/decorators/public.decorator";
+import { Log } from "../../common/decorators/log.decorator";
+import { ActionTypeValue } from "../../system/log/action-type.enum";
+import { LogModuleValue } from "../../system/log/log-module.enum";
 import { DictService } from "./dict.service";
 import { DictFormDto } from "./dto/create-dict.dto";
 import { UpdateDictDto } from "./dto/update-dict.dto";
@@ -118,6 +121,7 @@ export class DictController {
   }
 
   @ApiOperation({ summary: "更新字典项" })
+  @Log(LogModuleValue.DICT, ActionTypeValue.UPDATE)
   @IsUpdateBy()
   @Put(":dictCode/items/:itemId")
   @Permissions("sys:dict-item:update")
@@ -130,6 +134,7 @@ export class DictController {
 
   @ApiOperation({ summary: "删除字典项" })
   @IsUpdateBy()
+  @Log(LogModuleValue.DICT, ActionTypeValue.DELETE)
   @Delete(":dictCode/items/:itemIds")
   @Permissions("sys:dict-item:delete")
   async deleteDictItems(@Param("itemIds") itemIds: string) {

@@ -6,7 +6,7 @@ import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { Public } from "../common/decorators/public.decorator";
 
-@ApiTags("14. SSE连接")
+@ApiTags("13. SSE连接")
 @ApiBearerAuth()
 @Controller("sse")
 export class SseController {

@@ -12,6 +12,8 @@ import { ErrorCode } from "src/common/enums/error-code.enum";
 import * as bcrypt from "bcrypt";
 import { RedisService } from "src/core/redis/redis.service";
 import { RedisConstants } from "src/common/constants/redis.constants";
+import { LogService } from "../system/log/log.service";
+import { ActionTypeValue } from "../system/log/action-type.enum";
 
 /**
  * 认证服务
@@ -26,7 +28,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
     private readonly redisCacheService: RedisService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly logService: LogService
   ) {}
 
   /**
@@ -123,26 +126,10 @@ export class AuthService {
     };
 
     // 存储 access/refresh 双 Token 及 userId 反向索引
-    await this.redisCacheService.set(
-      `auth:token:access:${accessToken}`,
-      userSession,
-      accessTtl
-    );
-    await this.redisCacheService.set(
-      `auth:token:refresh:${refreshToken}`,
-      userSession,
-      refreshTtl
-    );
-    await this.redisCacheService.set(
-      `auth:user:access:${userId}`,
-      accessToken,
-      accessTtl
-    );
-    await this.redisCacheService.set(
-      `auth:user:refresh:${userId}`,
-      refreshToken,
-      refreshTtl
-    );
+    await this.redisCacheService.set(`auth:token:access:${accessToken}`, userSession, accessTtl);
+    await this.redisCacheService.set(`auth:token:refresh:${refreshToken}`, userSession, refreshTtl);
+    await this.redisCacheService.set(`auth:user:access:${userId}`, accessToken, accessTtl);
+    await this.redisCacheService.set(`auth:user:refresh:${userId}`, refreshToken, refreshTtl);
 
     return {
       tokenType: "Bearer",
@@ -180,7 +167,21 @@ export class AuthService {
       throw new BusinessException(ErrorCode.ACCOUNT_FROZEN);
     }
 
-    return await this.issueTokens(user);
+    const result = await this.issueTokens(user);
+
+    // 手动记录登录日志（Public 接口无法通过拦截器获取 userId）
+    this.logService
+      .saveManualLog({
+        actionType: ActionTypeValue.LOGIN,
+        operatorId: user.id,
+        operatorName: user.username,
+        requestMethod: "POST",
+        requestUri: "/api/v1/auth/login",
+        status: 1,
+      })
+      .catch(() => {});
+
+    return result;
   }
 
   /**
@@ -202,9 +203,7 @@ export class AuthService {
       throw new BusinessException(ErrorCode.REQUEST_REQUIRED_PARAMETER_IS_EMPTY);
     }
 
-    const cacheCode = await this.redisCacheService.get<string>(
-      `captcha:sms_login:${mobile}`
-    );
+    const cacheCode = await this.redisCacheService.get<string>(`captcha:sms_login:${mobile}`);
     if (!cacheCode) {
       throw new BusinessException(ErrorCode.USER_VERIFICATION_CODE_EXPIRED);
     }
@@ -219,7 +218,21 @@ export class AuthService {
     if (user.status === 0) {
       throw new BusinessException(ErrorCode.ACCOUNT_FROZEN);
     }
-    return await this.issueTokens(user);
+    const result = await this.issueTokens(user);
+
+    // 手动记录登录日志（Public 接口无法通过拦截器获取 userId）
+    this.logService
+      .saveManualLog({
+        actionType: ActionTypeValue.LOGIN,
+        operatorId: user.id,
+        operatorName: user.username,
+        requestMethod: "POST",
+        requestUri: "/api/v1/auth/login/sms",
+        status: 1,
+      })
+      .catch(() => {});
+
+    return result;
   }
 
   /**
@@ -295,9 +308,7 @@ export class AuthService {
     }
 
     // Redis-Token 模式
-    const userSession = await this.redisCacheService.get<any>(
-      `auth:token:refresh:${refreshToken}`
-    );
+    const userSession = await this.redisCacheService.get<any>(`auth:token:refresh:${refreshToken}`);
     if (!userSession) {
       throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
     }
@@ -305,11 +316,7 @@ export class AuthService {
     const accessToken = uuidv4();
     const accessTtl = this.config.expiresIn;
 
-    await this.redisCacheService.set(
-      `auth:token:access:${accessToken}`,
-      userSession,
-      accessTtl
-    );
+    await this.redisCacheService.set(`auth:token:access:${accessToken}`, userSession, accessTtl);
     await this.redisCacheService.set(
       `auth:user:access:${userSession.userId}`,
       accessToken,

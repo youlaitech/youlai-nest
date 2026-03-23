@@ -35,8 +35,9 @@ import { DataPermission } from "src/common/decorators/data-permission.decorator"
 import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
-import { LogService } from "../log/log.service";
-import { UserEventQueryDto } from "../log/dto/user-event.dto";
+import { Log } from "src/common/decorators/log.decorator";
+import { ActionTypeValue } from "src/system/log/action-type.enum";
+import { LogModuleValue } from "src/system/log/log-module.enum";
 
 /**
  * 用户接口控制器
@@ -46,16 +47,10 @@ import { UserEventQueryDto } from "../log/dto/user-event.dto";
 export class UserController {
   private readonly userService: UserService;
   private readonly logger: WinstonLogger;
-  private readonly logService: LogService;
 
-  constructor(
-    userService: UserService,
-    @Inject(WINSTON_MODULE_PROVIDER) logger: WinstonLogger,
-    logService: LogService
-  ) {
+  constructor(userService: UserService, @Inject(WINSTON_MODULE_PROVIDER) logger: WinstonLogger) {
     this.userService = userService;
     this.logger = logger;
-    this.logService = logService;
   }
 
   @ApiOperation({ summary: "获取当前登录用户信息" })
@@ -71,6 +66,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "个人中心修改用户信息" })
+  @Log(LogModuleValue.USER, ActionTypeValue.UPDATE)
   @Put("profile")
   async updateUserProfile(@Req() req, @Body() profileDto: UserProfileDto) {
     return await this.userService.updateProfile(req.user, profileDto);
@@ -158,6 +154,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "新增用户" })
+  @Log(LogModuleValue.USER, ActionTypeValue.INSERT)
   @Post()
   @Permissions("sys:user:create")
   async createUser(@Body() createUserDto: CreateUserDto) {
@@ -172,6 +169,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "修改用户" })
+  @Log(LogModuleValue.USER, ActionTypeValue.UPDATE)
   @Put(":id")
   @Permissions("sys:user:update")
   async updateUser(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
@@ -179,6 +177,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "删除用户" })
+  @Log(LogModuleValue.USER, ActionTypeValue.DELETE)
   @Delete(":ids")
   @Permissions("sys:user:delete")
   async deleteUsers(@Param("ids") ids: string) {
@@ -203,6 +202,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "修改用户状态" })
+  @Log(LogModuleValue.USER, ActionTypeValue.UPDATE)
   @Patch(":userId/status")
   @Permissions("sys:user:update")
   async updateUserStatus(@Param("userId") userId: string, @Query("status") status: number) {
@@ -210,6 +210,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "重置指定用户密码" })
+  @Log(LogModuleValue.USER, ActionTypeValue.RESET_PASSWORD)
   @Put(":userId/password/reset")
   @Permissions("sys:user:reset-password")
   async resetUserPassword(@Param("userId") userId: string, @Query("password") password: string) {
@@ -217,6 +218,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "当前用户修改密码" })
+  @Log(LogModuleValue.USER, ActionTypeValue.CHANGE_PASSWORD)
   @Put("password")
   async changeCurrentUserPassword(
     @CurrentUser("userId") userId: string,
@@ -263,6 +265,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: "导入用户" })
+  @Log(LogModuleValue.USER, ActionTypeValue.IMPORT)
   @Post("import")
   @Permissions("sys:user:import")
   @UseInterceptors(FileInterceptor("file"))
@@ -303,27 +306,5 @@ export class UserController {
       query.status,
       query.createTime
     );
-  }
-
-  @ApiOperation({ summary: "用户事件列表" })
-  @Get("events")
-  async getUserEvents(@CurrentUser("userId") userId: string, @Query() query: UserEventQueryDto) {
-    if (query.pageNum && query.pageSize) {
-      return await this.logService.getUserEventPage(userId, query);
-    } else {
-      const list = await this.logService.getUserEventList(userId, query, 50);
-      return { data: list };
-    }
-  }
-
-  @ApiOperation({ summary: "登录设备列表" })
-  @Get("login-devices")
-  async getLoginDevices(
-    @CurrentUser("userId") userId: string,
-    @Query("days") days?: number,
-    @Query("limit") limit?: number
-  ) {
-    const devices = await this.logService.getLoginDevices(userId, days ?? 30, limit ?? 10);
-    return { data: devices };
   }
 }

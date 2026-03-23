@@ -15,6 +15,9 @@ import { LoginRequestDto } from "./dto/login-request.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginResultDto } from "./dto/login-result.dto";
 import { Public } from "../common/decorators/public.decorator";
+import { Log } from "../common/decorators/log.decorator";
+import { ActionTypeValue } from "../system/log/action-type.enum";
+import { LogModuleValue } from "../system/log/log-module.enum";
 import { ToolsService } from "../common/utils/service/tools.service";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
@@ -71,6 +74,7 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: "注销登录" })
+  @Log(LogModuleValue.LOGIN, ActionTypeValue.LOGOUT)
   @Delete("logout")
   async logout(@Req() req: any) {
     const authHeader = req.headers.authorization;

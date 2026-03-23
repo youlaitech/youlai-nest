@@ -17,6 +17,9 @@ import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Permissions } from "../../common/decorators/public.decorator";
+import { Log } from "../../common/decorators/log.decorator";
+import { ActionTypeValue } from "../../system/log/action-type.enum";
+import { LogModuleValue } from "../../system/log/log-module.enum";
 import { DataPermission } from "src/common/decorators/data-permission.decorator";
 
 /**
@@ -72,6 +75,7 @@ export class DeptController {
   }
 
   @ApiOperation({ summary: "编辑部门" })
+  @Log(LogModuleValue.DEPT, ActionTypeValue.UPDATE)
   @Put(":id")
   @Permissions("sys:dept:update")
   async update(
@@ -104,6 +108,7 @@ export class DeptController {
   }
 
   @ApiOperation({ summary: "删除部门" })
+  @Log(LogModuleValue.DEPT, ActionTypeValue.DELETE)
   @Delete(":ids")
   @Permissions("sys:dept:delete")
   async deleteDepartments(@Param("ids") ids: string) {

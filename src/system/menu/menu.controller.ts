@@ -13,6 +13,9 @@
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Permissions } from "src/common/decorators/public.decorator";
+import { Log } from "src/common/decorators/log.decorator";
+import { ActionTypeValue } from "src/system/log/action-type.enum";
+import { LogModuleValue } from "src/system/log/log-module.enum";
 import { MenuService } from "./menu.service";
 import { CreateMenuDto } from "./dto/create-menu.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
@@ -65,6 +68,7 @@ export class MenuController {
   }
 
   @ApiOperation({ summary: "修改菜单显示状态" })
+  @Log(LogModuleValue.MENU, ActionTypeValue.UPDATE)
   @Patch(":id")
   @Permissions("sys:menu:update")
   async update(@Param("id") id: string, @Query("visible") visible: number) {
@@ -74,6 +78,7 @@ export class MenuController {
   }
 
   @ApiOperation({ summary: "删除菜单" })
+  @Log(LogModuleValue.MENU, ActionTypeValue.DELETE)
   @Delete(":id")
   @Permissions("sys:menu:delete")
   deleteMenu(@Param("id") id: string) {

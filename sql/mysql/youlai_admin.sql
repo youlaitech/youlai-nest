@@ -372,7 +372,7 @@ CREATE TABLE `sys_user`  (
 -- Records of sys_user
 -- ----------------------------
 INSERT INTO `sys_user` VALUES (1, 'root', '有来技术', 0, '$2a$10$xVWsNOhHrCxh5UbpCE7/HuJ.PAOKcYAqRxD2CO2nVnJS.IAXkr5aq', NULL, 'https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif', '18812345677', 1, 'youlaitech@163.com', now(), NULL, now(), NULL, 0);
-INSERT INTO `sys_user` VALUES (2, 'admin', '系统管理员', 1, '$2a$10$xVWsNOhHrCxh5UbpCE7/HuJ.PAOKcYAqRxD2CO2nVnJS.IAXkr5aq', 1, 'https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif', '18812345678', 1, 'youlaitech@163.com', now(), NULL, now(), NULL, 0);
+INSERT INTO `sys_user` VALUES (2, 'admin', '系统管理员', 1, '$2a$10$xVWsNOhHrCxh5UbpCE7/HuJ.PAOKcYAqRxD2CO2nVnJS.IAXkr5aq', 1, 'https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif', '18888888888', 1, 'youlaitech@163.com', now(), NULL, now(), NULL, 0);
 INSERT INTO `sys_user` VALUES (3, 'test', '测试小用户', 1, '$2a$10$xVWsNOhHrCxh5UbpCE7/HuJ.PAOKcYAqRxD2CO2nVnJS.IAXkr5aq', 3, 'https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif', '18812345679', 1, 'youlaitech@163.com', now(), NULL, now(), NULL, 0);
 INSERT INTO `sys_user` VALUES (4, 'dept_manager', '部门主管', 1, '$2a$10$xVWsNOhHrCxh5UbpCE7/HuJ.PAOKcYAqRxD2CO2nVnJS.IAXkr5aq', 1, 'https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif', '18812345680', 1, 'manager@youlaitech.com', now(), NULL, now(), NULL, 0);
 INSERT INTO `sys_user` VALUES (5, 'dept_member', '部门成员', 1, '$2a$10$xVWsNOhHrCxh5UbpCE7/HuJ.PAOKcYAqRxD2CO2nVnJS.IAXkr5aq', 1, 'https://foruda.gitee.com/images/1723603502796844527/03cdca2a_716974.gif', '18812345681', 1, 'member@youlaitech.com', now(), NULL, now(), NULL, 0);
@@ -406,24 +406,29 @@ INSERT IGNORE INTO `sys_user_role` VALUES (7, 7);
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_log`;
 CREATE TABLE `sys_log` (
-                           `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-                           `action_type` varchar(50) NOT NULL COMMENT '行为类型: LOGIN/LOGOUT/CHANGE_PWD/UPDATE_PROFILE等',
-                           `request_uri` varchar(255) COMMENT '请求路径',
-                           `request_method` varchar(10) COMMENT '请求方式',
-                           `ip` varchar(45) COMMENT 'IP地址',
-                           `province` varchar(100) COMMENT '省份',
-                           `city` varchar(100) COMMENT '城市',
-                           `device` varchar(100) COMMENT '设备',
-                           `os` varchar(100) COMMENT '操作系统',
-                           `browser` varchar(100) COMMENT '浏览器',
-                           `status` tinyint COMMENT '0失败 1成功',
-                           `error_msg` varchar(255) COMMENT '错误信息',
-                           `execution_time` int COMMENT '执行时间(ms)',
-                           `create_by` bigint COMMENT '操作用户ID',
-                           `create_time` datetime COMMENT '创建时间',
-                           PRIMARY KEY (`id`) USING BTREE,
-                           KEY `idx_user_action_time` (`create_by`, `action_type`, `create_time`),
-                           KEY `idx_time` (`create_time`)
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `module` TINYINT NOT NULL COMMENT '模块，数字枚举，参考 LogModule 枚举',
+    `action_type` TINYINT NOT NULL COMMENT '操作类型，数字枚举，参考 ActionType 枚举',
+    `title` VARCHAR(100) NOT NULL COMMENT '前端显示标题',
+    `content` TEXT COMMENT '自定义日志内容',
+    `operator_id` BIGINT NOT NULL COMMENT '操作人ID',
+    `operator_name` VARCHAR(50) COMMENT '操作人名称',
+    `request_uri` VARCHAR(255) COMMENT '请求路径',
+    `request_method` VARCHAR(10) COMMENT '请求方法',
+    `ip` VARCHAR(45) COMMENT 'IP地址',
+    `province` VARCHAR(100) COMMENT '省份',
+    `city` VARCHAR(100) COMMENT '城市',
+    `device` VARCHAR(100) COMMENT '设备',
+    `os` VARCHAR(100) COMMENT '操作系统',
+    `browser` VARCHAR(100) COMMENT '浏览器',
+    `status` TINYINT DEFAULT 1 COMMENT '0失败 1成功',
+    `error_msg` VARCHAR(255) COMMENT '错误信息',
+    `execution_time` INT COMMENT '执行时间(ms)',
+    `create_time` DATETIME COMMENT '操作时间',
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `idx_module_action_time` (`module`, `action_type`, `create_time`),
+    KEY `idx_operator_time` (`operator_id`, `create_time`),
+    KEY `idx_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统操作日志表';
 
 -- ----------------------------

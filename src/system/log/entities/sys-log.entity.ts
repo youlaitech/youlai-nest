@@ -8,8 +8,29 @@ export class SysLog {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id: string;
 
-  @Column({ name: "action_type", type: "varchar", length: 50, comment: "行为类型" })
-  actionType: string;
+  @Column({ type: "tinyint", comment: "模块" })
+  module: number;
+
+  @Column({ name: "action_type", type: "tinyint", comment: "操作类型" })
+  actionType: number;
+
+  @Column({ type: "varchar", length: 100, nullable: true, comment: "操作标题" })
+  title: string | null;
+
+  @Column({ type: "text", nullable: true, comment: "自定义日志内容" })
+  content: string | null;
+
+  @Column({ name: "operator_id", type: "bigint", nullable: true, comment: "操作人ID" })
+  operatorId: string | null;
+
+  @Column({
+    name: "operator_name",
+    type: "varchar",
+    length: 50,
+    nullable: true,
+    comment: "操作人名称",
+  })
+  operatorName: string | null;
 
   @Column({
     name: "request_uri",
@@ -55,9 +76,6 @@ export class SysLog {
 
   @Column({ name: "execution_time", type: "int", nullable: true, comment: "执行时间(ms)" })
   executionTime: number | null;
-
-  @Column({ name: "create_by", type: "bigint", nullable: true, comment: "操作用户ID" })
-  createBy?: string | null;
 
   @CreateDateColumn({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
   createTime: Date;

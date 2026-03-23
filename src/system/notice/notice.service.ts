@@ -184,6 +184,9 @@ export class NoticeService {
     notice.updateTime = new Date();
     await this.noticeRepository.save(notice);
 
+    // 发布时先删除该通知之前的用户通知数据（重新发布场景）
+    await this.userNoticeRepository.delete({ noticeId: idStr });
+
     // 根据 targetType 分发到用户
     const now = new Date();
     let targetUserIds: string[] = [];
@@ -256,6 +259,9 @@ export class NoticeService {
     notice.revokeTime = new Date();
     notice.updateTime = new Date();
     await this.noticeRepository.save(notice);
+
+    // 撤回时删除用户通知状态记录
+    await this.userNoticeRepository.delete({ noticeId: id.toString() });
 
     // 通知前端移除该通知
     const onlineUsers = this.sseService.getOnlineUsers();

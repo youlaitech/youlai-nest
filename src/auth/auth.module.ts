@@ -5,6 +5,7 @@ import { WxMaAuthService } from "./wxma-auth.service";
 import { WxMaAuthController } from "./wxma-auth.controller";
 import { UserModule } from "../system/user/user.module";
 import { RoleModule } from "../system/role/role.module";
+import { LogModule } from "../system/log/log.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -20,6 +21,7 @@ import { SysUserSocial } from "../system/user/entities/sys-user-social.entity";
   imports: [
     UserModule,
     RoleModule,
+    LogModule,
     RedisSharedModule,
     TypeOrmModule.forFeature([SysUser, SysUserSocial]),
     PassportModule.register({ defaultStrategy: "jwt" }),

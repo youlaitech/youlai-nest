@@ -7,8 +7,23 @@ export class LogPageVo {
   @ApiProperty({ description: "主键" })
   id: string;
 
-  @ApiProperty({ description: "行为类型" })
-  actionType: string;
+  @ApiProperty({ description: "模块" })
+  module: string | null;
+
+  @ApiProperty({ description: "操作类型" })
+  actionType: string | null;
+
+  @ApiProperty({ description: "操作标题" })
+  title: string | null;
+
+  @ApiProperty({ description: "自定义日志内容" })
+  content: string | null;
+
+  @ApiProperty({ description: "操作人ID" })
+  operatorId: string | null;
+
+  @ApiProperty({ description: "操作人名称" })
+  operatorName: string | null;
 
   @ApiProperty({ description: "状态：0失败 1成功" })
   status: number | null;
@@ -40,12 +55,6 @@ export class LogPageVo {
   @ApiProperty({ description: "错误信息" })
   errorMsg: string | null;
 
-  @ApiProperty({ description: "创建人ID" })
-  createBy: string | null;
-
   @ApiProperty({ description: "创建时间", example: "2025-01-01 12:00:00" })
   createTime: string | null;
-
-  @ApiProperty({ description: "操作人" })
-  operator: string | null;
 }

@@ -6,8 +6,21 @@ import { LogQueryDto } from "./dto/log-query.dto";
 import { LogPageVo } from "./dto/log-page.vo";
 import { VisitTrendDto } from "./dto/visit-trend.dto";
 import { VisitStatsDto } from "./dto/visit-stats.dto";
-import { SysUser } from "../user/entities/sys-user.entity";
-import { UserEventQueryDto, UserEventVo, LoginDeviceVo } from "./dto/user-event.dto";
+import { ActionTypeEnum, ActionTypeValue } from "./action-type.enum";
+import { LogModuleEnum } from "./log-module.enum";
+
+export interface ManualLogParams {
+  actionType: ActionTypeValue;
+  operatorId: string;
+  operatorName?: string;
+  requestMethod: string;
+  requestUri: string;
+  ip?: string;
+  userAgent?: string;
+  status?: number;
+  errorMsg?: string;
+  executionTime?: number;
+}
 
 /**
  * 日志服务
@@ -16,9 +29,7 @@ import { UserEventQueryDto, UserEventVo, LoginDeviceVo } from "./dto/user-event.
 export class LogService {
   constructor(
     @InjectRepository(SysLog)
-    private readonly logRepository: Repository<SysLog>,
-    @InjectRepository(SysUser)
-    private readonly userRepository: Repository<SysUser>
+    private readonly logRepository: Repository<SysLog>
   ) {}
 
   async getLogPage(query: LogQueryDto) {
@@ -77,22 +88,14 @@ export class LogService {
       .take(pageSizeSafe)
       .getManyAndCount();
 
-    const userIds = Array.from(
-      new Set(records.map((r) => r.createBy).filter((v) => v !== null && v !== undefined))
-    );
-    const users = userIds.length
-      ? await this.userRepository
-          .createQueryBuilder("user")
-          .select(["user.id", "user.nickname"])
-          .where("user.id IN (:...ids)", { ids: userIds })
-          .getMany()
-      : [];
-    const userMap = new Map<string, string>();
-    users.forEach((u) => userMap.set(u.id, u.nickname));
-
     const list: LogPageVo[] = records.map((item) => ({
       id: item.id,
-      actionType: item.actionType,
+      module: item.module != null ? LogModuleEnum.getLabel(item.module) : null,
+      actionType: item.actionType != null ? ActionTypeEnum.getLabel(item.actionType) : null,
+      title: item.title,
+      content: item.content,
+      operatorId: item.operatorId,
+      operatorName: item.operatorName,
       status: item.status,
       requestUri: item.requestUri,
       requestMethod: item.requestMethod,
@@ -103,7 +106,6 @@ export class LogService {
       os: item.os,
       executionTime: item.executionTime,
       errorMsg: item.errorMsg,
-      createBy: item.createBy,
       createTime: item.createTime
         ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(
             item.createTime.getDate()
@@ -111,7 +113,6 @@ export class LogService {
             item.createTime.getMinutes()
           ).padStart(2, "0")}:${String(item.createTime.getSeconds()).padStart(2, "0")}`
         : null,
-      operator: item.createBy ? (userMap.get(item.createBy) ?? null) : null,
     }));
 
     return {
@@ -237,122 +238,70 @@ export class LogService {
     };
   }
 
-  async getUserEventPage(userId: string, query: UserEventQueryDto) {
-    const { pageNum = 1, pageSize = 10, actionType, startDate, endDate } = query;
+  /**
+   * 手动记录日志（用于登录/登出等 Public 接口）
+   * 拦截器无法从安全上下文获取 userId，需在业务逻辑中手动传入
+   */
+  async saveManualLog(params: ManualLogParams) {
+    const { userAgent = "" } = params;
+    const { browser, os } = this.parseUserAgent(userAgent);
 
-    const qb = this.logRepository
-      .createQueryBuilder("log")
-      .where("log.create_by = :userId", { userId });
+    const log = new SysLog();
+    log.actionType = params.actionType;
+    log.requestMethod = params.requestMethod;
+    log.requestUri = params.requestUri;
+    log.ip = params.ip ?? null;
+    log.device = os;
+    log.os = os;
+    log.browser = browser;
+    log.status = params.status ?? 1;
+    log.errorMsg = params.errorMsg ?? null;
+    log.executionTime = params.executionTime ?? 0;
+    log.operatorId = params.operatorId;
+    log.operatorName = params.operatorName ?? null;
+    log.createTime = new Date();
 
-    if (actionType) {
-      qb.andWhere("log.action_type = :actionType", { actionType });
-    }
-    if (startDate) {
-      qb.andWhere("log.create_time >= :startDate", { startDate });
-    }
-    if (endDate) {
-      const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
-      qb.andWhere("log.create_time <= :endDate", { endDate: endDateTime });
-    }
-
-    const [records, total] = await qb
-      .orderBy("log.create_time", "DESC")
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
-      .getManyAndCount();
-
-    const list: UserEventVo[] = records.map((item) => ({
-      id: item.id,
-      actionType: item.actionType,
-      status: item.status,
-      device: item.device,
-      os: item.os,
-      browser: item.browser,
-      ip: item.ip,
-      region: [item.province, item.city].filter(Boolean).join(" ") || null,
-      createTime: item.createTime
-        ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(item.createTime.getDate()).padStart(2, "0")} ${String(item.createTime.getHours()).padStart(2, "0")}:${String(item.createTime.getMinutes()).padStart(2, "0")}:${String(item.createTime.getSeconds()).padStart(2, "0")}`
-        : null,
-    }));
-
-    return {
-      data: list,
-      page: { pageNum, pageSize, total },
-    };
+    await this.logRepository.save(log);
   }
 
-  async getUserEventList(
-    userId: string,
-    query: UserEventQueryDto,
-    limit: number
-  ): Promise<UserEventVo[]> {
-    const { actionType, startDate, endDate } = query;
+  private parseUserAgent(ua: string): { browser: string; os: string } {
+    if (!ua) return { browser: "", os: "" };
 
-    const qb = this.logRepository
-      .createQueryBuilder("log")
-      .where("log.create_by = :userId", { userId });
+    let browser = "";
+    let os = "";
 
-    if (actionType) {
-      qb.andWhere("log.action_type = :actionType", { actionType });
+    if (ua.includes("Windows NT 10")) os = "Windows 10";
+    else if (ua.includes("Windows NT 6.3")) os = "Windows 8.1";
+    else if (ua.includes("Windows NT 6.1")) os = "Windows 7";
+    else if (ua.includes("Windows")) os = "Windows";
+    else if (ua.includes("Mac OS X")) {
+      const match = ua.match(/Mac OS X ([\d_]+)/);
+      os = match ? `macOS ${match[1].replace(/_/g, ".")}` : "macOS";
+    } else if (ua.includes("Android")) {
+      const match = ua.match(/Android ([\d.]+)/);
+      os = match ? `Android ${match[1]}` : "Android";
+    } else if (ua.includes("iPhone") || ua.includes("iPad")) {
+      const match = ua.match(/OS ([\d_]+)/);
+      os = match ? `iOS ${match[1].replace(/_/g, ".")}` : "iOS";
+    } else if (ua.includes("Linux")) os = "Linux";
+
+    if (ua.includes("Edg/")) {
+      const match = ua.match(/Edg\/([\d.]+)/);
+      browser = match ? `Edge ${match[1]}` : "Edge";
+    } else if (ua.includes("OPR/") || ua.includes("Opera/")) {
+      const match = ua.match(/(?:OPR|Opera)\/([\d.]+)/);
+      browser = match ? `Opera ${match[1]}` : "Opera";
+    } else if (ua.includes("Firefox/")) {
+      const match = ua.match(/Firefox\/([\d.]+)/);
+      browser = match ? `Firefox ${match[1]}` : "Firefox";
+    } else if (ua.includes("Chrome/") && !ua.includes("Edg/")) {
+      const match = ua.match(/Chrome\/([\d.]+)/);
+      browser = match ? `Chrome ${match[1]}` : "Chrome";
+    } else if (ua.includes("Safari/") && !ua.includes("Chrome")) {
+      const match = ua.match(/Version\/([\d.]+)/);
+      browser = match ? `Safari ${match[1]}` : "Safari";
     }
-    if (startDate) {
-      qb.andWhere("log.create_time >= :startDate", { startDate });
-    }
-    if (endDate) {
-      const endDateTime = endDate.length === 10 ? `${endDate} 23:59:59` : endDate;
-      qb.andWhere("log.create_time <= :endDate", { endDate: endDateTime });
-    }
 
-    const records = await qb.orderBy("log.create_time", "DESC").limit(limit).getMany();
-
-    return records.map((item) => ({
-      id: item.id,
-      actionType: item.actionType,
-      status: item.status,
-      device: item.device,
-      os: item.os,
-      browser: item.browser,
-      ip: item.ip,
-      region: [item.province, item.city].filter(Boolean).join(" ") || null,
-      createTime: item.createTime
-        ? `${item.createTime.getFullYear()}-${String(item.createTime.getMonth() + 1).padStart(2, "0")}-${String(item.createTime.getDate()).padStart(2, "0")} ${String(item.createTime.getHours()).padStart(2, "0")}:${String(item.createTime.getMinutes()).padStart(2, "0")}:${String(item.createTime.getSeconds()).padStart(2, "0")}`
-        : null,
-    }));
-  }
-
-  async getLoginDevices(userId: string, days: number, limit: number): Promise<LoginDeviceVo[]> {
-    const startTime = new Date();
-    startTime.setDate(startTime.getDate() - days);
-
-    const rows = await this.logRepository
-      .createQueryBuilder("log")
-      .select("log.device", "device")
-      .addSelect("log.os", "os")
-      .addSelect("log.browser", "browser")
-      .addSelect("log.ip", "ip")
-      .addSelect("log.province", "province")
-      .addSelect("log.city", "city")
-      .addSelect("COUNT(*)", "loginCount")
-      .addSelect("MAX(log.create_time)", "lastLoginTime")
-      .where("log.create_by = :userId", { userId })
-      .andWhere("log.action_type = 'LOGIN'")
-      .andWhere("log.create_time >= :startTime", { startTime })
-      .groupBy("log.device, log.os, log.browser, log.ip, log.province, log.city")
-      .orderBy("lastLoginTime", "DESC")
-      .limit(limit)
-      .getRawMany();
-
-    return rows.map((row) => ({
-      device: row.device,
-      os: row.os,
-      browser: row.browser,
-      ip: row.ip,
-      region: `${row.province || ""} ${row.city || ""}`.trim() || null,
-      loginCount: Number(row.loginCount) || 0,
-      lastLoginTime:
-        row.lastLoginTime instanceof Date
-          ? `${row.lastLoginTime.getFullYear()}-${String(row.lastLoginTime.getMonth() + 1).padStart(2, "0")}-${String(row.lastLoginTime.getDate()).padStart(2, "0")} ${String(row.lastLoginTime.getHours()).padStart(2, "0")}:${String(row.lastLoginTime.getMinutes()).padStart(2, "0")}:${String(row.lastLoginTime.getSeconds()).padStart(2, "0")}`
-          : row.lastLoginTime,
-    }));
+    return { browser, os };
   }
 }
