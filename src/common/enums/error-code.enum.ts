@@ -68,7 +68,7 @@ export const ErrorCode = {
   ACCESS_PERMISSION_EXCEPTION: {
     code: "A0300",
     msg: "访问权限异常",
-    httpStatus: HttpStatus.BAD_REQUEST,
+    httpStatus: HttpStatus.FORBIDDEN,
   },
   ACCESS_UNAUTHORIZED: { code: "A0301", msg: "访问未授权", httpStatus: HttpStatus.UNAUTHORIZED },
 

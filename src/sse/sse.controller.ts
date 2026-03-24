@@ -19,20 +19,15 @@ export class SseController {
   @Public()
   @Get("connect")
   @ApiOperation({ summary: "建立SSE连接" })
-  async connect(@Req() req: Request, @Res() res: Response, @Query("token") token?: string) {
+  async connect(@Req() req: Request, @Res() res: Response) {
     const authHeader = req.headers.authorization;
-    let jwtToken: string | undefined;
 
-    if (authHeader?.startsWith("Bearer ")) {
-      jwtToken = authHeader.slice(7);
-    } else if (token) {
-      jwtToken = token;
-    }
-
-    if (!jwtToken) {
+    if (!authHeader?.startsWith("Bearer ")) {
       res.status(401).json({ code: 401, msg: "Unauthorized" });
       return;
     }
+
+    const jwtToken = authHeader.slice(7);
 
     try {
       const secret = this.configService.getOrThrow<string>("jwt.secretKey");

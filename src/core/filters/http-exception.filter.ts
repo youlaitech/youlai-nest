@@ -57,7 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      // 认证/鉴权错误按 401 返回，接口不存在按 404 返回
+      // 认证错误返回 401，权限不足返回 403
       if (status === HttpStatus.UNAUTHORIZED) {
         return response
           .status(HttpStatus.UNAUTHORIZED)
@@ -70,9 +70,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
       if (status === HttpStatus.FORBIDDEN) {
         return response
-          .status(HttpStatus.UNAUTHORIZED)
+          .status(HttpStatus.FORBIDDEN)
           .json(
-            buildResponseBody(ErrorCode.ACCESS_UNAUTHORIZED.code, ErrorCode.ACCESS_UNAUTHORIZED.msg)
+            buildResponseBody(
+              ErrorCode.ACCESS_PERMISSION_EXCEPTION.code,
+              ErrorCode.ACCESS_PERMISSION_EXCEPTION.msg
+            )
           );
       }
       if (status === HttpStatus.NOT_FOUND) {
@@ -91,24 +94,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (status === HttpStatus.BAD_REQUEST || status === HttpStatus.UNPROCESSABLE_ENTITY) {
         return response
-          .status(status)
+          .status(HttpStatus.OK)
           .json(buildResponseBody(ErrorCode.USER_REQUEST_PARAMETER_ERROR.code, msg));
       }
 
       return response
-        .status(status || HttpStatus.BAD_REQUEST)
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .json(buildResponseBody(ErrorCode.SYSTEM_ERROR.code, msg));
     }
 
     // 数据库唯一约束冲突等（TypeORM QueryFailedError 通常会落到这里）
     if (isDuplicateEntryError(exception)) {
       return response
-        .status(HttpStatus.BAD_REQUEST)
+        .status(HttpStatus.OK)
         .json(buildResponseBody(ErrorCode.INTEGRITY_CONSTRAINT_VIOLATION.code, "数据已存在"));
     }
 
     // 处理其他未捕获异常
-    const status = HttpStatus.BAD_REQUEST;
+    const status = HttpStatus.INTERNAL_SERVER_ERROR;
     const error = exception as Error;
 
     return response
