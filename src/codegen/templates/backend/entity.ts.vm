@@ -2,12 +2,12 @@
  * ${businessName} 实体
  */
 import { Column, Entity } from "typeorm";
-import { BaseEntity } from "src/common/entities";
+import { BaseEntity } from "@/common/entities/base.entity";
 
 @Entity("${tableName}")
 export class ${entityName} extends BaseEntity {
 #foreach($fieldConfig in $fieldConfigs)
-  #if($fieldConfig.fieldName != "id" && $fieldConfig.fieldName != "createBy" && $fieldConfig.fieldName != "createTime" && $fieldConfig.fieldName != "updateBy" && $fieldConfig.fieldName != "updateTime" && $fieldConfig.fieldName != "isDeleted")
+#if($fieldConfig.fieldName != "id" && $fieldConfig.fieldName != "createBy" && $fieldConfig.fieldName != "createTime" && $fieldConfig.fieldName != "updateBy" && $fieldConfig.fieldName != "updateTime" && $fieldConfig.fieldName != "isDeleted")
   @Column({
     #if($fieldConfig.columnName && $fieldConfig.columnName != $fieldConfig.fieldName)
     name: "${fieldConfig.columnName}",
@@ -24,7 +24,6 @@ export class ${entityName} extends BaseEntity {
     #end
   })
   ${fieldConfig.fieldName}: ${fieldConfig.tsType};
-  #end
-
+#end
 #end
 }

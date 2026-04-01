@@ -1,4 +1,4 @@
-﻿import { Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { SysNotice } from "./entities/sys-notice.entity";
@@ -6,7 +6,7 @@ import { SysUserNotice } from "./entities/sys-user-notice.entity";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
-import { SseService } from "src/sse/sse.service";
+import { SseService } from "../../message/sse.service";
 
 /**
  * 通知公告服务

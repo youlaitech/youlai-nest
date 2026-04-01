@@ -1,6 +1,6 @@
-﻿import { Column, Entity, ManyToMany, JoinTable } from "typeorm";
+import { Column, Entity, ManyToMany, JoinTable } from "typeorm";
 import { SysRole } from "../../role/entities/sys-role.entity";
-import { BaseEntity } from "../../../common/entities";
+import { BaseEntity } from "@/common/entities/base.entity";
 
 @Entity("sys_user")
 export class SysUser extends BaseEntity {

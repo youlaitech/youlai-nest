@@ -1,6 +1,6 @@
-﻿import { Controller, Get, Query, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Get, Query, UsePipes, ValidationPipe } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { Public } from "@/common/decorators/public.decorator";
+import { Public } from "../../common/decorators/auth.decorator";
 import { LogService } from "./log.service";
 import { LogQueryDto } from "./dto/log-query.dto";
 

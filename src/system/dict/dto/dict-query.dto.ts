@@ -1,6 +1,6 @@
-﻿import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
-import { BaseQueryDto } from "src/common/dto/base-query.dto";
+import { BaseQueryDto } from "@/common/dto/base-query.dto";
 
 /**
  * 字典查询参数

@@ -1,4 +1,4 @@
-﻿import { Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { DataSource } from "typeorm";
 import JSZip from "jszip";
 import * as fs from "fs";
@@ -6,7 +6,7 @@ import * as path from "path";
 // velocityjs 没有稳定的 TS 类型定义，使用 any
 import * as Velocity from "velocityjs";
 
-import type { CodegenPreviewVo } from "./dto/codegen-preview.vo";
+import type { CodegenPreviewDto } from "./dto/codegen-preview.dto";
 import type { GenConfigFormDto, FieldConfigDto } from "./dto/gen-config-form.dto";
 import type { TableQueryDto } from "./dto/table-query.dto";
 
@@ -469,12 +469,12 @@ export class CodegenService {
     tableName: string,
     pageType: "classic" | "curd" = "classic",
     type: "ts" | "js" = "ts"
-  ): Promise<CodegenPreviewVo[]> {
+  ): Promise<CodegenPreviewDto[]> {
     const config = await this.getGenConfig(tableName);
     const fieldConfigs = config.fieldConfigs || [];
     const frontendType = type === "js" ? "js" : "ts";
 
-    const previews: CodegenPreviewVo[] = [];
+    const previews: CodegenPreviewDto[] = [];
     for (const [templateName, templateConfig] of Object.entries(this.templateConfigs) as [
       TemplateName,
       TemplateConfig,

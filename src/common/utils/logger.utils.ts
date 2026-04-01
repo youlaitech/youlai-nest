@@ -42,7 +42,7 @@ export class LoggerUtils {
     };
   }
 
-  private static parseClientIP(req: Request): string {
+  static parseClientIP(req: Request): string {
     return (
       req.ip || req.socket?.remoteAddress || req.headers["x-forwarded-for"]?.toString() || "unknown"
     );

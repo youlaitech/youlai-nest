@@ -1,10 +1,9 @@
 ﻿import { Injectable, Inject } from "@nestjs/common";
 
-import * as Client from "ali-oss";
 import * as dayjs from "dayjs";
 import { ConfigType } from "@nestjs/config";
 import ossConfig from "../config/oss.config";
-import OSS from "ali-oss";
+import OSS, * as Client from "ali-oss";
 import * as Minio from "minio";
 import * as $OpenApi from "@alicloud/openapi-client";
 import ocr_api20210707, * as $ocr_api20210707 from "@alicloud/ocr-api20210707";
@@ -21,20 +20,20 @@ export class FileService {
   /** 当前 OSS 类型：aliyun | minio | local */
   private readonly ossType: "aliyun" | "minio" | "local";
 
-  /** 阿里云 OSS 客户端及配置（当 ossType=aliyun 时启用） */
-  private aliClient: any;
-  private aliConfig: Record<string, any>;
-  private staticClient: any;
-  private staticConfig: Record<string, any>;
+  /** 阿里云 OSS 客户端 */
+  private aliClient: OSS;
+  private aliConfig: OSS.Options & { bucket: string };
+  private staticClient: OSS;
+  private staticConfig: OSS.Options & { bucket: string };
 
   /** MinIO 客户端及配置（当 ossType=minio 时启用） */
   private minioClient: Minio.Client | null = null;
   private minioBucket: string | null = null;
-  private minioConfig: Record<string, any> = {};
+  private minioConfig: Minio.ClientOptions = {} as Minio.ClientOptions;
 
   // OCR 身份证识别（阿里云）
-  private ORCClient: ocr_api20210707 | null = null;
-  private OCRConfig: Record<string, any> = {};
+  private OCRClient: ocr_api20210707 | null = null;
+  private OCRConfig: $OpenApi.Config = new $OpenApi.Config({});
 
   constructor(
     @Inject(ossConfig.KEY)
@@ -54,7 +53,7 @@ export class FileService {
         bucket: ali.bucketName,
         callbackUrl: "http://localhost:3000/oss/result",
       };
-      this.aliClient = new Client(<OSS.Options>this.aliConfig);
+      this.aliClient = new Client(this.aliConfig);
 
       this.staticConfig = {
         region: ali.endpoint,
@@ -63,14 +62,14 @@ export class FileService {
         bucket: "staticolgstorage",
         callbackUrl: "http://localhost:3000/oss/result",
       };
-      this.staticClient = new Client(<OSS.Options>this.staticConfig);
+      this.staticClient = new Client(this.staticConfig);
 
       this.OCRConfig = new $OpenApi.Config({
         accessKeyId: ali.accessKeyId,
         accessKeySecret: ali.accessKeySecret,
+        endpoint: ali.endpoint,
       });
-      this.OCRConfig.endpoint = ali.endpoint;
-      this.ORCClient = new ocr_api20210707(<any>this.OCRConfig);
+      this.OCRClient = new ocr_api20210707(this.OCRConfig);
     }
 
     // MinIO 初始化
@@ -91,13 +90,12 @@ export class FileService {
         secretKey: minio.secretKey,
       };
 
-      this.minioClient = new Minio.Client(this.minioConfig as any);
+      this.minioClient = new Minio.Client(this.minioConfig);
       this.minioBucket = minio.bucketName;
     }
   }
 
   //  定义两个存储桶连接
-  //  想清楚
   async getSignature() {
     // 阿里云 OSS：保持原有签名行为
     if (this.ossType === "aliyun") {
@@ -161,40 +159,25 @@ export class FileService {
   }
 
   async getstaticSignature() {
-    // const client = new Client(config);
-
     const date = new Date();
-    // 时长加 1 天，作为签名的有限期
     date.setDate(date.getDate() + 1);
 
     const policy = {
-      // 设置签名的有效期，格式为Unix时间戳
       expiration: date.toISOString(),
-      conditions: [
-        ["content-length-range", 0, 10485760000], // 设置上传文件的大小限制
-      ],
+      conditions: [["content-length-range", 0, 10485760000]],
     };
 
-    // 生成签名，策略等信息
     const formData = await this.staticClient.calculatePostSignature(policy);
-
-    // bucket域名，客户端将向此地址发送请求
     const location = await this.staticClient.getBucketLocation("staticolgstorage");
     const host = `https://${this.staticConfig.bucket}.${location.location}.aliyuncs.com`;
 
-    // 上传回调。
     const callback = {
-      // 设置回调请求的服务器地址
       callbackUrl: this.staticConfig.callbackUrl,
-      // 设置回调的内容，${object} 等占位符会由 OSS 进行填充
-      // ${object}表示文件的存储路径，${mimeType}表示资源类型，对于图片类型的文件，可以通过${imageInfo.height}等去设置宽高信息
       callbackBody:
         "filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}",
-      // 设置回调的内容类型，也支持 application/json
       callbackBodyType: "application/x-www-form-urlencoded",
     };
 
-    // 响应给客户端的签名和策略等信息
     return {
       expire: dayjs().add(1, "days").unix().toString(),
       policy: formData.policy,
@@ -202,7 +185,6 @@ export class FileService {
       accessId: formData.OSSAccessKeyId,
       host,
       dir: this.staticConfig.dir,
-      // 传给客户端的回调参数，需要通过Buffer.from 对 JSON 进行 Base64 编码
       callback: Buffer.from(JSON.stringify(callback)).toString("base64"),
     };
   }
@@ -371,23 +353,14 @@ export class FileService {
     }
   }
 
-  async ORC(url: string, type: string) {
-    // 依赖环境变量 ALIBABA_CLOUD_ACCESS_KEY_ID / ALIBABA_CLOUD_ACCESS_KEY_SECRET
-    // STS 方案：https://help.aliyun.com/document_detail/378664.html
-    // let client = this.ORCClient();
-    // const bodyStream = Stream.readFromFilePath('<your-file-path>');
+  async OCR(url: string, type: string) {
     const recognizeIdcardRequest = new $ocr_api20210707.RecognizeAllTextRequest({
-      // body: bodyStream,
-      // outputFigure: true,
-      // outputQualityInfo: true,
-      url: url,
+      url,
       type,
-      // 'https://lgstorage.oss-cn-qingdao.aliyuncs.com/apartment/houseType/712f9305-651d-4b01-ba57-d26d719960e0323488274767.jpeg?OSSAccessKeyId=LTAI5tR4nrrdyY274G3cnx8V&Expires=3407512152&Signature=jGHaW5duhNbW6i93TfRg4TyeOsA%3D',
     });
     const runtime = new $Util.RuntimeOptions({});
     try {
-      // 仅在阿里云 OSS / OCR 可用
-      if (!this.ORCClient) {
+      if (!this.OCRClient) {
         return {
           data: JSON.stringify({
             code: 400,
@@ -396,11 +369,10 @@ export class FileService {
         };
       }
 
-      const res = await this.ORCClient.recognizeAllTextWithOptions(recognizeIdcardRequest, runtime);
+      const res = await this.OCRClient.recognizeAllTextWithOptions(recognizeIdcardRequest, runtime);
 
       return res?.body?.data;
     } catch (error) {
-      // 错误 message
       Util.assertAsString(error.message);
       if (error.message.indexOf("illegalImageContent") !== -1) {
         return {

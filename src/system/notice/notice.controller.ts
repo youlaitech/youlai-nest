@@ -1,4 +1,4 @@
-﻿import {
+import {
   Body,
   Controller,
   Delete,
@@ -10,8 +10,8 @@
   SetMetadata,
 } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { Permissions } from "src/common/decorators/public.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Permissions } from "../../common/decorators/auth.decorator";
 import { NoticeService } from "./notice.service";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";

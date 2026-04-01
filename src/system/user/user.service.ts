@@ -1,18 +1,19 @@
-﻿import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { RoleService } from "../role/role.service";
 import { DeptService } from "../dept/dept.service";
-import { RolePermService } from "../role/role-perm.service";
+import { RolePermService } from "../role/role-permission.service";
 import { UserAuthInfo } from "./interfaces/user-auth-info.interface";
 import { CurrentUserDto } from "./dto/current-user.dto";
 import { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
-import { DEFAULT_PASSWORD, ROOT_ROLE_CODE } from "src/common/constants";
+import { DEFAULT_PASSWORD } from "../../common/constants/system.constant";
+import { ROOT_ROLE_CODE } from "../../common/constants/role.constant";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Not } from "typeorm";
 import { ConfigService } from "@nestjs/config";
-import { RedisService } from "src/core/redis/redis.service";
+import { RedisService } from "../../common/redis/redis.service";
 import { SysUser } from "./entities/sys-user.entity";
 import { SysUserRole } from "./entities/sys-user-role.entity";
 import * as bcrypt from "bcrypt";
@@ -21,10 +22,10 @@ import type { PasswordChangeDto } from "./dto/password-change.dto";
 import type { MobileUpdateDto } from "./dto/mobile-update.dto";
 import type { EmailUpdateDto } from "./dto/email-update.dto";
 import type { UserProfileDto } from "./dto/user-profile.dto";
-import { ErrorCode } from "src/common/enums/error-code.enum";
+import { ErrorCode } from "../../common/enums/error-code.enum";
 import * as XLSX from "xlsx";
 import { RoleDataScope } from "../../common/models/role-data-scope.model";
-import { RequestContext } from "src/core/context/request-context";
+import { RequestContext } from "../../common/context/request-context";
 
 /**
  * 用户服务

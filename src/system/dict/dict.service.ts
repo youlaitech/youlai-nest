@@ -1,4 +1,4 @@
-﻿import { Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Not } from "typeorm";
 import { SysDict } from "./entities/sys-dict.entity";
@@ -8,7 +8,7 @@ import { DictFormDto } from "./dto/create-dict.dto";
 import { UpdateDictDto } from "./dto/update-dict.dto";
 import { CreateDictItemDto } from "./dto/create-dict-item.dto";
 import { UpdateDictItemDto } from "./dto/update-dict-item.dto";
-import { SseService } from "src/sse/sse.service";
+import { SseService } from "../../message/sse.service";
 
 /**
  * 字典服务

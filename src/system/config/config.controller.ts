@@ -1,12 +1,12 @@
 ﻿import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { Log } from "src/common/decorators/log.decorator";
-import { ActionTypeValue } from "src/system/log/action-type.enum";
-import { LogModuleValue } from "src/system/log/log-module.enum";
+import { Log } from "../../common/decorators/log.decorator";
+import { ActionTypeValue } from "../../common/enums/action-type.enum";
+import { LogModuleValue } from "../../common/enums/log-module.enum";
 import { ConfigService } from "./config.service";
 import { ConfigQueryDto } from "./dto/config-query.dto";
 import { CreateConfigDto, UpdateConfigDto } from "./dto/config-form.dto";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
 /**
  * 系统配置接口控制器

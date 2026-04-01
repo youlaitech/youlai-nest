@@ -1,4 +1,4 @@
-﻿import {
+import {
   Body,
   Controller,
   Delete,
@@ -11,10 +11,10 @@
   SetMetadata,
 } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { Permissions } from "../../common/decorators/public.decorator";
+import { Permissions } from "../../common/decorators/auth.decorator";
 import { Log } from "../../common/decorators/log.decorator";
-import { ActionTypeValue } from "../../system/log/action-type.enum";
-import { LogModuleValue } from "../../system/log/log-module.enum";
+import { ActionTypeValue } from "../../common/enums/action-type.enum";
+import { LogModuleValue } from "../../common/enums/log-module.enum";
 import { RoleService } from "./role.service";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";

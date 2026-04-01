@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -23,21 +23,21 @@ import { UserQueryDto } from "./dto/user-query.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import type { CurrentUserInfo } from "src/common/interfaces/current-user.interface";
+import type { CurrentUserInfo } from "../../common/interfaces/current-user.interface";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { PasswordChangeDto } from "./dto/password-change.dto";
 import { MobileUpdateDto } from "./dto/mobile-update.dto";
 import { EmailUpdateDto } from "./dto/email-update.dto";
 import { PasswordVerifyDto } from "./dto/password-verify.dto";
 import { UserProfileDto } from "./dto/user-profile.dto";
-import { Permissions } from "src/common/decorators/public.decorator";
-import { DataPermission } from "src/common/decorators/data-permission.decorator";
+import { Permissions } from "../../common/decorators/auth.decorator";
+import { DataPermission } from "../../common/decorators/data-permission.decorator";
 import * as XLSX from "xlsx";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger as WinstonLogger } from "winston";
-import { Log } from "src/common/decorators/log.decorator";
-import { ActionTypeValue } from "src/system/log/action-type.enum";
-import { LogModuleValue } from "src/system/log/log-module.enum";
+import { Log } from "../../common/decorators/log.decorator";
+import { ActionTypeValue } from "../../common/enums/action-type.enum";
+import { LogModuleValue } from "../../common/enums/log-module.enum";
 
 /**
  * 用户接口控制器

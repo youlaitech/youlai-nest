@@ -1,4 +1,4 @@
-﻿import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
@@ -7,11 +7,11 @@ import { Repository, In, Brackets } from "typeorm";
 import { SysRole } from "./entities/sys-role.entity";
 import { SysRoleMenu } from "./entities/sys-role-menu.entity";
 import { SysRoleDept } from "./entities/sys-role-dept.entity";
-import { RolePermService } from "./role-perm.service";
+import { RolePermService } from "./role-permission.service";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { SysUserRole } from "../user/entities/sys-user-role.entity";
-import { ROOT_ROLE_CODE } from "src/common/constants";
-import { RedisService } from "src/core/redis/redis.service";
+import { ROOT_ROLE_CODE } from "../../common/constants/role.constant";
+import { RedisService } from "../../common/redis/redis.service";
 import { RoleDataScope } from "../../common/models/role-data-scope.model";
 import { DataScopeEnum } from "../../common/enums/data-scope.enum";
 

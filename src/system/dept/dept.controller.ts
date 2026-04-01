@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -16,11 +16,11 @@ import { CreateDeptDto } from "./dto/create-dept.dto";
 import { UpdateDeptDto } from "./dto/update-dept.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { Permissions } from "../../common/decorators/public.decorator";
+import { Permissions } from "../../common/decorators/auth.decorator";
 import { Log } from "../../common/decorators/log.decorator";
-import { ActionTypeValue } from "../../system/log/action-type.enum";
-import { LogModuleValue } from "../../system/log/log-module.enum";
-import { DataPermission } from "src/common/decorators/data-permission.decorator";
+import { ActionTypeValue } from "../../common/enums/action-type.enum";
+import { LogModuleValue } from "../../common/enums/log-module.enum";
+import { DataPermission } from "../../common/decorators/data-permission.decorator";
 
 /**
  * 部门接口控制器

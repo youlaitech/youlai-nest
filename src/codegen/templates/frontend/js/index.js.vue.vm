@@ -1,430 +1,455 @@
 <template>
-  <div class="app-container">
-    <div class="filter-section">
+  <div class="page-container">
+    <!-- 搜索区域 -->
+    <el-card shadow="never" class="page-search">
       <el-form ref="queryFormRef" :model="queryParams" :inline="true" label-width="auto">
-        #foreach($fieldConfig in $fieldConfigs)
-          #if($fieldConfig.isShowInQuery == 1)
-            <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
-                    #if($fieldConfig.formType == "INPUT")
-                      <el-input
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          placeholder="$fieldConfig.fieldComment"
-                          clearable
-                          @keyup.enter="handleQuery()"
-                      />
-                    #elseif($fieldConfig.formType == "SELECT")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="queryParams.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
-                        #else
-                          <el-select v-model="queryParams.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
-                            <el-option :key="1" :value="1" label="选项一"/>
-                            <el-option :key="2" :value="2" label="选项二"/>
-                          </el-select>
-                        #end
-                    #elseif($fieldConfig.formType == "RADIO")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
-                        #else
-                          <el-radio-group v-model="queryParams.$fieldConfig.fieldName">
-                            <el-radio :key="1" :value="1">选项一</el-radio>
-                            <el-radio :key="2" :value="2">选项二</el-radio>
-                          </el-radio-group>
-                        #end
-                    #elseif($fieldConfig.formType == "CHECK_BOX")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
-                        #else
-                          <el-checkbox-group v-model="queryParams.$fieldConfig.fieldName">
-                            <el-checkbox :key="1" :label="1">选项一</el-checkbox>
-                            <el-checkbox :key="2" :label="2">选项二</el-checkbox>
-                          </el-checkbox-group>
-                        #end
-                    #elseif($fieldConfig.formType == "INPUT_NUMBER")
-                      <el-input-number
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "SWITCH")
-                      <el-switch
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          :active-value="1"
-                          :inactive-value="0"
-                      />
-                    #elseif($fieldConfig.formType == "TEXT_AREA")
-                      <el-input type="textarea"
-                                v-model="queryParams.$fieldConfig.fieldName"
-                                placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "DATE_TIME")
-                      <el-date-picker
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          #if($fieldConfig.queryType == "BETWEEN")
-                          type="daterange"
-                          range-separator="~"
-                          start-placeholder="开始时间"
-                          end-placeholder="结束时间"
-                          #else
-                          type="datetime"
-                          placeholder="$fieldConfig.fieldComment"
-                          #end
-                          value-format="YYYY-MM-DD HH:mm:ss"
-                      />
-                    #elseif($fieldConfig.formType == "DATE")
-                      <el-date-picker
-                          class="!w-[240px]"
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          #if($fieldConfig.queryType == "BETWEEN")
-                          type="daterange"
-                          range-separator="~"
-                          start-placeholder="开始时间"
-                          end-placeholder="结束时间"
-                          #else
-                          type="date"
-                          placeholder="$fieldConfig.fieldComment"
-                          #end
-                          value-format="YYYY-MM-DD"
-                      />
-                    #end
-            </el-form-item>
-          #end
-        #end
-        <el-form-item class="search-buttons">
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInQuery == 1)
+        <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
+#if($fieldConfig.formType == "INPUT")
+          <el-input
+            v-model="queryParams.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+#elseif($fieldConfig.formType == "SELECT")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="queryParams.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+#else
+          <el-select v-model="queryParams.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
+            <el-option :key="1" :value="1" label="选项一"/>
+            <el-option :key="2" :value="2" label="选项二"/>
+          </el-select>
+#end
+#elseif($fieldConfig.formType == "RADIO")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
+#else
+          <el-radio-group v-model="queryParams.$fieldConfig.fieldName">
+            <el-radio :key="1" :value="1">选项一</el-radio>
+            <el-radio :key="2" :value="2">选项二</el-radio>
+          </el-radio-group>
+#end
+#elseif($fieldConfig.formType == "CHECK_BOX")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
+#else
+          <el-checkbox-group v-model="queryParams.$fieldConfig.fieldName">
+            <el-checkbox :key="1" :label="1">选项一</el-checkbox>
+            <el-checkbox :key="2" :label="2">选项二</el-checkbox>
+          </el-checkbox-group>
+#end
+#elseif($fieldConfig.formType == "INPUT_NUMBER")
+          <el-input-number
+            v-model="queryParams.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+          />
+#elseif($fieldConfig.formType == "SWITCH")
+          <el-switch
+            v-model="queryParams.$fieldConfig.fieldName"
+            :active-value="1"
+            :inactive-value="0"
+          />
+#elseif($fieldConfig.formType == "TEXT_AREA")
+          <el-input
+            type="textarea"
+            v-model="queryParams.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+          />
+#elseif($fieldConfig.formType == "DATE_TIME")
+#if($fieldConfig.queryType == "BETWEEN")
+          <el-date-picker
+            v-model="queryParams.$fieldConfig.fieldName"
+            type="daterange"
+            range-separator="~"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+#else
+          <el-date-picker
+            v-model="queryParams.$fieldConfig.fieldName"
+            type="datetime"
+            placeholder="$fieldConfig.fieldComment"
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+#end
+#elseif($fieldConfig.formType == "DATE")
+#if($fieldConfig.queryType == "BETWEEN")
+          <el-date-picker
+            v-model="queryParams.$fieldConfig.fieldName"
+            type="daterange"
+            range-separator="~"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="YYYY-MM-DD"
+          />
+#else
+          <el-date-picker
+            v-model="queryParams.$fieldConfig.fieldName"
+            type="date"
+            placeholder="$fieldConfig.fieldComment"
+            value-format="YYYY-MM-DD"
+          />
+#end
+#end
+        </el-form-item>
+#end
+#end
+        <el-form-item>
           <el-button type="primary" icon="search" @click="handleQuery">搜索</el-button>
           <el-button icon="refresh" @click="handleResetQuery">重置</el-button>
         </el-form-item>
       </el-form>
-    </div>
+    </el-card>
 
-    <el-card shadow="hover" class="table-section">
-      <div class="table-section__toolbar">
-        <div class="table-section__toolbar--actions">
+    <el-card shadow="never" class="page-content">
+      <div class="page-toolbar">
+        <div class="page-toolbar__left">
           <el-button
-              v-hasPerm="['${moduleName}:${entityKebab}:create']"
-              type="success"
-              icon="plus"
-              @click="handleCreateClick()"
+            v-hasPerm="['${moduleName}:${entityKebab}:create']"
+            type="success"
+            icon="plus"
+            @click="handleCreateClick"
           >新增</el-button>
           <el-button
-              v-hasPerm="['${moduleName}:${entityKebab}:delete']"
-              type="danger"
-              :disabled="!hasSelection"
-              icon="delete"
-              @click="handleDelete()"
+            v-hasPerm="['${moduleName}:${entityKebab}:delete']"
+            type="danger"
+            icon="delete"
+            :disabled="!hasSelection"
+            @click="handleDelete"
           >删除</el-button>
         </div>
       </div>
 
       <el-table
-        ref="dataTableRef"
         v-loading="loading"
         :data="pageData"
         border
         stripe
         highlight-current-row
-        class="table-section__content"
         row-key="id"
         @selection-change="handleSelectionChange"
       >
-        <el-table-column type="selection" width="55" align="center" />
-        #foreach($fieldConfig in $fieldConfigs)
-          #if($fieldConfig.isShowInList == 1)
-            #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-              <el-table-column label="$fieldConfig.fieldComment" width="150" align="center">
-                <template #default="scope">
-                  <DictTag v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
-                </template>
-              </el-table-column>
-            #else
-              <el-table-column
-                key="$fieldConfig.fieldName"
-                label="$fieldConfig.fieldComment"
-                prop="$fieldConfig.fieldName"
-                min-width="150"
-                align="center"
-              />
-            #end
-          #end
-        #end
+        <el-table-column type="selection" width="50" align="center" />
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInList == 1)
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+        <el-table-column label="$fieldConfig.fieldComment" width="150" align="center">
+          <template #default="scope">
+            <DictTag v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+          </template>
+        </el-table-column>
+#else
+        <el-table-column
+          key="$fieldConfig.fieldName"
+          label="$fieldConfig.fieldComment"
+          prop="$fieldConfig.fieldName"
+          min-width="150"
+          align="center"
+        />
+#end
+#end
+#end
         <el-table-column fixed="right" label="操作" width="220">
           <template #default="scope">
             <el-button
-                v-hasPerm="['${moduleName}:${entityKebab}:update']"
-                type="primary"
-                size="small"
-                link
-                icon="edit"
-                @click="handleEditClick(String(scope.row.id))"
-            >
-              编辑
-            </el-button>
+              v-hasPerm="['${moduleName}:${entityKebab}:update']"
+              type="primary"
+              size="small"
+              link
+              icon="edit"
+              @click="handleEditClick(String(scope.row.id))"
+            >编辑</el-button>
             <el-button
-                v-hasPerm="['${moduleName}:${entityKebab}:delete']"
-                type="danger"
-                size="small"
-                link
-                icon="delete"
-                @click="handleDelete(String(scope.row.id))"
-            >
-              删除
-            </el-button>
+              v-hasPerm="['${moduleName}:${entityKebab}:delete']"
+              type="danger"
+              size="small"
+              link
+              icon="delete"
+              @click="handleDelete(String(scope.row.id))"
+            >删除</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <pagination
-          v-if="total > 0"
-          v-model:total="total"
-          v-model:page="queryParams.pageNum"
-          v-model:limit="queryParams.pageSize"
-          @pagination="fetchList"
+        v-if="total > 0"
+        v-model:total="total"
+        v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize"
+        @pagination="fetchList"
       />
     </el-card>
 
-    <!-- $!{businessName}表单弹窗 -->
-    <el-dialog
-        v-model="dialog.visible"
-        :title="dialog.title"
-        width="500px"
-        @close="closeDialog"
+    <!-- $!{businessName}表单 -->
+    <el-drawer
+      v-model="dialog.visible"
+      :title="dialog.title"
+      append-to-body
+      size="500px"
+      @close="closeDialog"
     >
       <el-form ref="dataFormRef" :model="formData" :rules="rules" label-width="100px">
-          #foreach($fieldConfig in $fieldConfigs)
-              #if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN")
-                <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
-                    #if($fieldConfig.formType == "INPUT")
-                      <el-input
-                          v-model="formData.$fieldConfig.fieldName"
-                          placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "SELECT")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="formData.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
-                        #else
-                          <el-select v-model="formData.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
-                            <el-option :value="0" label="选项一"/>
-                            <el-option :value="1" label="选项二"/>
-                          </el-select>
-                        #end
-                    #elseif($fieldConfig.formType == "RADIO")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="formData.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
-                        #else
-                          <el-radio-group v-model="formData.$fieldConfig.fieldName">
-                            <el-radio :value="0">选项一</el-radio>
-                            <el-radio :value="1">选项二</el-radio>
-                          </el-radio-group>
-                        #end
-                    #elseif($fieldConfig.formType == "CHECK_BOX")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="formData.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
-                        #else
-                          <el-checkbox-group v-model="formData.$fieldConfig.fieldName">
-                            <el-checkbox :value="0">选项一</el-checkbox>
-                            <el-checkbox :value="1">选项二</el-checkbox>
-                          </el-checkbox-group>
-                        #end
-                    #elseif($fieldConfig.formType == "INPUT_NUMBER")
-                      <el-input-number
-                          v-model="formData.$fieldConfig.fieldName"
-                          placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "SWITCH")
-                      <el-switch
-                          v-model="formData.$fieldConfig.fieldName"
-                          :active-value="1"
-                          :inactive-value="0"
-                      />
-                    #elseif($fieldConfig.formType == "TEXT_AREA")
-                      <el-input type="textarea"
-                                v-model="formData.$fieldConfig.fieldName"
-                                placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "DATE_TIME")
-                      <el-date-picker
-                          v-model="formData.$fieldConfig.fieldName"
-                          type="datetime"
-                          placeholder="$fieldConfig.fieldComment"
-                          value-format="YYYY-MM-DD HH:mm:ss"
-                      />
-                    #elseif($fieldConfig.formType == "DATE")
-                      <el-date-picker
-                          class="!w-[240px]"
-                          v-model="formData.$fieldConfig.fieldName"
-                          type="date"
-                          placeholder="$fieldConfig.fieldComment"
-                          value-format="YYYY-MM-DD"
-                      />
-                    #end
-                </el-form-item>
-
-              #elseif($fieldConfig.formType == "HIDDEN")
-                <el-input type="hidden" v-model="formData.$fieldConfig.fieldName" />
-              #end
-          #end
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN")
+        <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
+#if($fieldConfig.formType == "INPUT")
+          <el-input
+            v-model="formData.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+          />
+#elseif($fieldConfig.formType == "SELECT")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="formData.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+#else
+          <el-select v-model="formData.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
+            <el-option :value="0" label="选项一"/>
+            <el-option :value="1" label="选项二"/>
+          </el-select>
+#end
+#elseif($fieldConfig.formType == "RADIO")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="formData.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
+#else
+          <el-radio-group v-model="formData.$fieldConfig.fieldName">
+            <el-radio :value="0">选项一</el-radio>
+            <el-radio :value="1">选项二</el-radio>
+          </el-radio-group>
+#end
+#elseif($fieldConfig.formType == "CHECK_BOX")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="formData.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
+#else
+          <el-checkbox-group v-model="formData.$fieldConfig.fieldName">
+            <el-checkbox :value="0">选项一</el-checkbox>
+            <el-checkbox :value="1">选项二</el-checkbox>
+          </el-checkbox-group>
+#end
+#elseif($fieldConfig.formType == "INPUT_NUMBER")
+          <el-input-number
+            v-model="formData.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+          />
+#elseif($fieldConfig.formType == "SWITCH")
+          <el-switch
+            v-model="formData.$fieldConfig.fieldName"
+            :active-value="1"
+            :inactive-value="0"
+          />
+#elseif($fieldConfig.formType == "TEXT_AREA")
+          <el-input
+            type="textarea"
+            v-model="formData.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+          />
+#elseif($fieldConfig.formType == "DATE_TIME")
+          <el-date-picker
+            v-model="formData.$fieldConfig.fieldName"
+            type="datetime"
+            placeholder="$fieldConfig.fieldComment"
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+#elseif($fieldConfig.formType == "DATE")
+          <el-date-picker
+            v-model="formData.$fieldConfig.fieldName"
+            type="date"
+            placeholder="$fieldConfig.fieldComment"
+            value-format="YYYY-MM-DD"
+          />
+#end
+        </el-form-item>
+#elseif($fieldConfig.formType == "HIDDEN")
+        <el-input type="hidden" v-model="formData.$fieldConfig.fieldName" />
+#end
+#end
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleSubmit()">确定</el-button>
-          <el-button @click="closeDialog()">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">确 定</el-button>
+          <el-button @click="closeDialog">取 消</el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-  import { onMounted, reactive, ref } from "vue";
-  import { ElMessage, ElMessageBox } from "element-plus";
-  import { useTableSelection } from "@/composables";
-  import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
+import { onMounted, reactive, ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { useTableSelection } from "@/composables";
+import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
 
-  defineOptions({
-    name: "${entityName}",
-    inheritAttrs: false,
-  });
+defineOptions({
+  name: "${entityName}",
+  inheritAttrs: false,
+});
 
-  const queryFormRef = ref();
-  const dataFormRef = ref();
+const queryFormRef = ref();
+const dataFormRef = ref();
 
-  const loading = ref(false);
-  const total = ref(0);
+const loading = ref(false);
+const total = ref(0);
 
-  const queryParams = reactive({
-    pageNum: 1,
-    pageSize: 10,
-  });
+const queryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+});
 
-  // $!{businessName}表格数据
-  const pageData = ref([]);
+const pageData = ref([]);
 
-  const dialog = reactive({
-    title: "",
-    visible: false,
-  });
+const dialog = reactive({
+  title: "",
+  visible: false,
+});
 
-  // $!{businessName}表单数据
-  const formData = reactive({});
+const initialFormData = {};
+const formData = reactive({ ...initialFormData });
 
-  // $!{businessName}表单校验规则
-  const rules = reactive({
-      #if($fieldConfigs)
-          #foreach($fieldConfig in ${fieldConfigs})
-              #if($fieldConfig.isShowInForm && $fieldConfig.isRequired)
-                      ${fieldConfig.fieldName}: [{ required: true, message: "请输入${fieldConfig.fieldComment}", trigger: "blur" }],
-              #end
-          #end
-      #end
-  });
+const rules = reactive({
+#if($fieldConfigs)
+#foreach($fieldConfig in ${fieldConfigs})
+#if($fieldConfig.isShowInForm && $fieldConfig.isRequired)
+  ${fieldConfig.fieldName}: [{ required: true, message: "请输入${fieldConfig.fieldComment}", trigger: "blur" }],
+#end
+#end
+#end
+});
 
-  const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection();
+const { selectedIds, hasSelection, handleSelectionChange } = useTableSelection();
 
-  async function fetchList() {
-    loading.value = true;
-    try {
-      const data = await ${entityName}API.getPage(queryParams);
-      pageData.value = data.list;
-      total.value = data.total ?? 0;
-    } finally {
-      loading.value = false;
+/**
+ * 获取列表数据
+ */
+async function fetchList() {
+  loading.value = true;
+  try {
+    const data = await ${entityName}API.getPage(queryParams);
+    pageData.value = data.list;
+    total.value = data.total ?? 0;
+  } finally {
+    loading.value = false;
+  }
+}
+
+/**
+ * 查询
+ */
+function handleQuery() {
+  queryParams.pageNum = 1;
+  fetchList();
+}
+
+/**
+ * 重置查询
+ */
+function handleResetQuery() {
+  queryFormRef.value?.resetFields();
+  handleQuery();
+}
+
+/**
+ * 打开表单弹窗
+ */
+function openDialog() {
+  dialog.visible = true;
+}
+
+/**
+ * 关闭表单弹窗
+ */
+function closeDialog() {
+  dialog.visible = false;
+  resetForm();
+}
+
+/**
+ * 重置表单
+ */
+function resetForm() {
+  dataFormRef.value?.resetFields();
+  dataFormRef.value?.clearValidate();
+  Object.assign(formData, initialFormData);
+}
+
+/**
+ * 新增
+ */
+function handleCreateClick() {
+  dialog.title = "新增$!{businessName}";
+  openDialog();
+}
+
+/**
+ * 编辑
+ */
+async function handleEditClick(id) {
+  dialog.title = "修改$!{businessName}";
+  const data = await ${entityName}API.getFormData(id);
+  Object.assign(formData, data);
+  openDialog();
+}
+
+/**
+ * 提交表单
+ */
+async function handleSubmit() {
+  const valid = await dataFormRef.value?.validate().then(
+    () => true,
+    () => false
+  );
+  if (!valid) return;
+
+  loading.value = true;
+  try {
+    if (formData.id) {
+      await ${entityName}API.update(formData.id, formData);
+      ElMessage.success("修改成功");
+    } else {
+      await ${entityName}API.create(formData);
+      ElMessage.success("新增成功");
     }
+    closeDialog();
+    handleResetQuery();
+  } finally {
+    loading.value = false;
+  }
+}
+
+/**
+ * 删除
+ */
+function handleDelete(id) {
+  const ids = id ?? selectedIds.value.join(",");
+  if (!ids) {
+    ElMessage.warning("请勾选删除项");
+    return;
   }
 
-  /** 查询$!{businessName} */
-  function handleQuery() {
-    queryParams.pageNum = 1;
-    fetchList();
-  }
-
-  /** 重置$!{businessName}查询 */
-  function handleResetQuery() {
-    queryFormRef.value?.resetFields();
-    handleQuery();
-  }
-
-  function openDialog() {
-    dialog.visible = true;
-  }
-
-  function closeDialog() {
-    dialog.visible = false;
-    resetForm();
-  }
-
-  function resetForm() {
-    dataFormRef.value?.resetFields();
-    dataFormRef.value?.clearValidate();
-    formData.id = undefined;
-  }
-
-  async function handleCreateClick() {
-    dialog.title = "新增$!{businessName}";
-    openDialog();
-  }
-
-  async function handleEditClick(id) {
-    dialog.title = "修改$!{businessName}";
-          ${entityName}API.getFormData(id).then((data) => {
-      Object.assign(formData, data);
-      openDialog();
-    });
-  }
-
-  /** 提交$!{businessName}表单 */
-  function handleSubmit() {
-    dataFormRef.value?.validate((valid) => {
-      if (valid) {
-        loading.value = true;
-        const id = formData.id;
-        if (id) {
-                ${entityName}API.update(id, formData)
-              .then(() => {
-                ElMessage.success("修改成功");
-                closeDialog();
-                handleResetQuery();
-              })
-              .finally(() => (loading.value = false));
-        } else {
-                ${entityName}API.create(formData)
-              .then(() => {
-                ElMessage.success("新增成功");
-                closeDialog();
-                handleResetQuery();
-              })
-              .finally(() => (loading.value = false));
-        }
-      }
-    });
-  }
-
-  /** 删除$!{businessName} */
-  function handleDelete(id) {
-    const ids = [id || selectedIds.value].join(",");
-    if (!ids) {
-      ElMessage.warning("请勾选删除项");
-      return;
+  ElMessageBox.confirm("确认删除选中的数据吗？", "警告", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning",
+  }).then(
+    () => {
+      loading.value = true;
+      ${entityName}API.deleteByIds(ids)
+        .then(() => {
+          ElMessage.success("删除成功");
+          handleResetQuery();
+        })
+        .finally(() => (loading.value = false));
+    },
+    () => {
+      /* 用户取消 */
     }
+  );
+}
 
-    ElMessageBox.confirm("确认删除已选中的数据项?", "警告", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    }).then(
-        () => {
-          loading.value = true;
-                ${entityName}API.deleteByIds(ids)
-              .then(() => {
-                ElMessage.success("删除成功");
-                handleResetQuery();
-              })
-              .finally(() => (loading.value = false));
-        },
-        () => {
-          ElMessage.info("已取消删除");
-        }
-    );
-  }
-
-  onMounted(() => {
-    handleQuery();
-  });
+onMounted(() => {
+  handleQuery();
+});
 </script>
+
+<style scoped lang="scss"></style>

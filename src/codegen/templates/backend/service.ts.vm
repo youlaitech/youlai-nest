@@ -20,11 +20,11 @@ export class ${entityName}Service {
    * ${businessName} 分页列表
    */
   async get${entityName}Page(query: ${entityName}QueryDto) {
-    const pageNum = Number(query.pageNum) > 0 ? Number(query.pageNum) : 1;
-    const pageSize = Number(query.pageSize) > 0 ? Number(query.pageSize) : 10;
+    const pageNumSafe = Number(query.pageNum) > 0 ? Number(query.pageNum) : 1;
+    const pageSizeSafe = Number(query.pageSize) > 0 ? Number(query.pageSize) : 10;
 
-    const qb = this.${entityLowerCamel}Repository.createQueryBuilder("t");
-    qb.where("t.isDeleted = :isDeleted", { isDeleted: 0 });
+    const queryBuilder = this.${entityLowerCamel}Repository.createQueryBuilder("${entityLowerCamel}");
+    queryBuilder.where("${entityLowerCamel}.isDeleted = :isDeleted", { isDeleted: 0 });
 #foreach($fieldConfig in $fieldConfigs)
 #if($fieldConfig.isShowInQuery)
     if (
@@ -33,15 +33,15 @@ export class ${entityName}Service {
       query.${fieldConfig.fieldName} !== ""
     ) {
   #if($fieldConfig.queryType == "LIKE")
-      qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: "%" + query.${fieldConfig.fieldName} + "%",
       });
   #elseif($fieldConfig.queryType == "LIKE_LEFT")
-      qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: "%" + query.${fieldConfig.fieldName},
       });
   #elseif($fieldConfig.queryType == "LIKE_RIGHT")
-      qb.andWhere("t.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} LIKE :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName} + "%",
       });
   #elseif($fieldConfig.queryType == "IN")
@@ -49,15 +49,15 @@ export class ${entityName}Service {
         ? query.${fieldConfig.fieldName}
         : String(query.${fieldConfig.fieldName}).split(",").filter(Boolean);
       if (${fieldConfig.fieldName}List.length) {
-        qb.andWhere("t.${fieldConfig.fieldName} IN (:...${fieldConfig.fieldName}List)", {
+        queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} IN (:...${fieldConfig.fieldName}List)", {
           ${fieldConfig.fieldName}List,
         });
       }
   #elseif($fieldConfig.queryType == "BETWEEN")
       const ${fieldConfig.fieldName}Range = query.${fieldConfig.fieldName};
       if (Array.isArray(${fieldConfig.fieldName}Range) && ${fieldConfig.fieldName}Range.length === 2) {
-        qb.andWhere(
-          "t.${fieldConfig.fieldName} BETWEEN :${fieldConfig.fieldName}Start AND :${fieldConfig.fieldName}End",
+        queryBuilder.andWhere(
+          "${entityLowerCamel}.${fieldConfig.fieldName} BETWEEN :${fieldConfig.fieldName}Start AND :${fieldConfig.fieldName}End",
           {
             ${fieldConfig.fieldName}Start: ${fieldConfig.fieldName}Range[0],
             ${fieldConfig.fieldName}End: ${fieldConfig.fieldName}Range[1],
@@ -65,27 +65,27 @@ export class ${entityName}Service {
         );
       }
   #elseif($fieldConfig.queryType == "GT")
-      qb.andWhere("t.${fieldConfig.fieldName} > :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} > :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
       });
   #elseif($fieldConfig.queryType == "GE")
-      qb.andWhere("t.${fieldConfig.fieldName} >= :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} >= :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
       });
   #elseif($fieldConfig.queryType == "LT")
-      qb.andWhere("t.${fieldConfig.fieldName} < :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} < :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
       });
   #elseif($fieldConfig.queryType == "LE")
-      qb.andWhere("t.${fieldConfig.fieldName} <= :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} <= :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
       });
   #elseif($fieldConfig.queryType == "NE")
-      qb.andWhere("t.${fieldConfig.fieldName} != :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} != :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
       });
   #else
-      qb.andWhere("t.${fieldConfig.fieldName} = :${fieldConfig.fieldName}", {
+      queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} = :${fieldConfig.fieldName}", {
         ${fieldConfig.fieldName}: query.${fieldConfig.fieldName},
       });
   #end
@@ -93,17 +93,17 @@ export class ${entityName}Service {
 #end
 #end
 
-    qb.orderBy("t.id", "DESC");
-    const [list, total] = await qb
-      .skip((pageNum - 1) * pageSize)
-      .take(pageSize)
+    queryBuilder.orderBy("${entityLowerCamel}.id", "DESC");
+    const [list, total] = await queryBuilder
+      .skip((pageNumSafe - 1) * pageSizeSafe)
+      .take(pageSizeSafe)
       .getManyAndCount();
 
     return {
       data: list,
       page: {
-        pageNum,
-        pageSize,
+        pageNum: pageNumSafe,
+        pageSize: pageSizeSafe,
         total,
       },
     };
@@ -128,7 +128,7 @@ export class ${entityName}Service {
     });
 
     await this.${entityLowerCamel}Repository.save(entity);
-    return true;
+    return entity;
   }
 
   /**

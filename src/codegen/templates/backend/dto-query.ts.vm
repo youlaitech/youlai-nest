@@ -1,5 +1,6 @@
 import { IsOptional, IsString, IsNumber, IsArray } from "class-validator";
-import { BaseQueryDto } from "src/common/dto/base-query.dto";
+import { Transform } from "class-transformer";
+import { BaseQueryDto } from "@/common/dto/base-query.dto";
 
 /**
  * ${businessName} 查询参数
@@ -14,15 +15,15 @@ export class ${entityName}QueryDto extends BaseQueryDto {
 #if($fieldConfig.queryType == "BETWEEN")
   @IsArray()
   @IsString({ each: true })
-  readonly ${fieldConfig.fieldName}?: string[];
+  ${fieldConfig.fieldName}?: string[];
 #elseif($fieldConfig.tsType == "number")
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
-  readonly ${fieldConfig.fieldName}?: number;
+  ${fieldConfig.fieldName}?: number;
 #else
   @IsString()
-  readonly ${fieldConfig.fieldName}?: string;
+  ${fieldConfig.fieldName}?: string;
 #end
-
 #end
 #end
 }

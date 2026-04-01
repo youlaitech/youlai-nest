@@ -1,4 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsNotEmpty, IsArray } from "class-validator";
+import { Transform } from "class-transformer";
 
 /**
  * ${businessName} 创建参数
@@ -17,15 +18,15 @@ export class Create${entityName}Dto {
 #if($fieldConfig.formType == "CHECK_BOX")
   @IsArray()
   @IsString({ each: true })
-  readonly ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end string[];
+  ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?#end: string[];
 #elseif($fieldConfig.tsType == "number")
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsNumber()
-  readonly ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end number;
+  ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?#end: number;
 #else
   @IsString()
-  readonly ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?:#end string;
+  ${fieldConfig.fieldName}#if($fieldConfig.isRequired != 1)?#end: string;
 #end
-
 #end
 #end
 }

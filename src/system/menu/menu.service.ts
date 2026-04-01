@@ -5,8 +5,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In } from "typeorm";
 import { SysMenu } from "./entities/sys-menu.entity";
 import { UserService } from "../user/user.service";
-import { RolePermService } from "../role/role-perm.service";
-import { Route } from "./interface/menu.type";
+import { RolePermService } from "../role/role-permission.service";
+import { Route } from "./interfaces/menu.interface";
 
 /**
  * 菜单服务

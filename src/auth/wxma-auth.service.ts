@@ -12,7 +12,7 @@ import { WxMaLoginResultDto } from "./dto/wxma-login-result.dto";
 import { LoginResultDto } from "./dto/login-result.dto";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { ErrorCode } from "../common/enums/error-code.enum";
-import { RedisService } from "../core/redis/redis.service";
+import { RedisService } from "../common/redis/redis.service";
 import jwtConfig from "../config/jwt.config";
 import { ConfigType } from "@nestjs/config";
 

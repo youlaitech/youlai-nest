@@ -1,8 +1,8 @@
-﻿import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsArray, IsNumber, IsOptional, IsString } from "class-validator";
 
-import { BaseQueryDto } from "src/common/dto/base-query.dto";
+import { BaseQueryDto } from "@/common/dto/base-query.dto";
 
 /**
  * 用户查询参数

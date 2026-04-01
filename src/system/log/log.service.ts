@@ -3,11 +3,12 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SysLog } from "./entities/sys-log.entity";
 import { LogQueryDto } from "./dto/log-query.dto";
-import { LogPageVo } from "./dto/log-page.vo";
+import { LogPageDto } from "./dto/log-page.dto";
 import { VisitTrendDto } from "./dto/visit-trend.dto";
 import { VisitStatsDto } from "./dto/visit-stats.dto";
-import { ActionTypeEnum, ActionTypeValue } from "./action-type.enum";
-import { LogModuleEnum } from "./log-module.enum";
+import { ActionTypeEnum, ActionTypeValue } from "../../common/enums/action-type.enum";
+import { LogModuleEnum } from "../../common/enums/log-module.enum";
+import { parseUserAgent } from "../../common/utils/user-agent.util";
 
 export interface ManualLogParams {
   actionType: ActionTypeValue;
@@ -88,7 +89,7 @@ export class LogService {
       .take(pageSizeSafe)
       .getManyAndCount();
 
-    const list: LogPageVo[] = records.map((item) => ({
+    const list: LogPageDto[] = records.map((item) => ({
       id: item.id,
       module: item.module != null ? LogModuleEnum.getLabel(item.module) : null,
       actionType: item.actionType != null ? ActionTypeEnum.getLabel(item.actionType) : null,
@@ -244,7 +245,7 @@ export class LogService {
    */
   async saveManualLog(params: ManualLogParams) {
     const { userAgent = "" } = params;
-    const { browser, os } = this.parseUserAgent(userAgent);
+    const { browser, os } = parseUserAgent(userAgent);
 
     const log = new SysLog();
     log.actionType = params.actionType;
@@ -264,44 +265,4 @@ export class LogService {
     await this.logRepository.save(log);
   }
 
-  private parseUserAgent(ua: string): { browser: string; os: string } {
-    if (!ua) return { browser: "", os: "" };
-
-    let browser = "";
-    let os = "";
-
-    if (ua.includes("Windows NT 10")) os = "Windows 10";
-    else if (ua.includes("Windows NT 6.3")) os = "Windows 8.1";
-    else if (ua.includes("Windows NT 6.1")) os = "Windows 7";
-    else if (ua.includes("Windows")) os = "Windows";
-    else if (ua.includes("Mac OS X")) {
-      const match = ua.match(/Mac OS X ([\d_]+)/);
-      os = match ? `macOS ${match[1].replace(/_/g, ".")}` : "macOS";
-    } else if (ua.includes("Android")) {
-      const match = ua.match(/Android ([\d.]+)/);
-      os = match ? `Android ${match[1]}` : "Android";
-    } else if (ua.includes("iPhone") || ua.includes("iPad")) {
-      const match = ua.match(/OS ([\d_]+)/);
-      os = match ? `iOS ${match[1].replace(/_/g, ".")}` : "iOS";
-    } else if (ua.includes("Linux")) os = "Linux";
-
-    if (ua.includes("Edg/")) {
-      const match = ua.match(/Edg\/([\d.]+)/);
-      browser = match ? `Edge ${match[1]}` : "Edge";
-    } else if (ua.includes("OPR/") || ua.includes("Opera/")) {
-      const match = ua.match(/(?:OPR|Opera)\/([\d.]+)/);
-      browser = match ? `Opera ${match[1]}` : "Opera";
-    } else if (ua.includes("Firefox/")) {
-      const match = ua.match(/Firefox\/([\d.]+)/);
-      browser = match ? `Firefox ${match[1]}` : "Firefox";
-    } else if (ua.includes("Chrome/") && !ua.includes("Edg/")) {
-      const match = ua.match(/Chrome\/([\d.]+)/);
-      browser = match ? `Chrome ${match[1]}` : "Chrome";
-    } else if (ua.includes("Safari/") && !ua.includes("Chrome")) {
-      const match = ua.match(/Version\/([\d.]+)/);
-      browser = match ? `Safari ${match[1]}` : "Safari";
-    }
-
-    return { browser, os };
-  }
 }

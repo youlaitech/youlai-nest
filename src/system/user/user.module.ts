@@ -1,4 +1,4 @@
-﻿import { Module, forwardRef } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { UserService } from "./user.service";
 import { UserController } from "./user.controller";
@@ -8,7 +8,7 @@ import { RoleModule } from "../role/role.module";
 import { DeptModule } from "../dept/dept.module";
 import { MenuModule } from "../menu/menu.module";
 import { LogModule } from "../log/log.module";
-import { RedisSharedModule } from "src/core/redis/redis.module";
+import { RedisSharedModule } from "../../common/redis/redis.module";
 
 @Module({
   imports: [

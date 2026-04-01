@@ -1,6 +1,6 @@
 {
   "name": "youlai-nest",
-  "version": "4.3.0",
+  "version": "2.0.0",
   "description": "🌈 基于 Node.js、NestJS、TypeORM、Vite 构建的企业级权限管理后端，是 vue3-element-admin 配套的官方 Node.js 实现。",
   "author": "youlaitech",
   "private": true,

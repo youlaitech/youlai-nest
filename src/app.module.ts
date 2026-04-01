@@ -1,4 +1,4 @@
-﻿import {
+import {
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -16,34 +16,32 @@ import { RedisModule as LiaoliaRedisModule } from "@liaoliaots/nestjs-redis";
 
 import { AuthModule } from "./auth/auth.module"; // 认证相关模块（隐式包含 User, Role, Menu, Dept）
 import { RoleModule } from "./system/role/role.module"; // 角色模块（提供 RolePermService）
-import { RedisSharedModule } from "./core/redis/redis.module";
+import { RedisSharedModule } from "./common/redis/redis.module";
 import { DictModule } from "./system/dict/dict.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
-import { SseModule } from "./sse/sse.module";
+import { SseModule } from "./message/sse.module";
 import { CodegenModule } from "./codegen/codegen.module";
 import { FileModule } from "./file/file.module";
 import { LogModule } from "./system/log/log.module";
 import { NoticeModule } from "./system/notice/notice.module";
 
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { LoggerMiddleware } from "./core/logger/logger.middleware";
-import { RequestContextMiddleware } from "./core/middleware/request-context.middleware";
-import { RateLimitMiddleware } from "./core/middleware/rate-limit.middleware";
-import { HttpExceptionFilter } from "./core/filters/http-exception.filter";
-import { XRequestInterceptor } from "./core/interceptors/request.interceptor";
-import { JwtAuthGuard } from "./core/guards/jwt-auth.guard";
-import { RedisTokenAuthGuard } from "./auth/redis-token.guard";
+import { LoggerMiddleware } from "./common/middleware/logger.middleware";
+import { RequestContextMiddleware } from "./common/middleware/request-context.middleware";
+import { RateLimitMiddleware } from "./common/middleware/rate-limit.middleware";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
+import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { RedisTokenAuthGuard } from "./auth/guards/redis-token.guard";
 
 import jwtConfig from "./config/jwt.config";
 import typeormConfig from "./config/typeorm.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
-import { DataScopeGuard } from "./core/guards/data-scope.guard";
-import { PermissionGuard } from "src/core/guards/permission.guard";
-import { DataPermissionInterceptor } from "./core/interceptors/data-permission.interceptor";
-import { initDataPermissionPlugin } from "./core/plugins/data-permission.plugin";
-import { AuditSubscriber } from "./core/subscribers/audit.subscriber";
+import { DataScopeGuard } from "./common/guards/data-scope.guard";
+import { PermissionGuard } from "./common/guards/permission.guard";
+import { DataPermissionInterceptor } from "./common/interceptors/data-permission.interceptor";
+import { initDataPermissionPlugin } from "./common/plugins/data-permission.plugin";
+import { AuditSubscriber } from "./common/subscribers/audit.subscriber";
 
 const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 
@@ -109,9 +107,8 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     LogModule,
     NoticeModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [
-    AppService,
     JwtAuthGuard,
     RedisTokenAuthGuard,
     // 会话认证守卫：根据 SESSION_TYPE 选择 JWT 模式或 Redis 会话模式

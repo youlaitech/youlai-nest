@@ -1,5 +1,5 @@
 import { Column, Entity, ManyToOne, JoinColumn } from "typeorm";
-import { BaseEntity } from "../../../common/entities";
+import { BaseEntity } from "@/common/entities/base.entity";
 
 export enum SocialPlatform {
   WECHAT_MINI = "WECHAT_MINI",

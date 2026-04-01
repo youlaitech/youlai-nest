@@ -1,19 +1,19 @@
-﻿import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { JwtService } from "@nestjs/jwt";
 import { v4 as uuidv4 } from "uuid";
 import { UserService } from "../system/user/user.service";
 import type { LoginRequestDto } from "./dto/login-request.dto";
-import jwtConfig from "src/config/jwt.config";
+import jwtConfig from "../config/jwt.config";
 import { ConfigType, ConfigService } from "@nestjs/config";
 import { LoginResultDto } from "./dto/login-result.dto";
-import { BusinessException } from "src/common/exceptions/business.exception";
-import { ErrorCode } from "src/common/enums/error-code.enum";
+import { BusinessException } from "../common/exceptions/business.exception";
+import { ErrorCode } from "../common/enums/error-code.enum";
 import * as bcrypt from "bcrypt";
-import { RedisService } from "src/core/redis/redis.service";
-import { RedisConstants } from "src/common/constants/redis.constants";
+import { RedisService } from "../common/redis/redis.service";
+import { RedisConstants } from "../common/constants/redis.constants";
 import { LogService } from "../system/log/log.service";
-import { ActionTypeValue } from "../system/log/action-type.enum";
+import { ActionTypeValue } from "../common/enums/action-type.enum";
 
 /**
  * 认证服务

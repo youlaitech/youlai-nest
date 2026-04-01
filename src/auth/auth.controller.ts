@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Post,
   Get,
@@ -14,15 +14,15 @@ import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/login-request.dto";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginResultDto } from "./dto/login-result.dto";
-import { Public } from "../common/decorators/public.decorator";
+import { Public } from "../common/decorators/auth.decorator";
 import { Log } from "../common/decorators/log.decorator";
-import { ActionTypeValue } from "../system/log/action-type.enum";
-import { LogModuleValue } from "../system/log/log-module.enum";
-import { ToolsService } from "../common/utils/service/tools.service";
+import { ActionTypeValue } from "../common/enums/action-type.enum";
+import { LogModuleValue } from "../common/enums/log-module.enum";
+import { ToolsService } from "../common/utils/captcha.util";
 import { BusinessException } from "../common/exceptions/business.exception";
 import { v4 as uuidv4 } from "uuid";
-import { RedisService } from "../core/redis/redis.service";
-import { ErrorCode } from "src/common/enums/error-code.enum";
+import { RedisService } from "../common/redis/redis.service";
+import { ErrorCode } from "../common/enums/error-code.enum";
 
 /**
  * 认证接口控制器

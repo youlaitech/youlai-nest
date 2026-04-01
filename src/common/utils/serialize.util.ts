@@ -1,13 +1,15 @@
 ﻿export type DateFormatOptions = {
-  format?: string; // currently supports 'yyyy-MM-dd HH:mm:ss' pattern
-  timeZone?: string; // IANA time zone string like 'Asia/Shanghai'
+  /** 格式模式，当前支持 'yyyy-MM-dd HH:mm:ss' */
+  format?: string;
+  /** IANA 时区标识，如 'Asia/Shanghai' */
+  timeZone?: string;
 };
 
 export function formatDateToString(date: Date, opts?: DateFormatOptions): string | null {
   if (!(date instanceof Date)) return null;
   const timeZone = opts?.timeZone || "Asia/Shanghai";
 
-  // Use Intl.DateTimeFormat to get parts in the requested timezone, then assemble
+  // 使用 Intl.DateTimeFormat 获取指定时区的各时间部分，再拼接为字符串
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone,
     hour12: false,
@@ -27,7 +29,7 @@ export function formatDateToString(date: Date, opts?: DateFormatOptions): string
   const mm = get("minute");
   const ss = get("second");
 
-  // Currently we return the common pattern 'yyyy-MM-dd HH:mm:ss'
+  // 返回常见格式 'yyyy-MM-dd HH:mm:ss'
   return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
 }
 
@@ -39,57 +41,53 @@ export function transformDatesInObject<T>(obj: T, opts?: DateFormatOptions): T {
   if (obj === null || obj === undefined) return obj;
 
   if (obj instanceof Date) {
-    // @ts-ignore
-    return formatDateToString(obj, opts) as any;
+    return formatDateToString(obj, opts) as unknown as T;
   }
 
   if (typeof obj === "bigint") {
-    // @ts-ignore
-    return obj.toString() as any;
+    return obj.toString() as unknown as T;
   }
 
   if (typeof obj === "number") {
     if (!Number.isSafeInteger(obj)) {
-      // @ts-ignore
-      return obj.toString() as any;
+      return obj.toString() as unknown as T;
     }
-    // safe number, return as-is
-    return obj as any;
+    return obj;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map((item) => transformDatesInObject(item, opts)) as any;
+    return obj.map((item) => transformDatesInObject(item, opts)) as unknown as T;
   }
 
   if (isPlainObject(obj)) {
     const res: any = {};
     for (const key of Object.keys(obj as any)) {
       const val = (obj as any)[key];
-      // Date -> formatted string
+      // Date -> 格式化字符串
       if (val instanceof Date) {
         res[key] = formatDateToString(val, opts);
         continue;
       }
 
-      // BigInt -> string
+      // BigInt -> 字符串
       if (typeof val === "bigint") {
         res[key] = val.toString();
         continue;
       }
 
-      // Number exceeding safe integer -> string
+      // 超出安全整数范围的 Number -> 字符串
       if (typeof val === "number" && !Number.isSafeInteger(val)) {
         res[key] = val.toString();
         continue;
       }
 
-      // Nested arrays / objects -> recurse
+      // 嵌套数组 / 对象 -> 递归处理
       if (Array.isArray(val) || isPlainObject(val)) {
         res[key] = transformDatesInObject(val, opts);
         continue;
       }
 
-      // default passthrough
+      // 其他类型直接透传
       res[key] = val;
     }
     return res;

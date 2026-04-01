@@ -1,6 +1,6 @@
 import { SetMetadata } from "@nestjs/common";
-import type { ActionTypeValue } from "../../system/log/action-type.enum";
-import type { LogModuleValue } from "../../system/log/log-module.enum";
+import type { ActionTypeValue } from "../enums/action-type.enum";
+import type { LogModuleValue } from "../enums/log-module.enum";
 
 export const LOG_MODULE = "log_module";
 export const LOG_ACTION_TYPE = "log_action_type";
