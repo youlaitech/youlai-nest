@@ -103,6 +103,7 @@
         </el-form-item>
       </el-form>
     </el-card>
+    </el-card>
 
     <el-card shadow="never" class="page-content">
       <div class="page-toolbar">

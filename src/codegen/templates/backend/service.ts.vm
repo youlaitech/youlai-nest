@@ -99,14 +99,7 @@ export class ${entityName}Service {
       .take(pageSizeSafe)
       .getManyAndCount();
 
-    return {
-      data: list,
-      page: {
-        pageNum: pageNumSafe,
-        pageSize: pageSizeSafe,
-        total,
-      },
-    };
+    return { list, total };
   }
 
   /**

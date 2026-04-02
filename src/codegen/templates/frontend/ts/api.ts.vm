@@ -71,3 +71,6 @@ const ${entityName}API = {
 };
 
 export default ${entityName}API;
+
+// 重导出类型
+export * from "./types";
