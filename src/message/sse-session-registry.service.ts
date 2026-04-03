@@ -90,6 +90,14 @@ export class SseSessionRegistry implements OnModuleDestroy {
   }
 
   onModuleDestroy() {
+    // 主动关闭所有 SSE 连接的 HTTP 响应
+    this.emitterUserMap.forEach((sessionInfo, emitter) => {
+      try {
+        if (emitter.complete) {
+          emitter.complete();
+        }
+      } catch (_e) {}
+    });
     this.userEmittersMap.clear();
     this.emitterUserMap.clear();
   }
