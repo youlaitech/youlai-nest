@@ -21,14 +21,14 @@ export class LogController {
 
   @Public()
   @ApiOperation({ summary: "访问趋势统计" })
-  @Get("views/trend")
+  @Get("analytics/trend")
   async getVisitTrend(@Query("startDate") startDate: string, @Query("endDate") endDate: string) {
     return await this.logService.getVisitTrend(startDate, endDate);
   }
 
   @Public()
   @ApiOperation({ summary: "访问统计概览" })
-  @Get("views")
+  @Get("analytics/overview")
   async getVisitOverview() {
     return await this.logService.getVisitStats();
   }
