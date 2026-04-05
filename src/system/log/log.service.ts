@@ -91,8 +91,8 @@ export class LogService {
 
     const list: LogPageDto[] = records.map((item) => ({
       id: item.id,
-      module: item.module != null ? LogModuleEnum.getLabel(item.module) : null,
-      actionType: item.actionType != null ? ActionTypeEnum.getLabel(item.actionType) : null,
+      module: item.module !== null ? LogModuleEnum.getLabel(item.module) : null,
+      actionType: item.actionType !== null ? ActionTypeEnum.getLabel(item.actionType) : null,
       title: item.title,
       content: item.content,
       operatorId: item.operatorId,
@@ -141,7 +141,7 @@ export class LogService {
     }
 
     if (!dates.length) {
-      return { dates: [], pvList: [], ipList: [] };
+      return { dates: [], pvList: [], uvList: [] };
     }
 
     const startStr = `${dates[0]} 00:00:00`;
@@ -155,7 +155,7 @@ export class LogService {
       .groupBy("DATE_FORMAT(log.create_time, '%Y-%m-%d')")
       .getRawMany<{ date: string; count: string }>();
 
-    const ipRows = await this.logRepository
+    const uvRows = await this.logRepository
       .createQueryBuilder("log")
       .select("DATE_FORMAT(log.create_time, '%Y-%m-%d')", "date")
       .addSelect("COUNT(DISTINCT log.ip)", "count")
@@ -166,16 +166,16 @@ export class LogService {
     const pvMap = new Map<string, number>();
     pvRows.forEach((row) => pvMap.set(row.date, Number(row.count) || 0));
 
-    const ipMap = new Map<string, number>();
-    ipRows.forEach((row) => ipMap.set(row.date, Number(row.count) || 0));
+    const uvMap = new Map<string, number>();
+    uvRows.forEach((row) => uvMap.set(row.date, Number(row.count) || 0));
 
     const pvList = dates.map((d) => pvMap.get(d) ?? 0);
-    const ipList = dates.map((d) => ipMap.get(d) ?? 0);
+    const uvList = dates.map((d) => uvMap.get(d) ?? 0);
 
     return {
       dates,
       pvList,
-      ipList,
+      uvList,
     };
   }
 
@@ -264,5 +264,4 @@ export class LogService {
 
     await this.logRepository.save(log);
   }
-
 }

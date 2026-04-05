@@ -628,10 +628,10 @@ export class CodegenService {
       return `${tableKebab}.entity${extension}`;
     }
     if (templateName === "API") {
-      return `${entityKebab}${extension}`;
+      return `index${extension}`;
     }
     if (templateName === "API_TYPES") {
-      return `${entityKebab}${extension}`;
+      return `types${extension}`;
     }
     if (templateName === "VIEW") {
       return "index.vue";
@@ -672,9 +672,9 @@ export class CodegenService {
 
     let p: string;
     if (templateName === "API") {
-      p = path.join(frontend, "src", subpackageName, moduleName);
+      p = path.join(frontend, "src", "api", moduleName, toKebabCase(entityName));
     } else if (templateName === "API_TYPES") {
-      p = path.join(frontend, "src", "types", "api");
+      p = path.join(frontend, "src", "api", moduleName, toKebabCase(entityName));
     } else if (templateName === "VIEW") {
       p = path.join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName));
     } else {
