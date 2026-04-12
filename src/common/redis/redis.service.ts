@@ -26,8 +26,6 @@ export class RedisService {
     return this.client;
   }
 
-  // ==================== 基础 KV 操作 ====================
-
   async set(key: string, value: any, ttl?: number): Promise<boolean> {
     try {
       const serialized = JSON.stringify(value);
@@ -93,8 +91,6 @@ export class RedisService {
       return false;
     }
   }
-
-  // ==================== Hash 操作 ====================
 
   /**
    * 设置 Hash 字段值

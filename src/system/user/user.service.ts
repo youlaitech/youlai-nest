@@ -475,7 +475,7 @@ export class UserService {
       gender: data.gender,
     };
 
-    // remove undefined keys
+    // 移除 undefined 字段
     Object.keys(updateData).forEach((k) => updateData[k] === undefined && delete updateData[k]);
 
     if (Object.keys(updateData).length === 0) {

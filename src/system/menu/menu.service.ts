@@ -462,4 +462,82 @@ export class MenuService {
 
     return {};
   }
+
+  /**
+   * 代码生成菜单
+   */
+  async addMenuForCodegen(
+    parentMenuId: number,
+    tableName: string,
+    moduleName: string,
+    businessName: string,
+    entityName: string
+  ): Promise<void> {
+    const parent = await this.menuRepository.findOne({ where: { id: parentMenuId.toString() } });
+    if (!parent) {
+      return;
+    }
+
+    // 计算同级最大排序号 +1
+    let sort = 1;
+    const maxSortMenu = await this.menuRepository.findOne({
+      where: { parentId: parentMenuId.toString() },
+      order: { sort: "DESC" },
+    });
+    if (maxSortMenu) {
+      sort = maxSortMenu.sort + 1;
+    }
+
+    // 构建菜单实体
+    const entityKebab = this.toKebabCase(entityName);
+    const treePath = `${parent.treePath},${parentMenuId}`;
+
+    // 创建菜单记录
+    const menu = this.menuRepository.create({
+      parentId: parentMenuId.toString(),
+      type: "M",
+      name: businessName,
+      routeName: entityName,
+      routePath: entityKebab,
+      component: `${moduleName}/${entityKebab}/index`,
+      sort,
+      visible: 1,
+      treePath,
+      createTime: new Date(),
+    });
+    await this.menuRepository.save(menu);
+
+    // 生成按钮权限标识
+    const permPrefix = `${moduleName}:${tableName.replace(/_/g, "-")}:`;
+    const actions = ["add", "edit", "delete", "detail", "export", "import"];
+    for (let i = 0; i < actions.length; i++) {
+      const action = actions[i];
+      const button = this.menuRepository.create({
+        parentId: menu.id,
+        type: "B",
+        name: action,
+        perm: permPrefix + action,
+        sort: i + 1,
+        treePath: `${treePath},${menu.id}`,
+        createTime: new Date(),
+      });
+      await this.menuRepository.save(button);
+    }
+  }
+
+  /**
+   * 驼峰转换为kebab-case
+   */
+  private toKebabCase(s: string): string {
+    if (!s) return "";
+    let result = "";
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (i > 0 && c >= "A" && c <= "Z") {
+        result += "-";
+      }
+      result += c.toLowerCase();
+    }
+    return result;
+  }
 }

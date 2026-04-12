@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { DataSource } from "typeorm";
-import JSZip from "jszip";
+const JSZip = require("jszip");
 import * as fs from "fs";
 import * as path from "path";
 // velocityjs 没有稳定的 TS 类型定义，使用 any
@@ -163,7 +163,7 @@ export class CodegenService {
 
     const params: any[] = [];
     let where = "t.TABLE_SCHEMA = DATABASE()";
-    // exclude codegen metadata tables
+    // 排除代码生成元数据表
     where += " AND t.TABLE_NAME NOT IN ('gen_table','gen_table_column')";
     if (keywords) {
       where += " AND t.TABLE_NAME LIKE ?";
@@ -596,7 +596,9 @@ export class CodegenService {
       entityLowerCamel: lowerFirst(entityName),
       entityKebab: toKebabCase(entityName),
       entityUpperSnake: toSnakeUpper(entityName),
+      dollar: "$",
       businessName: config.businessName,
+      entityComment: config.businessName,
       fieldConfigs: fieldConfigs.map((f) => this.toTemplateFieldConfig(f)),
     };
 
@@ -698,8 +700,7 @@ export class CodegenService {
 }
 
 function resolveBootTemplatePath(templatePath: string) {
-  // Use the local repo templates directory only. Templates should be placed at:
-  //   <project-root>/src/platform/codegen/templates/<templatePath>
+  // 使用本地模板目录，模板路径：<project-root>/src/codegen/templates/<templatePath>
   const p = path.resolve(process.cwd(), "src", "codegen", "templates", templatePath);
 
   if (fs.existsSync(p)) {

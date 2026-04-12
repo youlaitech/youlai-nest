@@ -32,7 +32,7 @@ async function bootstrap() {
   });
 
   // 全局拦截器
-  // Pass ConfigService to ResponseInterceptor so date formatting is configurable
+  // 传入 ConfigService 以支持日期格式化配置
   app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector), configService));
 
   // 全局验证管道

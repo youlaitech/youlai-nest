@@ -34,7 +34,7 @@ export class SseService {
       this.sessionRegistry.userConnected(username, emitter as any);
       this.logger.debug(`SSE connection established: username=${username}`);
 
-      // Send initial online count
+      // 发送初始在线人数
       this.sendOnlineCount();
 
       return () => {

@@ -17,7 +17,7 @@ export class LogQueryDto extends BaseQueryDto {
 
   @ApiProperty({ description: "操作时间范围 [开始, 结束]", required: false, type: [String] })
   @IsOptional()
-  // transform incoming query array to remove empty strings and normalize single value to array
+  // 过滤空字符串，单值规范化为数组
   @Transform(({ value }) => {
     if (Array.isArray(value)) {
       const filtered = value.map((v) => (v === "" ? undefined : v)).filter(Boolean);
