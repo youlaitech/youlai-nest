@@ -50,14 +50,13 @@ youlai-nest/
 │  ├─ main.ts                # 应用入口
 │  ├─ app.module.ts          # 根模块
 │  ├─ auth/                  # 认证与鉴权模块
-│  ├─ system/                # 系统核心模块（用户/角色/菜单等）
-│  ├─ core/                  # 框架核心（守卫/过滤器/拦截器/中间件等）
+│  ├─ system/                # 系统核心模块（用户/角色/菜单/部门等）
 │  ├─ codegen/               # 代码生成模块
 │  ├─ file/                  # 文件管理模块
-│  ├─ websocket/             # WebSocket 模块
-│  ├─ common/                # 公共能力（常量/枚举/异常/工具类等）
+│  ├─ message/               # SSE 消息推送
+│  ├─ common/                # 公共能力（守卫/拦截器/过滤器/常量/枚举/异常/工具类等）
 │  ├─ config/                # 配置文件
-│  └─ typings/               # 类型定义
+│  └─ types/                 # 类型定义
 ├─ sql/                      # 数据库脚本
 ├─ .env                      # 基础环境配置
 ├─ .env.dev                  # 开发环境配置
