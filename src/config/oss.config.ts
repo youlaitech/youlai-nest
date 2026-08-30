@@ -1,7 +1,7 @@
 ﻿import { registerAs } from "@nestjs/config";
 
 export default registerAs("oss", () => ({
-  type: (process.env.OSS_TYPE || "minio") as "aliyun" | "minio" | "local",
+  type: (process.env.OSS_TYPE || "s3") as "aliyun" | "s3" | "local",
 
   // 上传限制
   upload: {
@@ -14,12 +14,13 @@ export default registerAs("oss", () => ({
       .filter((e) => e.length > 0),
   },
 
-  minio: {
-    endpoint: process.env.OSS_MINIO_ENDPOINT || "http://111.229.83.153:9000",
-    accessKey: process.env.OSS_MINIO_ACCESS_KEY || "bybaddp7zyARpgNbEGKf",
-    secretKey: process.env.OSS_MINIO_SECRET_KEY || "p9rBdQZPBIJcMH23iyFkZkXmmawbmwPlk3JLlaaj",
-    bucketName: process.env.OSS_MINIO_BUCKET || "public",
-    customDomain: process.env.OSS_MINIO_CUSTOM_DOMAIN || "",
+  s3: {
+    endpoint: process.env.OSS_S3_ENDPOINT || "http://localhost:9000",
+    region: process.env.OSS_S3_REGION || "us-east-1",
+    accessKey: process.env.OSS_S3_ACCESS_KEY || "rustfs-admin",
+    secretKey: process.env.OSS_S3_SECRET_KEY || "rustfs-admin",
+    bucketName: process.env.OSS_S3_BUCKET || "public",
+    customDomain: process.env.OSS_S3_CUSTOM_DOMAIN || "",
   },
 
   aliyun: {

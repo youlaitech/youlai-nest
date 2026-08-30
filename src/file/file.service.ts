@@ -4,7 +4,8 @@ import * as dayjs from "dayjs";
 import { ConfigType } from "@nestjs/config";
 import ossConfig from "../config/oss.config";
 import OSS, * as Client from "ali-oss";
-import * as Minio from "minio";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as $OpenApi from "@alicloud/openapi-client";
 import ocr_api20210707, * as $ocr_api20210707 from "@alicloud/ocr-api20210707";
 import Util, * as $Util from "@alicloud/tea-util";
@@ -13,12 +14,12 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * 文件服务（OSS/MinIO/本地存储）
+ * 文件服务（阿里云 OSS/S3(RustFS)/本地存储）
  */
 @Injectable()
 export class FileService {
-  /** 当前 OSS 类型：aliyun | minio | local */
-  private readonly ossType: "aliyun" | "minio" | "local";
+  /** 当前 OSS 类型：aliyun | s3 | local */
+  private readonly ossType: "aliyun" | "s3" | "local";
 
   /** 阿里云 OSS 客户端 */
   private aliClient: OSS;
@@ -26,10 +27,10 @@ export class FileService {
   private staticClient: OSS;
   private staticConfig: OSS.Options & { bucket: string };
 
-  /** MinIO 客户端及配置（当 ossType=minio 时启用） */
-  private minioClient: Minio.Client | null = null;
-  private minioBucket: string | null = null;
-  private minioConfig: Minio.ClientOptions = {} as Minio.ClientOptions;
+  /** S3 客户端及配置（当 ossType=s3 时启用，当前部署 RustFS） */
+  private s3Client: S3Client | null = null;
+  private s3Bucket: string | null = null;
+  private s3Config: ConfigType<typeof ossConfig>["s3"] | null = null;
 
   // OCR 身份证识别（阿里云）
   private OCRClient: ocr_api20210707 | null = null;
@@ -72,26 +73,21 @@ export class FileService {
       this.OCRClient = new ocr_api20210707(this.OCRConfig);
     }
 
-    // MinIO 初始化
-    if (this.ossType === "minio") {
-      const minio = ossConf.minio;
+    // S3(RustFS) 初始化
+    if (this.ossType === "s3") {
+      const s3 = ossConf.s3;
 
-      // 解析 endpoint
-      const url = new URL(minio.endpoint);
-      const endPoint = url.hostname;
-      const port = Number(url.port) || (url.protocol === "https:" ? 443 : 9000);
-      const useSSL = url.protocol === "https:";
-
-      this.minioConfig = {
-        endPoint,
-        port,
-        useSSL,
-        accessKey: minio.accessKey,
-        secretKey: minio.secretKey,
-      };
-
-      this.minioClient = new Minio.Client(this.minioConfig);
-      this.minioBucket = minio.bucketName;
+      this.s3Config = s3;
+      this.s3Bucket = s3.bucketName;
+      this.s3Client = new S3Client({
+        endpoint: s3.endpoint,
+        region: s3.region,
+        forcePathStyle: true,
+        credentials: {
+          accessKeyId: s3.accessKey,
+          secretAccessKey: s3.secretKey,
+        },
+      });
     }
   }
 
@@ -129,22 +125,22 @@ export class FileService {
       };
     }
 
-    // MinIO：返回预签名上传 URL（PUT），前端直接向该 URL 上传文件
-    if (this.ossType === "minio" && this.minioClient && this.minioBucket) {
+    // S3(RustFS)：返回预签名上传 URL（PUT），前端直接向该 URL 上传文件
+    if (this.ossType === "s3" && this.s3Client && this.s3Bucket) {
       const objectPrefix = `uploads/${dayjs().format("YYYY/MM/DD")}/`;
       const objectName = `${objectPrefix}`; // 前端需要自行替换为具体文件名
 
       // 预签名 URL 有效期（秒）
       const expires = 24 * 60 * 60;
-      const uploadUrl = await this.minioClient.presignedPutObject(
-        this.minioBucket,
-        objectName,
-        expires
+      const uploadUrl = await getSignedUrl(
+        this.s3Client,
+        new PutObjectCommand({ Bucket: this.s3Bucket, Key: objectName }),
+        { expiresIn: expires }
       );
 
       return {
-        type: "minio",
-        bucket: this.minioBucket,
+        type: "s3",
+        bucket: this.s3Bucket,
         objectPrefix,
         uploadUrl,
         expires,
@@ -200,9 +196,13 @@ export class FileService {
       return downloadUrl;
     }
 
-    // MinIO
-    if (this.ossType === "minio" && this.minioClient && this.minioBucket) {
-      const url = await this.minioClient.presignedGetObject(this.minioBucket, key, 3600);
+    // S3(RustFS)
+    if (this.ossType === "s3" && this.s3Client && this.s3Bucket) {
+      const url = await getSignedUrl(
+        this.s3Client,
+        new GetObjectCommand({ Bucket: this.s3Bucket, Key: key }),
+        { expiresIn: 3600 }
+      );
       return url;
     }
 
@@ -219,12 +219,19 @@ export class FileService {
         return buffer;
       }
 
-      // MinIO
-      if (this.ossType === "minio" && this.minioClient && this.minioBucket) {
-        const stream = await this.minioClient.getObject(this.minioBucket, key);
+      // S3(RustFS)
+      if (this.ossType === "s3" && this.s3Client && this.s3Bucket) {
+        const res = await this.s3Client.send(
+          new GetObjectCommand({ Bucket: this.s3Bucket, Key: key })
+        );
+        const stream = res.Body!.transformToWebStream();
+        const reader = stream.getReader();
         const chunks: Buffer[] = [];
-        for await (const chunk of stream) {
-          chunks.push(Buffer.from(chunk));
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(Buffer.from(value));
         }
         return Buffer.concat(chunks);
       }
@@ -291,30 +298,35 @@ export class FileService {
       return { name: originalName, url };
     }
 
-    // minio
-    if (this.ossType === "minio" && this.minioClient && this.minioBucket) {
+    // s3
+    if (this.ossType === "s3" && this.s3Client && this.s3Bucket) {
       const content = await getFileContent();
       if (!content) {
         throw new Error("file buffer is empty");
       }
 
-      await this.minioClient.putObject(this.minioBucket, objectName, content, content.length, {
-        "Content-Type": file?.mimetype || "application/octet-stream",
-      });
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.s3Bucket,
+          Key: objectName,
+          Body: content,
+          ContentType: file?.mimetype || "application/octet-stream",
+        })
+      );
 
-      const customDomain = (this.ossConf.minio.customDomain || "").trim();
+      const customDomain = (this.ossConf.s3.customDomain || "").trim();
       if (customDomain) {
         const base = customDomain.replace(/\/+$/, "");
         return {
           name: originalName,
-          url: `${base}/${this.minioBucket}/${objectName}`,
+          url: `${base}/${this.s3Bucket}/${objectName}`,
         };
       }
 
-      const presigned = await this.minioClient.presignedGetObject(
-        this.minioBucket,
-        objectName,
-        24 * 60 * 60
+      const presigned = await getSignedUrl(
+        this.s3Client,
+        new GetObjectCommand({ Bucket: this.s3Bucket, Key: objectName }),
+        { expiresIn: 24 * 60 * 60 }
       );
       const cleanUrl = presigned.includes("?")
         ? presigned.substring(0, presigned.indexOf("?"))

@@ -1,0 +1,63 @@
+# 有来后台管理系统(Nest.js) Docker Compose 配置
+#
+# 安装：docker compose up -d
+# 卸载：docker compose down（加 -v 同时删除数据卷）
+#
+# 说明：
+# - name 固定项目名，容器统一管理和卸载，避免与其他项目冲突
+# - MySQL 首次启动时自动执行 ./sql 下初始化脚本（仅首次，数据卷已存在时跳过）
+# - 中间件配置全部内联于 command 参数，无需外部配置文件
+# - 数据持久化使用命名卷（docker volume 统一管理），不污染项目目录
+# - RustFS 兼容 MinIO 磁盘格式与 S3 协议（MinIO 社区版已于 2026 年停止维护）
+
+name: youlai-nest
+
+services:
+  mysql:
+    image: mysql:8.0.29
+    container_name: youlai-nest-mysql
+    restart: unless-stopped
+    # 等价于原 my.cnf 的 utf8mb4 字符集设置（MySQL 8 其余项与默认值一致）
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      - TZ=Asia/Shanghai
+      - LANG=en_US.UTF-8
+      - MYSQL_ROOT_PASSWORD=123456
+    volumes:
+      - youlai-nest-mysql-data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+
+  redis:
+    image: redis:7.2.3
+    container_name: youlai-nest-redis
+    restart: unless-stopped
+    # --protected-mode no 允许远程连接（原 redis.conf 唯一非默认项）
+    command: redis-server --requirepass 123456 --appendonly no --protected-mode no
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - youlai-nest-redis-data:/data
+    ports:
+      - 6379:6379
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: youlai-nest-rustfs
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - LANG=en_US.UTF-8
+      - RUSTFS_ACCESS_KEY=rustfs-admin
+      - RUSTFS_SECRET_KEY=rustfs-admin
+    volumes:
+      - youlai-nest-rustfs-data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+
+volumes:
+  youlai-nest-mysql-data:
+  youlai-nest-redis-data:
+  youlai-nest-rustfs-data:
