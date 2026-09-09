@@ -44,7 +44,6 @@ export class LoggingInterceptor implements NestInterceptor {
       const userAgent = (req.headers?.["user-agent"] as string) || "";
       const { browser, os } = parseUserAgent(userAgent);
 
-      // 没有 @Log 装饰器的接口不记录日志
       const logMetadata = this.reflector.get<LogMetadata>(LOG_MODULE, context.getHandler());
       if (!logMetadata) return;
 

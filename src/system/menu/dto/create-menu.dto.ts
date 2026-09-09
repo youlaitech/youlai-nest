@@ -1,7 +1,9 @@
 ﻿import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
 import { Transform } from "class-transformer";
 
-/** 菜单创建参数 */
+/**
+ * 菜单创建参数
+ */
 export class CreateMenuDto {
   @IsString()
   @MaxLength(20)

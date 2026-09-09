@@ -4,7 +4,9 @@ import type { RoleDataScope } from "../models/role-data-scope.model";
 import type { DataPermissionConfig } from "../decorators/data-permission.decorator";
 export type { DataPermissionConfig };
 
-/** 请求上下文，基于 AsyncLocalStorage 实现请求级隔离 */
+/**
+ * 请求上下文，基于 AsyncLocalStorage 实现请求级隔离
+ */
 export class RequestContext {
   private static asyncLocalStorage = new AsyncLocalStorage<{
     user: CurrentUserInfo;

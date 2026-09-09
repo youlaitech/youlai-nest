@@ -8,16 +8,8 @@ import { SysRole } from "./entities/sys-role.entity";
 import { SysMenu } from "../menu/entities/sys-menu.entity";
 
 /**
- * 角色权限缓存服务
- *
- * 负责管理角色与权限标识的映射关系，采用 Read-Through 缓存策略：
- * - 优先从 Redis Hash 缓存读取
- * - 缓存未命中时自动回源数据库并写入缓存
- *
- * 缓存结构：
- * - Key: system:role:perms
- * - Field: 角色编码
- * - Value: 权限标识数组
+ * 角色权限缓存服务。
+ * Read-Through 策略：优先读 Redis Hash 缓存，未命中时回源数据库并写回。
  */
 @Injectable()
 export class RolePermService {
@@ -62,10 +54,8 @@ export class RolePermService {
    * @param roleCode 角色编码
    */
   async refreshRolePermsCache(roleCode: string): Promise<void> {
-    // 删除该角色的缓存
     await this.redisService.hdel(this.cacheKey, roleCode);
 
-    // 从数据库重新获取
     const perms = await this.getRolePermsByRoleCodeFromDB(roleCode);
 
     // 写入缓存（空数组也写入，防止缓存穿透）

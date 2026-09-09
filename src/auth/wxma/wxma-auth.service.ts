@@ -1,20 +1,19 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource } from "typeorm";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 
-import { SysUser } from "../system/user/entities/sys-user.entity";
-import { SysUserSocial, SocialPlatform } from "../system/user/entities/sys-user-social.entity";
+import { SysUser } from "../../system/user/entities/sys-user.entity";
+import { SysUserSocial, SocialPlatform } from "../../system/user/entities/sys-user-social.entity";
+import { UserService } from "../../system/user/user.service";
+import { TokenService } from "../token.service";
 import { WxMaLoginResultDto } from "./dto/wxma-login-result.dto";
-import { LoginResultDto } from "./dto/login-result.dto";
-import { BusinessException } from "../common/exceptions/business.exception";
-import { ErrorCode } from "../common/enums/error-code.enum";
-import { RedisService } from "../common/redis/redis.service";
-import jwtConfig from "../config/jwt.config";
-import { ConfigType } from "@nestjs/config";
+import { LoginResultDto } from "../dto/login-result.dto";
+import { BusinessException } from "../../common/exceptions/business.exception";
+import { ErrorCode } from "../../common/enums/error-code.enum";
+import { RedisService } from "../../common/redis/redis.service";
 
 interface WechatSessionResponse {
   openid?: string;
@@ -45,6 +44,9 @@ interface WechatTokenResponse {
   errmsg?: string;
 }
 
+/**
+ * 微信小程序认证服务：微信会话换取、手机号绑定，令牌签发委托给 {@link TokenService}
+ */
 @Injectable()
 export class WxMaAuthService {
   private readonly logger = new Logger(WxMaAuthService.name);
@@ -53,11 +55,10 @@ export class WxMaAuthService {
   private readonly appSecret: string;
 
   constructor(
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfigData: ConfigType<typeof jwtConfig>,
-    private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly userService: UserService,
+    private readonly tokenService: TokenService,
     private readonly dataSource: DataSource,
     @InjectRepository(SysUser)
     private readonly userRepository: Repository<SysUser>,
@@ -123,6 +124,16 @@ export class WxMaAuthService {
     this.logger.log(`微信小程序绑定手机号成功：mobile=${mobile}, openId=${openId}`);
 
     return this.generateTokenByUserId(user.id);
+  }
+
+  private async generateTokenByUserId(userId: string): Promise<LoginResultDto> {
+    const user = await this.userService.getAuthInfoByUserId(Number(userId));
+
+    if (!user) {
+      throw new BusinessException({ ...ErrorCode.USER_ERROR, msg: "用户不存在" });
+    }
+
+    return this.tokenService.issueTokens(user);
   }
 
   private async getJsCodeSession(code: string): Promise<WechatSessionResponse> {
@@ -297,39 +308,5 @@ export class WxMaAuthService {
     }
 
     await this.redisService.del(cacheKey);
-  }
-
-  private async generateTokenByUserId(userId: string): Promise<LoginResultDto> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId, isDeleted: 0 },
-    });
-
-    if (!user) {
-      throw new BusinessException({ ...ErrorCode.USER_ERROR, msg: "用户不存在" });
-    }
-
-    const jti = uuidv4();
-    const payload = {
-      sub: userId,
-      username: user.username,
-      deptId: user.deptId,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.jwtConfigData.expiresIn,
-      jwtid: jti,
-    });
-
-    const refreshToken = this.jwtService.sign(
-      { sub: userId, type: "refresh" },
-      { expiresIn: this.jwtConfigData.expiresIn * 10 }
-    );
-
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: this.jwtConfigData.expiresIn,
-      tokenType: "Bearer",
-    };
   }
 }

@@ -1,8 +1,3 @@
-/**
- * Redis 缓存键常量定义
- *
- * 统一管理所有 Redis 键名，避免硬编码，便于维护和扩展
- */
 export const RedisConstants = {
   /**
    * 系统模块缓存键

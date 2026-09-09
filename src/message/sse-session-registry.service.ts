@@ -1,5 +1,5 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
-import { OnlineUserDto } from "../auth/interfaces/user-session.interface";
+import { OnlineUserDto } from "./interfaces/online-user.interface";
 
 interface SessionInfo {
   username: string;

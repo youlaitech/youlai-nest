@@ -255,7 +255,11 @@ export class CodegenService {
         frontendAppName: this.codegenConfig.frontendAppName,
         removeTablePrefix: this.codegenConfig.defaultRemoveTablePrefix,
         pageType: "classic",
-        fieldConfigs: fieldRows as FieldConfigDto[],
+        // 存量 field_type 可能是早期版本的 Java 类型，统一按 column_type 重新推导
+        fieldConfigs: (fieldRows || []).map((row: any) => ({
+          ...row,
+          fieldType: getTsTypeByColumnType(String(row.columnType || "")),
+        })) as FieldConfigDto[],
       };
     }
 
@@ -294,12 +298,12 @@ export class CodegenService {
 
     const fieldConfigs: FieldConfigDto[] = (columns || []).map((col: any, idx: number) => {
       const columnType = String(col.columnType || "");
-      const javaType = getJavaTypeByColumnType(columnType);
+      const tsType = getTsTypeByColumnType(columnType);
       return {
         columnName: col.columnName,
         columnType,
         fieldName: toCamelCase(String(col.columnName)),
-        fieldType: javaType,
+        fieldType: tsType,
         fieldComment: col.columnComment,
         isRequired: String(col.isNullable).toUpperCase() === "YES" ? 0 : 1,
         formType: getDefaultFormTypeByColumnType(columnType),
@@ -415,7 +419,7 @@ export class CodegenService {
           f.columnName || null,
           columnType || null,
           f.fieldName || null,
-          f.fieldType || getJavaTypeByColumnType(columnType),
+          getTsTypeByColumnType(columnType),
           f.fieldSort ?? i + 1,
           f.fieldComment || null,
           f.maxLength ?? null,
@@ -606,12 +610,12 @@ export class CodegenService {
   }
 
   private toTemplateFieldConfig(field: FieldConfigDto) {
-    const javaType = field.fieldType || getJavaTypeByColumnType(field.columnType || "");
+    const tsType = getTsTypeByColumnType(field.columnType || "");
     return {
       ...field,
-      javaType,
-      fieldType: javaType,
-      tsType: getTsTypeByJavaType(javaType),
+      fieldType: tsType,
+      tsType,
+      isDecimal: isDecimalColumnType(field.columnType || ""),
       // Velocity 模板在比较时使用字符串枚举名
       formType: getFormTypeName(field.formType),
       queryType: getQueryTypeName(field.queryType),
@@ -760,62 +764,32 @@ function normalizeColumnType(columnType: string) {
   return normalized;
 }
 
-function getJavaTypeByColumnType(columnType: string) {
+function getTsTypeByColumnType(columnType: string) {
   const t = normalizeColumnType(columnType);
   switch (t) {
-    case "varchar":
-    case "char":
-    case "text":
-    case "json":
-      return "String";
-    case "blob":
-      return "byte[]";
     case "int":
     case "tinyint":
     case "smallint":
     case "mediumint":
-      return "Integer";
     case "bigint":
-      return "Long";
     case "float":
-      return "Float";
     case "double":
-      return "Double";
     case "decimal":
-      return "BigDecimal";
-    case "date":
-      return "LocalDate";
-    case "datetime":
-    case "timestamp":
-      return "LocalDateTime";
-    case "boolean":
+      return "number";
     case "bit":
-      return "Boolean";
+    case "bool":
+    case "boolean":
+      return "boolean";
+    case "blob":
+      return "Uint8Array";
     default:
-      return "String";
+      return "string";
   }
 }
 
-function getTsTypeByJavaType(javaType: string) {
-  switch (javaType) {
-    case "String":
-      return "string";
-    case "Integer":
-    case "Long":
-    case "Float":
-    case "Double":
-    case "BigDecimal":
-      return "number";
-    case "Boolean":
-      return "boolean";
-    case "byte[]":
-      return "Uint8Array";
-    case "LocalDate":
-    case "LocalDateTime":
-      return "string";
-    default:
-      return "any";
-  }
+function isDecimalColumnType(columnType: string) {
+  const t = normalizeColumnType(columnType);
+  return t === "decimal" || t === "double" || t === "float";
 }
 
 function getDefaultFormTypeByColumnType(columnType: string) {

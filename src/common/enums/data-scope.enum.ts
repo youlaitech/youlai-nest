@@ -1,7 +1,6 @@
 ﻿/**
- * 数据权限范围枚举
- * 多角色数据权限合并策略：取并集（OR），即用户能看到所有角色权限范围内的数据。
- * 如果任一角色是 ALL，则直接跳过数据权限过滤。
+ * 数据权限范围枚举。
+ * 多角色合并策略：取并集（OR）；任一角色为 ALL 则跳过数据权限过滤。
  */
 export enum DataScopeEnum {
   /**
@@ -29,18 +28,4 @@ export enum DataScopeEnum {
    * 需要配合 sys_role_dept 表使用，存储角色可访问的部门ID列表
    */
   CUSTOM = 5,
-}
-
-/**
- * 获取数据权限枚举值
- */
-export function getDataScopeByValue(value: number): DataScopeEnum | undefined {
-  return Object.values(DataScopeEnum).find((v) => v === value) as DataScopeEnum | undefined;
-}
-
-/**
- * 判断是否为全部数据权限
- */
-export function isAllDataScope(value: number): boolean {
-  return value === DataScopeEnum.ALL;
 }

@@ -8,7 +8,9 @@ import {
   SKIP_DATA_PERMISSION_KEY,
 } from "../../common/decorators/data-permission.decorator";
 
-/** 数据权限拦截器 */
+/**
+ * 数据权限拦截器
+ */
 @Injectable()
 export class DataPermissionInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector) {}

@@ -389,7 +389,6 @@ export class RoleService {
       await this.roleMenuRepository.delete({ roleId });
       await this.roleRepository.update(roleId, { isDeleted: 1 });
 
-      // 刷新角色权限缓存（删除角色编码对应的缓存）
       await this.rolePermService.refreshRolePermsCache(role.code);
     }
   }

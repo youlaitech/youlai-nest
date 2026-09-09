@@ -5,7 +5,6 @@ import { FileService } from "./file.service";
 
 /**
  * 文件接口控制器
- * 提供简单的文件上传/删除功能
  */
 @ApiTags("10.文件接口")
 @Controller("files")

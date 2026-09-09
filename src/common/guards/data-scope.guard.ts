@@ -61,7 +61,6 @@ export class DataScopeGuard implements CanActivate {
     return true;
   }
 
-  /** 解析用户ID */
   private parseUserId(value: any): string | undefined {
     if (value === undefined || value === null || value === "") {
       return undefined;
@@ -69,7 +68,6 @@ export class DataScopeGuard implements CanActivate {
     return String(value);
   }
 
-  /** 解析部门ID */
   private parseId(value: any): string | null {
     if (value === undefined || value === null || value === "") {
       return null;
@@ -77,7 +75,6 @@ export class DataScopeGuard implements CanActivate {
     return String(value);
   }
 
-  /** 解析多角色数据权限 */
   private parseDataScopes(dataScopes: any): RoleDataScope[] {
     if (!dataScopes || !Array.isArray(dataScopes)) {
       return [];

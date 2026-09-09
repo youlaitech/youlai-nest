@@ -1,10 +1,8 @@
 import type { RoleDataScope } from "@/common/models/role-data-scope.model";
 
 /**
- * 用户认证信息
- *
- * 用于登录认证阶段的用户信息承载，包含用户名、密码、状态、角色等与认证相关的数据。
- * 权限标识（perms）不在此接口中存储，而是在需要时从角色权限缓存中动态获取。
+ * 用户认证信息。
+ * 权限标识（perms）不在此存储，需要时从角色权限缓存动态获取。
  */
 export interface UserAuthInfo {
   /**

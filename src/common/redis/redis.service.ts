@@ -3,12 +3,7 @@ import { RedisService as LiaoliaRedisService } from "@liaoliaots/nestjs-redis";
 import type { Redis } from "ioredis";
 
 /**
- * Redis 服务（缓存抽象，基于 ioredis）
- *
- * 提供常用的缓存操作方法，支持：
- * - 基础 KV 操作（set/get/del）
- * - Hash 操作（hset/hget/hdel/hmget）
- * - 模式匹配删除
+ * Redis 服务。
  */
 @Injectable()
 export class RedisService {

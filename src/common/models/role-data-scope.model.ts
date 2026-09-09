@@ -1,6 +1,8 @@
 ﻿import { DataScopeEnum } from "../enums/data-scope.enum";
 
-/** 角色数据权限 */
+/**
+ * 角色数据权限
+ */
 export class RoleDataScope {
   /** 角色编码 */
   roleCode: string;
@@ -57,7 +59,9 @@ export class RoleDataScope {
   }
 }
 
-/** 数据权限工具类 */
+/**
+ * 数据权限工具类
+ */
 export class DataScopeUtils {
   static hasAllDataScope(dataScopes: RoleDataScope[]): boolean {
     return dataScopes.some((ds) => ds.dataScope === DataScopeEnum.ALL);

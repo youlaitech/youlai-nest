@@ -7,10 +7,7 @@
 } from "typeorm";
 
 /**
- * 用户通知关联实体
- * 
- * 用户-通知关联表由系统自动生成，不需要记录创建人/修改人，
- * 因此不继承 BaseEntity，独立定义基础字段。
+ * 用户通知关联实体。
  */
 @Entity("sys_user_notice")
 export class SysUserNotice {

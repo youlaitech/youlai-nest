@@ -7,10 +7,7 @@
 } from "typeorm";
 
 /**
- * 系统菜单实体
- * 
- * 菜单属于系统元数据，不需要审计字段（create_by/update_by）和逻辑删除，
- * 因此不继承 BaseEntity，独立定义基础字段。
+ * 系统菜单实体。
  */
 @Entity("sys_menu")
 export class SysMenu {

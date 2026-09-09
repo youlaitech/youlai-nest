@@ -2,7 +2,9 @@
 
 export const DATA_PERMISSION_KEY = "data_permission";
 
-/** 数据权限装饰器配置 */
+/**
+ * 数据权限装饰器配置
+ */
 export interface DataPermissionConfig {
   /** 部门表别名 */
   deptAlias?: string;

@@ -65,10 +65,7 @@ export class NoticeService {
     };
   }
 
-  /**
-   * 新增通知公告
-   * 处理目标用户并补充创建信息
-   */
+  /** 新增通知公告 */
   async saveNotice(form: CreateNoticeDto & { createBy: string }) {
     const now = new Date();
     const normalizedTargetUserIds = this.normalizeTargetUserIds(form.targetUserIds);
@@ -276,10 +273,7 @@ export class NoticeService {
     return true;
   }
 
-  /**
-   * 逻辑删除通知公告
-   * 批量更新删除标识
-   */
+  /** 逻辑删除通知公告 */
   async deleteNotices(ids: string[]) {
     const idStrs = (ids || []).map((v) => v.toString());
     await this.noticeRepository.update(idStrs, { isDeleted: 1 });

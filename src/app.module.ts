@@ -30,7 +30,7 @@ import { RequestContextMiddleware } from "./common/middleware/request-context.mi
 import { RateLimitMiddleware } from "./common/middleware/rate-limit.middleware";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
-import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RedisTokenAuthGuard } from "./auth/guards/redis-token.guard";
 import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 

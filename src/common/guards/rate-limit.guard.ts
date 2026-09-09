@@ -4,7 +4,20 @@ import { RedisService } from "../redis/redis.service";
 import { BusinessException } from "../exceptions/business.exception";
 import { ErrorCode } from "../enums/error-code.enum";
 import { RATE_LIMIT_KEY, RateLimitOptions } from "../decorators/rate-limit.decorator";
+import { LoggerUtils } from "../utils/logger.utils";
 import * as crypto from "crypto";
+
+// 滑动窗口计数：ZSET 按时间戳剔除窗口外成员后统计
+const LUA_SLIDING_WINDOW = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local member = ARGV[3]
+redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+redis.call('ZADD', key, now, member)
+redis.call('PEXPIRE', key, window + 1000)
+return redis.call('ZCARD', key)
+`;
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
@@ -27,18 +40,20 @@ export class RateLimitGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = request.headers.authorization?.replace("Bearer ", "") || "";
-    const ip = request.ip || request.connection?.remoteAddress || "unknown";
+    const ip = LoggerUtils.parseClientIP(request) || "unknown";
     const identity = token
       ? crypto.createHash("sha256").update(token).digest("hex").slice(0, 16)
       : ip;
-    const path = `${request.method} ${request.route?.path || request.originalUrl?.split("?")[0]}`;
-    const key = `rate_limit:${identity}:${path}`;
+    const path = request.originalUrl?.split("?")[0] || request.url;
+    const key = `rate_limit:api:${identity}:${path}`;
 
     try {
-      const count = await this.redisService.getClient().incr(key);
-      if (count === 1) {
-        await this.redisService.getClient().expire(key, options.windowSec);
-      }
+      const now = Date.now();
+      const member = crypto.randomUUID();
+      const count = (await this.redisService
+        .getClient()
+        .eval(LUA_SLIDING_WINDOW, 1, key, now, options.windowSec * 1000, member)) as number;
+
       if (count > options.limit) {
         throw new BusinessException({
           code: ErrorCode.REQUEST_CONCURRENCY_LIMIT_EXCEEDED.code,

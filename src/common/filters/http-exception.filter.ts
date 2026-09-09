@@ -42,7 +42,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     };
 
-    // 处理业务异常
     if (exception instanceof BusinessException) {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
@@ -52,7 +51,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return response.status(status).json(buildResponseBody(code, msg));
     }
 
-    // 处理NestJS内置HTTP异常
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
@@ -110,7 +108,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         .json(buildResponseBody(ErrorCode.INTEGRITY_CONSTRAINT_VIOLATION.code, "数据已存在"));
     }
 
-    // 处理其他未捕获异常
     const status = HttpStatus.INTERNAL_SERVER_ERROR;
     const error = exception as Error;
 

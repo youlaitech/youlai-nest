@@ -62,7 +62,6 @@ export class UserService {
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
     const queryBuilder = this.userRepository.createQueryBuilder("user");
-    // 统一使用逻辑删除标识过滤
     queryBuilder.where("user.isDeleted = :isDeleted", { isDeleted: 0 });
     // root 用户（ROOT 角色）不在用户列表中展示
     queryBuilder.andWhere(
@@ -1053,7 +1052,6 @@ export class UserService {
       }
     }
 
-    // 开启事务处理
     return await this.userRepository.manager.transaction(async (manager) => {
       await manager.delete(SysUserRole, { userId: idStr });
 

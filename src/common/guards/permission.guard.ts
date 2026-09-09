@@ -12,13 +12,7 @@ import { IS_PUBLIC_KEY } from "../../common/decorators/auth.decorator";
 import { RolePermService } from "../../system/role/role-permission.service";
 
 /**
- * RBAC 权限守卫
- *
- * 权限校验流程：
- * 1. Public 装饰器标记的接口直接放行
- * 2. 超级管理员（ROOT_ROLE_CODE）直接放行
- * 3. 未声明权限要求的接口放行
- * 4. 从角色权限缓存中获取用户权限，校验是否具备所需权限
+ * RBAC 权限守卫。
  */
 @Injectable()
 export class PermissionGuard implements CanActivate {

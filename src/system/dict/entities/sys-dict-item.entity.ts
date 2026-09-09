@@ -7,10 +7,7 @@
 } from "typeorm";
 
 /**
- * 字典项实体
- * 
- * 字典项属于系统元数据，删除通常是物理删除，不需要逻辑删除标识，
- * 因此不继承 BaseEntity，独立定义基础字段。
+ * 字典项实体。
  */
 @Entity("sys_dict_item")
 export class SysDictItem {

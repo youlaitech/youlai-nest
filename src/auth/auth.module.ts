@@ -1,22 +1,25 @@
 import { Module } from "@nestjs/common";
-import { AuthService } from "./auth.service";
-import { AuthController } from "./auth.controller";
-import { QrCodeAuthService } from "./qr-code-auth.service";
-import { WxMaAuthService } from "./wxma-auth.service";
-import { WxMaAuthController } from "./wxma-auth.controller";
-import { UserModule } from "../system/user/user.module";
-import { RoleModule } from "../system/role/role.module";
-import { LogModule } from "../system/log/log.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { JwtStrategy } from "./strategies/jwt.strategy";
-import { RedisSharedModule } from "../common/redis/redis.module";
-import { RedisService } from "../common/redis/redis.service";
-import { ToolsService } from "../common/utils/captcha.util";
 import { TypeOrmModule } from "@nestjs/typeorm";
+
+import { UserModule } from "../system/user/user.module";
+import { RoleModule } from "../system/role/role.module";
+import { LogModule } from "../system/log/log.module";
 import { SysUser } from "../system/user/entities/sys-user.entity";
 import { SysUserSocial } from "../system/user/entities/sys-user-social.entity";
+import { RedisSharedModule } from "../common/redis/redis.module";
+
+import { AuthController } from "./auth.controller";
+import { AuthService } from "./auth.service";
+import { TokenService } from "./token.service";
+import { CaptchaService } from "./captcha.service";
+import { JwtStrategy } from "./strategies/jwt.strategy";
+import { QrCodeAuthController } from "./qr-code/qr-code-auth.controller";
+import { QrCodeAuthService } from "./qr-code/qr-code-auth.service";
+import { WxMaAuthController } from "./wxma/wxma-auth.controller";
+import { WxMaAuthService } from "./wxma/wxma-auth.service";
 
 @Module({
   imports: [
@@ -38,8 +41,14 @@ import { SysUserSocial } from "../system/user/entities/sys-user-social.entity";
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController, WxMaAuthController],
-  providers: [AuthService, QrCodeAuthService, WxMaAuthService, JwtStrategy, RedisService, ToolsService],
-  exports: [AuthService, WxMaAuthService],
+  controllers: [AuthController, QrCodeAuthController, WxMaAuthController],
+  providers: [
+    AuthService,
+    TokenService,
+    CaptchaService,
+    JwtStrategy,
+    QrCodeAuthService,
+    WxMaAuthService,
+  ],
 })
 export class AuthModule {}

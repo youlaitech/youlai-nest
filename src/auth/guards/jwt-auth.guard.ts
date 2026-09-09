@@ -14,9 +14,6 @@ export class JwtAuthGuard extends PassportAuthGuard("jwt") {
     super();
   }
 
-  /**
-   * 路由访问控制逻辑
-   */
   canActivate(context: ExecutionContext) {
     // 检查 @Public() 装饰器
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -30,9 +27,6 @@ export class JwtAuthGuard extends PassportAuthGuard("jwt") {
     return super.canActivate(context);
   }
 
-  /**
-   * 处理认证结果
-   */
   handleRequest(err: any, user: any) {
     if (err || !user) {
       throw new BusinessException(ErrorCode.ACCESS_TOKEN_INVALID);

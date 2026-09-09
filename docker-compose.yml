@@ -25,7 +25,6 @@ services:
       - MYSQL_ROOT_PASSWORD=123456
     volumes:
       - youlai-nest-mysql-data:/var/lib/mysql
-      - ./sql:/docker-entrypoint-initdb.d
     ports:
       - 3306:3306
 

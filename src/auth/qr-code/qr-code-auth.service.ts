@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
-import { RedisService } from "../common/redis/redis.service";
-import { RedisConstants } from "../common/constants/redis.constants";
-import { UserService } from "../system/user/user.service";
-import { AuthService } from "./auth.service";
-import { BusinessException } from "../common/exceptions/business.exception";
-import { ErrorCode } from "../common/enums/error-code.enum";
-import type { LoginResultDto } from "./dto/login-result.dto";
+import { RedisService } from "../../common/redis/redis.service";
+import { RedisConstants } from "../../common/constants/redis.constants";
+import { UserService } from "../../system/user/user.service";
+import { AuthService } from "../auth.service";
+import { BusinessException } from "../../common/exceptions/business.exception";
+import { ErrorCode } from "../../common/enums/error-code.enum";
+import type { LoginResultDto } from "../dto/login-result.dto";
 
 /** 扫码登录状态 */
 const STATUS = {
@@ -23,7 +23,9 @@ const DEFAULT_EXPIRE = 300;
 /** 状态流转时最小补足 TTL（秒） */
 const MIN_REMAIN = 30;
 
-/** 票据上下文 */
+/**
+ * 票据上下文
+ */
 interface QrCodeContext {
   ticket: string;
   status: string;

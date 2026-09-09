@@ -7,12 +7,8 @@ import { RoleService } from "../../system/role/role.service";
 import { RedisConstants } from "../../common/constants/redis.constants";
 
 /**
- * JWT 认证策略
- *
- * 解析并验证 JWT 令牌，将令牌载荷转换为标准化的用户对象
- * 处理令牌过期、签名有效性等底层验证
- *
- * 注意：权限标识（perms）不在此处获取，而是在权限守卫中从角色权限缓存动态读取
+ * JWT 认证策略。
+ * 注意：权限标识（perms）不在此处获取，而是在权限守卫中从角色权限缓存动态读取。
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

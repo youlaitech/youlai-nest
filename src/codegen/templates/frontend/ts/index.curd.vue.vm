@@ -39,7 +39,7 @@
     <!-- 新增 -->
     <PageModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
 #foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType.name() != "HIDDEN" && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN" && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
@@ -50,7 +50,7 @@
     <!-- 编辑 -->
     <PageModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
 #foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType.name() != "HIDDEN" && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN" && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
@@ -107,12 +107,10 @@ const searchConfig: ISearchConfig = reactive({
     },
 #else
     {
-#if($fieldConfig.javaType == "String")
-      type: "input",
-#elseif($fieldConfig.javaType == "Integer" || $fieldConfig.javaType == "Long")
-      type: "input-number",
-#elseif($fieldConfig.javaType == "Date" || $fieldConfig.javaType == "LocalDateTime")
+#if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
       type: "date-picker",
+#elseif($fieldConfig.tsType == "number")
+      type: "input-number",
 #else
       type: "input",
 #end
@@ -120,7 +118,7 @@ const searchConfig: ISearchConfig = reactive({
       prop: "$fieldConfig.fieldName",
       attrs: {
         placeholder: "$fieldConfig.fieldComment",
-#if($fieldConfig.javaType == "Date" || $fieldConfig.javaType == "LocalDateTime")
+#if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
         type: "daterange",
         "range-separator": "~",
         "start-placeholder": "开始时间",
@@ -213,7 +211,7 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
   // 表单项配置
   formItems: [
 #foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType.name() != "HIDDEN")
+#if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN")
 #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
     {
       type: "custom",
@@ -230,8 +228,20 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
     },
 #else
     {
-#if($fieldConfig.javaType == "String")
-#if($fieldConfig.fieldName.contains("password") || $fieldConfig.fieldName.contains("pwd"))
+#if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
+      type: "date-picker",
+      attrs: {
+        type: "datetime",
+        placeholder: "$fieldConfig.fieldComment",
+        format: "YYYY-MM-DD HH:mm:ss",
+        "value-format": "YYYY-MM-DD HH:mm:ss",
+        style: { width: "100%" }
+      },
+#if($fieldConfig.isRequired == 1)
+      rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "change" }],
+#end
+#elseif($fieldConfig.tsType == "string")
+#if($fieldConfig.fieldName.indexOf("password") >= 0 || $fieldConfig.fieldName.indexOf("pwd") >= 0)
       type: "input",
       attrs: {
         type: "password",
@@ -241,7 +251,7 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
 #if($fieldConfig.isRequired == 1)
       rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "blur" }],
 #end
-#elseif($fieldConfig.fieldName.contains("email"))
+#elseif($fieldConfig.fieldName.indexOf("email") >= 0)
       type: "input",
       attrs: {
         placeholder: "$fieldConfig.fieldComment",
@@ -253,7 +263,7 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
 #end
         { pattern: /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/, message: "请输入正确的邮箱地址", trigger: "blur" }
       ],
-#elseif($fieldConfig.fieldName.contains("mobile") || $fieldConfig.fieldName.contains("phone"))
+#elseif($fieldConfig.fieldName.indexOf("mobile") >= 0 || $fieldConfig.fieldName.indexOf("phone") >= 0)
       type: "input",
       attrs: {
         placeholder: "$fieldConfig.fieldComment",
@@ -274,38 +284,19 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
       rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "blur" }],
 #end
 #end
-#elseif($fieldConfig.javaType == "Integer" || $fieldConfig.javaType == "Long")
+#elseif($fieldConfig.tsType == "number")
       type: "input-number",
       attrs: {
         placeholder: "$fieldConfig.fieldComment",
-        style: { width: "100%" }
-      },
-#if($fieldConfig.isRequired == 1)
-      rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "blur" }],
-#end
-#elseif($fieldConfig.javaType == "BigDecimal" || $fieldConfig.javaType == "Double")
-      type: "input-number",
-      attrs: {
-        placeholder: "$fieldConfig.fieldComment",
+#if($fieldConfig.isDecimal)
         precision: 2,
+#end
         style: { width: "100%" }
       },
 #if($fieldConfig.isRequired == 1)
       rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "blur" }],
 #end
-#elseif($fieldConfig.javaType == "Date" || $fieldConfig.javaType == "LocalDateTime")
-      type: "date-picker",
-      attrs: {
-        type: "datetime",
-        placeholder: "$fieldConfig.fieldComment",
-        format: "YYYY-MM-DD HH:mm:ss",
-        "value-format": "YYYY-MM-DD HH:mm:ss",
-        style: { width: "100%" }
-      },
-#if($fieldConfig.isRequired == 1)
-      rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "change" }],
-#end
-#elseif($fieldConfig.javaType == "Boolean" || $fieldConfig.fieldName.contains("status"))
+#elseif($fieldConfig.tsType == "boolean" || $fieldConfig.fieldName.indexOf("status") >= 0)
       type: "switch",
       attrs: {
         activeText: "启用",
@@ -357,7 +348,6 @@ const editModalConfig: IModalConfig<${entityName}Form> = reactive({
   formItems: addModalConfig.formItems, // 复用新增的表单项
 });
 
-// 处理操作按钮点击
 const handleOperateClick = (data: IOperateData) => {
   if (data.name === "edit") {
     handleEditClick(data.row, async () => {
@@ -366,9 +356,8 @@ const handleOperateClick = (data: IOperateData) => {
   }
 };
 
-// 处理工具栏按钮点击（删除等）
+// 工具栏按钮（删除等）点击
 const handleToolbarClick = (name: string) => {
-  console.log(name);
 };
 
 </script>

@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Query,
-  Req,
-  Inject,
-  forwardRef,
-  Delete,
-} from "@nestjs/common";
+import { Controller, Post, Get, Body, Query, Req, Delete } from "@nestjs/common";
 
 import { AuthService } from "./auth.service";
 import { LoginRequestDto } from "./dto/login-request.dto";
@@ -18,14 +8,9 @@ import { Public } from "../common/decorators/auth.decorator";
 import { Log } from "../common/decorators/log.decorator";
 import { ActionTypeValue } from "../common/enums/action-type.enum";
 import { LogModuleValue } from "../common/enums/log-module.enum";
-import { ToolsService } from "../common/utils/captcha.util";
-import { BusinessException } from "../common/exceptions/business.exception";
-import { v4 as uuidv4 } from "uuid";
-import { RedisService } from "../common/redis/redis.service";
-import { ErrorCode } from "../common/enums/error-code.enum";
 import { RateLimit } from "../common/decorators/rate-limit.decorator";
-import { QrCodeAuthService } from "./qr-code-auth.service";
-import { CurrentUser } from "../common/decorators/current-user.decorator";
+import { CaptchaService } from "./captcha.service";
+import { TokenService } from "./token.service";
 
 /**
  * 认证接口控制器
@@ -35,37 +20,24 @@ import { CurrentUser } from "../common/decorators/current-user.decorator";
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly toolsService: ToolsService,
-    @Inject(forwardRef(() => RedisService))
-    private readonly RedisService: RedisService,
-    private readonly qrCodeAuthService: QrCodeAuthService
+    private readonly captchaService: CaptchaService,
+    private readonly tokenService: TokenService
   ) {}
 
   @ApiOperation({ summary: "登录接口" })
   @ApiOkResponse({ type: LoginResultDto })
   @Public()
-  @RateLimit({ limit: 5, windowSec: 60 })
+  @RateLimit({ limit: 60, windowSec: 60 })
   @Post("login")
   async login(@Body() loginDto: LoginRequestDto) {
     const { captchaCode, captchaId } = loginDto;
-
-    // 图形验证码：captcha:image:{captchaId} -> text（短 TTL）
-    const cacheCaptchaCode = await this.RedisService.get(`captcha:image:${captchaId}`);
-
-    if (!cacheCaptchaCode) {
-      throw new BusinessException(ErrorCode.USER_VERIFICATION_CODE_EXPIRED);
-    }
-
-    if (captchaCode?.toUpperCase() !== cacheCaptchaCode?.toUpperCase()) {
-      throw new BusinessException(ErrorCode.USER_VERIFICATION_CODE_ERROR);
-    }
-
+    await this.captchaService.verify(captchaId, captchaCode);
     return await this.authService.login(loginDto);
   }
 
   @ApiOperation({ summary: "短信验证码登录" })
   @Public()
-  @RateLimit({ limit: 5, windowSec: 60 })
+  @RateLimit({ limit: 60, windowSec: 60 })
   @Post("login/sms")
   async loginBySms(@Query("mobile") mobile: string, @Query("code") code: string) {
     return await this.authService.loginBySms(mobile, code);
@@ -87,13 +59,11 @@ export class AuthController {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring("Bearer ".length);
-      // JWT 模式：加入黑名单；redis-token 模式：清理 Redis 中的 token 映射
-      await this.authService.blacklistToken(token);
+      // 按 jti 拉黑当前令牌，仅 JWT 模式有效；redis-token 模式令牌本身随 TTL 失效
+      await this.tokenService.blacklistToken(token);
     }
 
-    // 清除用户信息
     req["user"] = null;
-    // 向客户端返回成功的响应
     return null;
   }
 
@@ -101,66 +71,13 @@ export class AuthController {
   @Public()
   @Get("captcha")
   async getCode() {
-    const svgCaptcha = await this.toolsService.captche();
-    const captchaId = uuidv4();
-    // 与 /auth/login 配套使用，120s 过期
-    await this.RedisService.set(`captcha:image:${captchaId}`, svgCaptcha.captcha.text, 120);
-    return {
-      captchaBase64: svgCaptcha.base64,
-      captchaId,
-      captchaCode: svgCaptcha.captcha.text,
-    };
+    return await this.captchaService.generate();
   }
 
   @ApiOperation({ summary: "刷新令牌" })
   @Public()
   @Post("refresh-token")
   async refreshToken(@Query("refreshToken") refreshToken: string) {
-    return await this.authService.refreshToken(refreshToken);
-  }
-
-  // ── 扫码登录 ──
-
-  @ApiOperation({ summary: "生成扫码登录票据" })
-  @Public()
-  @Post("qr-code/generate")
-  async qrGenerate(@Req() req: any) {
-    const clientIp =
-      (req.headers["x-forwarded-for"] ?? "").split(",")[0].trim() ||
-      (req.headers["x-real-ip"] ?? "").trim() ||
-      (req.ip ?? "unknown");
-    return this.qrCodeAuthService.generate(clientIp);
-  }
-
-  @ApiOperation({ summary: "查询扫码状态" })
-  @Public()
-  @Get("qr-code/status")
-  async qrStatus(@Query("ticket") ticket: string) {
-    return this.qrCodeAuthService.status(ticket);
-  }
-
-  @ApiOperation({ summary: "APP 标记已扫码" })
-  @Post("qr-code/scan")
-  async qrScan(@Body("ticket") ticket: string, @CurrentUser("userId") userId: number) {
-    return this.qrCodeAuthService.scan(ticket, userId);
-  }
-
-  @ApiOperation({ summary: "APP 确认登录" })
-  @Post("qr-code/confirm")
-  async qrConfirm(@Body("ticket") ticket: string, @CurrentUser("userId") userId: number) {
-    return this.qrCodeAuthService.confirm(ticket, userId);
-  }
-
-  @ApiOperation({ summary: "APP 取消登录" })
-  @Post("qr-code/cancel")
-  async qrCancel(@Body("ticket") ticket: string, @CurrentUser("userId") userId: number) {
-    return this.qrCodeAuthService.cancel(ticket, userId);
-  }
-
-  @ApiOperation({ summary: "PC 端换取会话令牌" })
-  @Public()
-  @Post("qr-code/login")
-  async qrLogin(@Body("ticket") ticket: string) {
-    return this.qrCodeAuthService.login(ticket);
+    return await this.tokenService.refreshToken(refreshToken);
   }
 }

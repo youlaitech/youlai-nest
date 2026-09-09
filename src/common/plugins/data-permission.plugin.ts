@@ -6,8 +6,7 @@ import type { RoleDataScope } from "../../common/models/role-data-scope.model";
 import { DataScopeEnum } from "../../common/enums/data-scope.enum";
 
 /**
- * 数据权限处理器
- * 支持多角色数据权限合并（OR连接各角色条件）
+ * 数据权限处理器，多角色条件以 OR 合并
  */
 export class DataPermissionHandler {
   private static hasAlias<T>(qb: SelectQueryBuilder<T>, alias?: string): boolean {
@@ -37,7 +36,6 @@ export class DataPermissionHandler {
     return true;
   }
 
-  /** 应用数据权限过滤 */
   static applyDataPermission<T>(
     qb: SelectQueryBuilder<T>,
     config: DataPermissionConfig | null
@@ -82,7 +80,6 @@ export class DataPermissionHandler {
     }
   }
 
-  /** 构建多角色并集条件 */
   private static buildUnionExpression<T>(
     qb: SelectQueryBuilder<T>,
     config: DataPermissionConfig,
@@ -107,7 +104,6 @@ export class DataPermissionHandler {
     return { expression: `(${unionExpression})`, parameters };
   }
 
-  /** 构建单角色数据权限条件 */
   private static buildRoleDataScopeExpression<T>(
     qb: SelectQueryBuilder<T>,
     config: DataPermissionConfig,

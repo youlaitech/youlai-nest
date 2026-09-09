@@ -282,7 +282,6 @@ export class MenuService {
       throw new Error("父级菜单不能为当前菜单");
     }
 
-    // 处理 parentId
     const newParentId = parentId || "0";
 
     // 重新计算 treePath（如果父级变化）
@@ -379,9 +378,6 @@ export class MenuService {
     return true;
   }
 
-  /**
-   * 菜单树形数据处理
-   */
   private buildMenuTree(menuList: SysMenu[]): any[] {
     const map: { [key: string]: any } = {};
     const roots: any[] = [];

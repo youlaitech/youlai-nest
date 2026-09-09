@@ -4,11 +4,7 @@ import { BusinessException } from "../../common/exceptions/business.exception";
 import { ErrorCode } from "../../common/enums/error-code.enum";
 
 /**
- * Redis 会话模式下的认证守卫
- *
- * - 从 Authorization: Bearer <accessToken> 中获取访问令牌
- * - 使用 Redis 映射 auth:token:access:{accessToken} -> UserSession
- * - 未命中则视为未登录
+ * Redis 会话模式下的认证守卫。
  */
 @Injectable()
 export class RedisTokenAuthGuard implements CanActivate {

@@ -1,9 +1,7 @@
 ﻿import { Entity, PrimaryColumn } from "typeorm";
 
 /**
- * 角色部门关联实体
- *
- * 用于自定义数据权限，存储角色可访问的部门ID列表
+ * 角色部门关联实体，用于自定义数据权限。
  */
 @Entity("sys_role_dept")
 export class SysRoleDept {

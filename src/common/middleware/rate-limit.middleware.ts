@@ -17,11 +17,6 @@ redis.call('PEXPIRE', key, window + 1000)
 return redis.call('ZCARD', key)
 `;
 
-const RATE_LIMIT_PATHS: Record<string, { limit: number; windowSec: number }> = {
-  "POST /api/v1/auth/login": { limit: 5, windowSec: 60 },
-  "POST /api/v1/auth/sms/code": { limit: 1, windowSec: 60 },
-};
-
 const IP_LIMIT = 1000;
 const IP_WINDOW_SEC = 60;
 
@@ -53,36 +48,6 @@ export class RateLimitMiddleware implements NestMiddleware {
         msg: ErrorCode.REQUEST_CONCURRENCY_LIMIT_EXCEEDED.msg,
         httpStatus: 429,
       });
-    }
-
-    // 特定接口限流
-    const routeKey = `${req.method} ${req.originalUrl?.split("?")[0]}`;
-    const config = RATE_LIMIT_PATHS[routeKey];
-    if (!config) return next();
-
-    const token = req.headers.authorization?.replace("Bearer ", "") || "";
-    const identity = token
-      ? crypto.createHash("sha256").update(token).digest("hex").slice(0, 16)
-      : ip;
-    const key = `rate_limit:api:${identity}:${req.originalUrl?.split("?")[0]}`;
-
-    try {
-      const now = Date.now();
-      const member = crypto.randomUUID();
-      const count = (await this.redisService
-        .getClient()
-        .eval(LUA_SLIDING_WINDOW, 1, key, now, config.windowSec * 1000, member)) as number;
-
-      if (count > config.limit) {
-        throw new BusinessException({
-          code: ErrorCode.REQUEST_CONCURRENCY_LIMIT_EXCEEDED.code,
-          msg: ErrorCode.REQUEST_CONCURRENCY_LIMIT_EXCEEDED.msg,
-          httpStatus: 429,
-        });
-      }
-    } catch (error) {
-      if (error instanceof BusinessException) throw error;
-      this.logger.warn("限流检查异常，跳过");
     }
 
     next();

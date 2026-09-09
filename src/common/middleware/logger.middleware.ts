@@ -7,7 +7,6 @@ import { Logger } from "winston";
 
 /**
  * HTTP 请求日志中间件
- * 记录请求和响应信息
  */
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {

@@ -29,6 +29,7 @@ import { PasswordChangeDto } from "./dto/password-change.dto";
 import { MobileUpdateDto } from "./dto/mobile-update.dto";
 import { EmailUpdateDto } from "./dto/email-update.dto";
 import { PasswordVerifyDto } from "./dto/password-verify.dto";
+import { PasswordResetDto } from "./dto/password-reset.dto";
 import { UserProfileDto } from "./dto/user-profile.dto";
 import { Permissions } from "../../common/decorators/auth.decorator";
 import { DataPermission } from "../../common/decorators/data-permission.decorator";
@@ -306,7 +307,7 @@ export class UserController {
   @Log(LogModuleValue.USER, ActionTypeValue.RESET_PASSWORD)
   @Put(":userId/password/reset")
   @Permissions("sys:user:reset-password")
-  async resetUserPassword(@Param("userId") userId: string, @Query("password") password: string) {
-    return await this.userService.resetUserPassword(userId, password);
+  async resetUserPassword(@Param("userId") userId: string, @Body() formData: PasswordResetDto) {
+    return await this.userService.resetUserPassword(userId, formData.password);
   }
 }
