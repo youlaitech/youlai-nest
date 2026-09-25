@@ -1,4 +1,4 @@
-﻿import { Injectable, NestMiddleware } from "@nestjs/common";
+import { Injectable, NestMiddleware } from "@nestjs/common";
 import { RequestContext } from "../context/request-context";
 
 /**

@@ -1,4 +1,4 @@
-﻿import { HttpException, HttpStatus } from "@nestjs/common";
+import { HttpException, HttpStatus } from "@nestjs/common";
 import { ErrorCode } from "../enums/error-code.enum";
 
 // 异常入参：ErrorCode 中的某一项，或自定义 code/msg

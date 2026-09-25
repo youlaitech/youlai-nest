@@ -1,4 +1,4 @@
-﻿import { AsyncLocalStorage } from "async_hooks";
+import { AsyncLocalStorage } from "async_hooks";
 import type { CurrentUserInfo } from "../interfaces/current-user.interface";
 import type { RoleDataScope } from "../models/role-data-scope.model";
 import type { DataPermissionConfig } from "../decorators/data-permission.decorator";

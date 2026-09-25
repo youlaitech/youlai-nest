@@ -1,4 +1,4 @@
-﻿import {
+import {
   Column,
   Entity,
   PrimaryGeneratedColumn,
@@ -46,4 +46,7 @@ export class SysDictItem {
 
   @UpdateDateColumn({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
   updateTime: Date;
+
+  @Column({ name: "is_deleted", type: "tinyint", default: 0, comment: "是否删除(0-未删除 1-已删除)" })
+  isDeleted: number;
 }

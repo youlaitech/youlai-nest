@@ -13,6 +13,7 @@ export enum LogModuleValue {
   NOTICE = 9,
   LOG = 10,
   CODEGEN = 11,
+  FORM = 12,
   OTHER = 99,
 }
 

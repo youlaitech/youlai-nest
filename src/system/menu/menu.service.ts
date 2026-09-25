@@ -1,6 +1,7 @@
-﻿import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateMenuDto } from "./dto/create-menu.dto";
-import { UpdateMenuDto } from "./dto/update-menu.dto";
+
+import { BusinessException } from "../../common/exceptions/business.exception";import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In, Not } from "typeorm";
 import { SysMenu } from "./entities/sys-menu.entity";
@@ -148,9 +149,10 @@ export class MenuService {
   /**
    * 获取菜单下拉树形列表
    */
-  async findOptions() {
+  async findOptions(types?: string[]) {
     const menus = await this.menuRepository.find({
-      select: ["id", "name", "parentId"],
+      where: types && types.length > 0 ? { type: In(types) } : {},
+      select: ["id", "name", "parentId", "type"],
       order: { sort: "ASC" },
     });
     return this.buildOptionsTree(menus);
@@ -189,6 +191,14 @@ export class MenuService {
       createMenuDto.routeName = null;
     }
 
+    // 父级层级校验：按钮只能挂在菜单下，其他类型只能挂在顶级或目录下
+    await this.validateMenuParent(type, parentId);
+
+    // 新增菜单未指定排序时排到同级末尾
+    if (!createMenuDto.sort) {
+      createMenuDto.sort = await this.resolveNextSort(parentId || "0");
+    }
+
     // 生成 treePath
     const treePath = await this.generateMenuTreePath(parentId || "0");
 
@@ -210,7 +220,77 @@ export class MenuService {
     }
     await this.menuRepository.save(menu);
 
+    // 新增页面菜单时按需生成增删改查按钮
+    if (createMenuDto.generateCrudButtons && createMenuDto.buttonPermPrefix?.trim()) {
+      await this.saveCrudButtons(menu.id, menu.treePath, createMenuDto.buttonPermPrefix.trim());
+    }
+
     return true;
+  }
+
+  /**
+   * 校验上级菜单层级：按钮只能挂在菜单下，其他类型只能挂在顶级或目录下
+   */
+  private async validateMenuParent(type: string, parentId?: string): Promise<void> {
+    const isButton = type === "B";
+    if (!parentId || parentId === "0") {
+      if (isButton) {
+        throw new BusinessException("按钮权限只能挂在菜单下");
+      }
+      return;
+    }
+
+    const parent = await this.menuRepository.findOne({ where: { id: parentId } });
+    if (!parent) {
+      throw new BusinessException("上级菜单不存在");
+    }
+
+    const parentIsMenu = parent.type === "M";
+    if (isButton && !parentIsMenu) {
+      throw new BusinessException("按钮权限只能挂在菜单下");
+    }
+    if (!isButton && parentIsMenu) {
+      throw new BusinessException("菜单下只能挂按钮权限");
+    }
+  }
+
+  /**
+   * 同级菜单的最大排序 + 1
+   */
+  private async resolveNextSort(parentId: string): Promise<number> {
+    const maxSortMenu = await this.menuRepository.findOne({
+      where: { parentId },
+      order: { sort: "DESC" },
+    });
+    return maxSortMenu?.sort ? maxSortMenu.sort + 1 : 1;
+  }
+
+  /**
+   * 生成增删改查按钮权限
+   */
+  private async saveCrudButtons(
+    menuId: string,
+    menuTreePath: string,
+    permPrefix: string,
+  ): Promise<void> {
+    const names = ["查询", "新增", "修改", "删除"];
+    const actions = ["list", "create", "update", "delete"];
+    // 树路径记录祖先链，等于所属菜单的树路径加上所属菜单ID，删除菜单时据此级联
+    const buttonTreePath = `${menuTreePath},${menuId}`;
+
+    for (let index = 0; index < names.length; index += 1) {
+      const button = this.menuRepository.create({
+        parentId: menuId,
+        treePath: buttonTreePath,
+        name: names[index],
+        type: "B",
+        perm: `${permPrefix}:${actions[index]}`,
+        visible: 1,
+        sort: index + 1,
+        createTime: new Date(),
+      });
+      await this.menuRepository.save(button);
+    }
   }
 
   /**
@@ -453,7 +533,6 @@ export class MenuService {
             icon: menu.icon || "",
             hidden: menu.visible === 0,
             keepAlive: (menu.type === "M" || isEmbedded) ? menu.keepAlive === 1 : false,
-            alwaysShow: menu.alwaysShow === 1,
             params: this.parseMenuParams(menu.params),
             externalUrl: isEmbedded && menu.externalUrl ? menu.externalUrl : "",
           },
@@ -534,7 +613,7 @@ export class MenuService {
     });
     await this.menuRepository.save(menu);
 
-    // 生成CURD按钮权限
+    // 生成CRUD按钮权限
     const permPrefix = `${moduleName}:${tableName.replace(/_/g, '-')}:`;
     const actions = ["查询", "新增", "修改", "删除"];
     const perms = ["list", "create", "update", "delete"];

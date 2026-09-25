@@ -1,4 +1,4 @@
-﻿export type DateFormatOptions = {
+export type DateFormatOptions = {
   /** 格式模式，当前支持 'yyyy-MM-dd HH:mm:ss' */
   format?: string;
   /** IANA 时区标识，如 'Asia/Shanghai' */

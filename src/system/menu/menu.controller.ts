@@ -33,8 +33,15 @@ export class MenuController {
 
   @ApiOperation({ summary: "菜单下拉树形列表" })
   @Get("options")
-  async getMenuOptions() {
-    return await this.menuService.findOptions();
+  async getMenuOptions(@Query("types") types?: string) {
+    // 前端可传 types=C,M 或重复键 types=C&types=M，均按逗号拆分解析
+    const typeList = types
+      ? types
+          .split(",")
+          .map((item) => item.trim())
+          .filter((item) => item)
+      : undefined;
+    return await this.menuService.findOptions(typeList);
   }
 
   @ApiOperation({ summary: "获取菜单列表" })

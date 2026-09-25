@@ -1,4 +1,4 @@
-﻿// MenuItem 接口
+// MenuItem 接口
 export interface MenuItem {
   parentId: string;
   name: string;
@@ -7,7 +7,6 @@ export interface MenuItem {
   routePath: string;
   component: string | null;
   externalUrl: string | null;
-  alwaysShow: number;
   keepAlive: number;
   visible: number;
   icon: string;
@@ -25,7 +24,6 @@ export interface Route {
     title: string;
     icon: string;
     hidden: boolean;
-    alwaysShow: boolean;
     keepAlive: boolean;
     params: Record<string, string> | null;
     externalUrl: string;

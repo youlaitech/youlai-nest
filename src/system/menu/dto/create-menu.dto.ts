@@ -1,4 +1,4 @@
-﻿import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
 import { Transform } from "class-transformer";
 
 /**
@@ -75,10 +75,16 @@ export class CreateMenuDto {
   @IsNumber()
   orderWeight?: number;
 
-  /** 目录只有一个子路由时是否始终显示 */
+  /** 新增页面菜单时是否生成增删改查按钮 */
   @IsOptional()
-  @IsNumber()
-  alwaysShow?: number;
+  @IsBoolean()
+  generateCrudButtons?: boolean;
+
+  /** 按钮权限标识前缀，如 sys:user */
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  buttonPermPrefix?: string;
 
   /** 是否缓存页面 */
   @IsOptional()

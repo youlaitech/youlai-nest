@@ -1,4 +1,4 @@
-﻿import { SelectQueryBuilder } from "typeorm";
+import { SelectQueryBuilder } from "typeorm";
 import { RequestContext } from "../context/request-context";
 import type { DataPermissionConfig } from "../context/request-context";
 import { DataScopeUtils } from "../../common/models/role-data-scope.model";

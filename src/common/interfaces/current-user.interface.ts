@@ -1,4 +1,4 @@
-﻿import type { RoleDataScope } from "../models/role-data-scope.model";
+import type { RoleDataScope } from "../models/role-data-scope.model";
 
 /**
  * 当前登录用户信息

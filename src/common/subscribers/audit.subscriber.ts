@@ -1,4 +1,4 @@
-﻿import { EventSubscriber, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
+import { EventSubscriber, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 import { RequestContext } from "../context/request-context";
 
 /**

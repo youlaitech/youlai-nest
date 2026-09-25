@@ -150,6 +150,12 @@ export class DictService {
       throw new BusinessException("字典不存在");
     }
 
+    // 级联逻辑删除字典项：父字典删除后子项随之不可见
+    await this.dictItemRepository.update(
+      { dictCode: dict.dictCode, isDeleted: 0 },
+      { isDeleted: 1, updateTime: new Date() },
+    );
+
     await this.dictRepository.update(idStr, {
       isDeleted: 1,
       updateBy: updateBy.toString() as any,
@@ -172,7 +178,8 @@ export class DictService {
     const pageSizeSafe = Number(pageSize) > 0 ? Number(pageSize) : 10;
 
     const queryBuilder = this.dictItemRepository.createQueryBuilder("item");
-    queryBuilder.where("item.dictCode = :dictCode", { dictCode });
+    // 过滤已删除字典项
+    queryBuilder.where("item.dictCode = :dictCode AND item.isDeleted = 0", { dictCode });
 
     if (keywords) {
       queryBuilder.andWhere("(item.label LIKE :keywords OR item.value LIKE :keywords)", {
@@ -191,6 +198,7 @@ export class DictService {
         "item.tagType",
       ])
       .orderBy("item.sort", "ASC")
+      .addOrderBy("item.id", "ASC")
       .skip((pageNumSafe - 1) * pageSizeSafe)
       .take(pageSizeSafe)
       .getManyAndCount();
@@ -212,9 +220,11 @@ export class DictService {
     const items = await this.dictItemRepository.find({
       where: {
         dictCode,
+        isDeleted: 0,
       },
       order: {
         sort: "ASC",
+        id: "ASC",
       },
       select: ["label", "value", "tagType"],
     });
@@ -237,9 +247,9 @@ export class DictService {
       throw new BusinessException("字典不存在");
     }
 
-    // 检查值是否已存在
+    // 检查值是否已存在（已删除项不参与唯一性判定）
     const existItem = await this.dictItemRepository.findOne({
-      where: { dictCode, value },
+      where: { dictCode, value, isDeleted: 0 },
     });
 
     if (existItem) {
@@ -275,7 +285,7 @@ export class DictService {
    */
   async getDictItemForm(id: string | number) {
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id: id.toString() },
+      where: { id: id.toString(), isDeleted: 0 },
     });
 
     if (!dictItem) {
@@ -300,7 +310,7 @@ export class DictService {
   async updateDictItem(id: string | number, updateData: UpdateDictItemDto) {
     const idStr = id.toString();
     const dictItem = await this.dictItemRepository.findOne({
-      where: { id: idStr },
+      where: { id: idStr, isDeleted: 0 },
     });
 
     if (!dictItem) {
@@ -314,6 +324,7 @@ export class DictService {
           dictCode: dictItem.dictCode,
           value: updateData.value,
           id: Not(idStr),
+          isDeleted: 0,
         },
       });
 
@@ -346,7 +357,11 @@ export class DictService {
       throw new BusinessException("字典项不存在");
     }
 
-    await this.dictItemRepository.delete(id.toString());
+    // 逻辑删除：保留历史数据，查询侧按 isDeleted=0 过滤
+    await this.dictItemRepository.update(id.toString(), {
+      isDeleted: 1,
+      updateTime: new Date(),
+    });
     this.sseService.sendDictChange(dictItem.dictCode);
     return true;
   }

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Column,
   Entity,
   PrimaryGeneratedColumn,
@@ -60,14 +60,6 @@ export class SysMenu {
   @Column({ length: 128, nullable: true, comment: "【按钮】权限标识" })
   perm: string;
 
-  @Column({
-    name: "always_show",
-    type: "tinyint",
-    default: 0,
-    nullable: true,
-    comment: "【目录】只有一个子路由是否始终显示（1-是 0-否）",
-  })
-  alwaysShow: number;
 
   @Column({
     name: "keep_alive",
