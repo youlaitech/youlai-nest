@@ -1,4 +1,4 @@
-﻿import { Entity, PrimaryColumn } from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm";
 
 /**
  * 角色部门关联实体，用于自定义数据权限。

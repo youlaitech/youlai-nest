@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Delete,
   Body,
@@ -51,7 +51,7 @@ export class CodegenController {
   @Get(":tableName/preview")
   async getPreview(
     @Param("tableName") tableName: string,
-    @Query("pageType") pageType?: "classic" | "curd",
+    @Query("pageType") pageType?: "classic" | "crud",
     @Query("type") type?: "ts" | "js"
   ) {
     return await this.codegenService.getPreview(tableName, pageType, type);
@@ -63,7 +63,7 @@ export class CodegenController {
   async download(
     @Res() res: Response,
     @Param("tableName") tableName: string,
-    @Query("pageType") pageType?: "classic" | "curd",
+    @Query("pageType") pageType?: "classic" | "crud",
     @Query("type") type?: "ts" | "js"
   ) {
     const tableNames = tableName.split(",").filter(Boolean);

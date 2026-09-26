@@ -1,4 +1,4 @@
-﻿import type { RoleDataScope } from "../../common/models/role-data-scope.model";
+import type { RoleDataScope } from "../../common/models/role-data-scope.model";
 
 /**
  * 用户会话信息（Redis-Token 模式下的会话快照）。

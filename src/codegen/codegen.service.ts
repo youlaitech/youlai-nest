@@ -471,7 +471,7 @@ export class CodegenService {
    */
   async getPreview(
     tableName: string,
-    pageType: "classic" | "curd" = "classic",
+    pageType: "classic" | "crud" = "classic",
     type: "ts" | "js" = "ts"
   ): Promise<CodegenPreviewDto[]> {
     const config = await this.getGenConfig(tableName);
@@ -535,7 +535,7 @@ export class CodegenService {
    */
   async downloadZip(
     tableNames: string[],
-    pageType: "classic" | "curd" = "classic",
+    pageType: "classic" | "crud" = "classic",
     type: "ts" | "js" = "ts"
   ) {
     const zip = new JSZip();
@@ -567,19 +567,19 @@ export class CodegenService {
     subpackageName: string,
     config: GenConfigFormDto,
     fieldConfigs: FieldConfigDto[],
-    pageType: "classic" | "curd"
+    pageType: "classic" | "crud"
   ) {
     let effectivePath = templatePath;
-    if (templateName === "VIEW" && pageType === "curd") {
+    if (templateName === "VIEW" && pageType === "crud") {
       if (effectivePath.endsWith("index.js.vue.vm")) {
         effectivePath = effectivePath.replace(
           "frontend/js/index.js.vue.vm",
-          "frontend/js/index.curd.js.vue.vm"
+          "frontend/js/index.crud.js.vue.vm"
         );
       } else if (effectivePath.endsWith("index.vue.vm")) {
         effectivePath = effectivePath.replace(
           "frontend/ts/index.vue.vm",
-          "frontend/ts/index.curd.vue.vm"
+          "frontend/ts/index.crud.vue.vm"
         );
       }
     }

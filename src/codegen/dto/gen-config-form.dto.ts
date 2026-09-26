@@ -1,4 +1,4 @@
-﻿export interface GenConfigFormDto {
+export interface GenConfigFormDto {
   id?: string;
   tableName?: string;
   businessName?: string;
@@ -10,7 +10,7 @@
   backendAppName?: string;
   frontendAppName?: string;
   fieldConfigs?: FieldConfigDto[];
-  pageType?: "classic" | "curd";
+  pageType?: "classic" | "crud";
   removeTablePrefix?: string;
 }
 

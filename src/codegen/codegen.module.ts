@@ -1,4 +1,4 @@
-﻿import { Module } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { CodegenController } from "./codegen.controller";
 import { CodegenService } from "./codegen.service";
 

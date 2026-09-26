@@ -1,4 +1,4 @@
-﻿import { registerAs } from "@nestjs/config";
+import { registerAs } from "@nestjs/config";
 
 export default registerAs("oss", () => ({
   type: (process.env.OSS_TYPE || "s3") as "aliyun" | "s3" | "local",

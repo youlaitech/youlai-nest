@@ -1,7 +1,7 @@
 <template>
   <div class="page-container h-full flex flex-1 flex-col">
     <!-- 搜索 -->
-    <PageSearch
+    <CrudSearch
       ref="searchRef"
       :search-config="searchConfig"
       @query-click="handleQueryClick"
@@ -14,10 +14,10 @@
       </template>
 #end
 #end
-    </PageSearch>
+    </CrudSearch>
 
     <!-- 列表 -->
-    <PageContent
+    <CrudTable
       ref="contentRef"
       :content-config="contentConfig"
       @add-click="handleAddClick"
@@ -34,10 +34,10 @@
       </template>
 #end
 #end
-    </PageContent>
+    </CrudTable>
 
     <!-- 新增 -->
-    <PageModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
+    <CrudModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
 #foreach($fieldConfig in $fieldConfigs)
 #if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN" && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
@@ -45,10 +45,10 @@
       </template>
 #end
 #end
-    </PageModal>
+    </CrudModal>
 
     <!-- 编辑 -->
-    <PageModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
+    <CrudModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
 #foreach($fieldConfig in $fieldConfigs)
 #if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN" && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
@@ -56,7 +56,7 @@
       </template>
 #end
 #end
-    </PageModal>
+    </CrudModal>
   </div>
 </template>
 
@@ -68,8 +68,8 @@ defineOptions({
 
 import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
 import type { ${entityName}Form, ${entityName}QueryParams } from "@/api/${moduleName}/${entityKebab}";
-import type { IObject, IOperateData, IModalConfig, IContentConfig, ISearchConfig } from "@/components/CURD/types";
-import usePage from "@/components/CURD/usePage";
+import type { IObject, IOperateData, IModalConfig, ICrudTableConfig, ISearchConfig } from "@/components/Crud/types";
+import useCrudPage from "@/components/Crud/useCrudPage";
 
 // 组合式 CRUD
 const {
@@ -85,7 +85,7 @@ const {
   handleExportClick,
   handleSearchClick,
   handleFilterChange,
-} = usePage();
+} = useCrudPage();
 
 // 搜索配置
 const searchConfig: ISearchConfig = reactive({
@@ -136,7 +136,7 @@ const searchConfig: ISearchConfig = reactive({
 });
 
 // 列表配置
-const contentConfig: IContentConfig<${entityName}QueryParams> = reactive({
+const contentConfig: ICrudTableConfig<${entityName}QueryParams> = reactive({
   // 权限前缀
   permPrefix: "${moduleName}:${entityKebab}",
   table: {

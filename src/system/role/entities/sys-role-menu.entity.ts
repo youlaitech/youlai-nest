@@ -1,4 +1,4 @@
-﻿import { Entity, PrimaryColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryColumn, ManyToOne, JoinColumn } from "typeorm";
 import { SysRole } from "./sys-role.entity";
 import { SysMenu } from "../../menu/entities/sys-menu.entity";
 

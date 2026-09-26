@@ -1,4 +1,4 @@
-﻿export interface CodegenPreviewDto {
+export interface CodegenPreviewDto {
   path: string;
   fileName: string;
   content: string;
