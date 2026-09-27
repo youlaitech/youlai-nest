@@ -8,7 +8,6 @@ import { RedisConstants } from "../../common/constants/redis.constants";
 
 /**
  * JWT 认证策略。
- * 注意：权限标识（perms）不在此处获取，而是在权限守卫中从角色权限缓存动态读取。
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

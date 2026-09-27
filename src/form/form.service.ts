@@ -1,12 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import axios from "axios";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { DataSource, In, Repository } from "typeorm";
 
 import { BusinessException } from "../common/exceptions/business.exception";
 import { RedisService } from "../common/redis/redis.service";
+import { chat, loadPrompt } from "../common/utils/ai.util";
 import { SysMenu } from "../system/menu/entities/sys-menu.entity";
 import { CreateFormDefinitionDto, FormDefinitionQueryDto } from "./dto/form.dto";
 import { FormData, FormDefinition, FormSnapshot } from "./entities/form.entity";
@@ -18,7 +16,7 @@ const DEFAULT_CATALOG_NAME = "表单中心";
 const FORM_ADMIN_CATALOG_NAME = "动态表单";
 const PUBLIC_SUBMIT_LIMIT = 10;
 const RENDER_CACHE_TTL = 1800;
-const SYSTEM_PROMPT_PATH = ["src", "form", "templates", "form", "system.md"];
+const SYSTEM_PROMPT_PATH = "form/system.md";
 
 /**
  * 校验表单规则结构。
@@ -114,19 +112,6 @@ function validateAndFilter(rules: any[], data: Record<string, any>): Record<stri
     throw new BusinessException(errors.join("；"));
   }
   return filtered;
-}
-
-function stripCodeFence(content: string): string {
-  const text = (content || "").trim();
-  if (!text.startsWith("```")) {
-    return text;
-  }
-  const start = text.indexOf("\n");
-  const end = text.lastIndexOf("```");
-  if (start === -1 || end <= start) {
-    return text;
-  }
-  return text.slice(start + 1, end).trim();
 }
 
 /**
@@ -635,33 +620,7 @@ export class FormService {
    * 用 AI 把需求描述转成 form-create 规则，产出经结构校验后才返回。
    */
   async aiGenerateRule(description: string): Promise<any[]> {
-    const baseUrl = process.env.AI_BASE_URL;
-    const apiKey = process.env.AI_API_KEY;
-    const model = process.env.AI_MODEL || "qwen-plus";
-    const timeout = Number(process.env.AI_TIMEOUT_MS) > 0 ? Number(process.env.AI_TIMEOUT_MS) : 60000;
-
-    if (!baseUrl || !apiKey) {
-      throw new BusinessException("AI 功能未开启，请配置 AI_BASE_URL 与 AI_API_KEY");
-    }
-
-    const prompt = readFileSync(join(process.cwd(), ...SYSTEM_PROMPT_PATH), "utf-8").trim();
-    const response = await axios.post(
-      `${baseUrl.replace(/\/+$/, "")}/chat/completions`,
-      {
-        model,
-        messages: [
-          { role: "system", content: prompt },
-          { role: "user", content: `需求描述：\n${description}` },
-        ],
-        response_format: { type: "json_object" },
-      },
-      {
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        timeout,
-      },
-    );
-
-    const content = stripCodeFence(response.data?.choices?.[0]?.message?.content ?? "");
+    const content = await chat(loadPrompt(SYSTEM_PROMPT_PATH), `需求描述：\n${description}`);
     let rules: any[];
     try {
       rules = JSON.parse(content);

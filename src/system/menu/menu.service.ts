@@ -4,10 +4,27 @@ import { CreateMenuDto } from "./dto/create-menu.dto";
 import { BusinessException } from "../../common/exceptions/business.exception";import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In, Not } from "typeorm";
+import { chatJson, loadPrompt } from "../../common/utils/ai.util";
+import { MenuAiFillDto } from "./dto/menu-ai-fill.dto";
 import { SysMenu } from "./entities/sys-menu.entity";
 import { UserService } from "../user/user.service";
 import { RolePermService } from "../role/role-permission.service";
-import { Route } from "./interfaces/menu.interface";
+import { MenuAiFillResult, Route } from "./interfaces/menu.interface";
+
+const SYSTEM_PROMPT_PATH = "menu/system.md";
+/** 同级菜单取样条数，样本只用于让模型沿用既有命名风格 */
+const SIBLING_SAMPLE_LIMIT = 10;
+const MENU_TYPE_LABELS: Record<string, string> = { C: "目录", M: "菜单", E: "外链", B: "按钮" };
+
+/**
+ * 菜单类型取中文名称，无匹配时沿用原值。
+ */
+function menuTypeLabel(type?: string | null): string {
+  if (!type) {
+    return "未指定";
+  }
+  return MENU_TYPE_LABELS[type] ?? type;
+}
 
 /**
  * 菜单服务
@@ -194,8 +211,8 @@ export class MenuService {
     // 父级层级校验：按钮只能挂在菜单下，其他类型只能挂在顶级或目录下
     await this.validateMenuParent(type, parentId);
 
-    // 新增菜单未指定排序时排到同级末尾
-    if (!createMenuDto.sort) {
+    // 新增菜单未指定排序时排到同级末尾；显式传 0 时保留 0
+    if (createMenuDto.sort === undefined || createMenuDto.sort === null) {
       createMenuDto.sort = await this.resolveNextSort(parentId || "0");
     }
 
@@ -294,6 +311,54 @@ export class MenuService {
   }
 
   /**
+   * 推断菜单配置，命名风格参照同级菜单
+   */
+  async aiFill(dto: MenuAiFillDto): Promise<MenuAiFillResult> {
+    const content = await chatJson<Record<string, any>>(
+      loadPrompt(SYSTEM_PROMPT_PATH),
+      await this.buildAiUserPrompt(dto),
+    );
+    const iconKeywords = content.iconKeywords;
+
+    return {
+      routePath: content.routePath || null,
+      perm: content.perm || null,
+      iconKeywords: Array.isArray(iconKeywords) ? iconKeywords.map((item) => String(item)) : [],
+    };
+  }
+
+  /**
+   * 构造用户提示词，附带同级菜单样本供模型沿用既有命名风格
+   */
+  private async buildAiUserPrompt(dto: MenuAiFillDto): Promise<string> {
+    const parentId = dto.parentId || "0";
+    const parent = parentId === "0" ? null : await this.menuRepository.findOne({ where: { id: parentId } });
+
+    const siblings = await this.menuRepository.find({
+      where: { parentId },
+      order: { sort: "ASC" },
+      take: SIBLING_SAMPLE_LIMIT,
+    });
+
+    const text = [
+      `菜单名称：${dto.name}`,
+      `菜单类型：${menuTypeLabel(dto.type)}`,
+      `上级菜单：${parent ? parent.name : "顶级"}`,
+      "同级菜单示例：",
+    ];
+    if (siblings.length === 0) {
+      text.push("（无）");
+    } else {
+      siblings.forEach((menu) => {
+        text.push(
+          `- ${menu.name}（类型 ${menuTypeLabel(menu.type)}，路径片段 ${menu.routePath || "无"}，权限 ${menu.perm || "无"}）`,
+        );
+      });
+    }
+    return `${text.join("\n")}\n`;
+  }
+
+  /**
    * 生成菜单树路径
    */
   private async generateMenuTreePath(parentId: string): Promise<string> {
@@ -363,6 +428,11 @@ export class MenuService {
     }
 
     const newParentId = parentId || "0";
+
+    // 父级层级校验：父级变更时才校验，未变更时放行历史遗留的非法层级
+    if (newParentId !== menu.parentId) {
+      await this.validateMenuParent(type, newParentId);
+    }
 
     // 重新计算 treePath（如果父级变化）
     let newTreePath = menu.treePath;

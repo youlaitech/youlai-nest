@@ -220,6 +220,8 @@ export class DictService {
     const items = await this.dictItemRepository.find({
       where: {
         dictCode,
+        // 下拉只返回启用项与未删除项
+        status: 1,
         isDeleted: 0,
       },
       order: {

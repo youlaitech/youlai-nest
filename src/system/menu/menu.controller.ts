@@ -18,6 +18,7 @@ import { ActionTypeValue } from "../../common/enums/action-type.enum";
 import { LogModuleValue } from "../../common/enums/log-module.enum";
 import { MenuService } from "./menu.service";
 import { CreateMenuDto } from "./dto/create-menu.dto";
+import { MenuAiFillDto } from "./dto/menu-ai-fill.dto";
 import { UpdateMenuDto } from "./dto/update-menu.dto";
 
 @ApiTags("04.菜单接口")
@@ -49,6 +50,12 @@ export class MenuController {
   @SetMetadata("resource", "sys_menu")
   async getMenus(@Query("keywords") keywords: string) {
     return await this.menuService.getMenus(keywords);
+  }
+
+  @ApiOperation({ summary: "AI 推断菜单的访问路径与权限标识" })
+  @Post("ai-fill")
+  async aiFillMenu(@Body() menuAiFillDto: MenuAiFillDto) {
+    return await this.menuService.aiFill(menuAiFillDto);
   }
 
   @ApiOperation({ summary: "新增菜单" })

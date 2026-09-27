@@ -15,6 +15,13 @@ export interface MenuItem {
   id: string;
 }
 
+// AI 推断的菜单配置
+export interface MenuAiFillResult {
+  routePath: string | null;
+  perm: string | null;
+  iconKeywords: string[];
+}
+
 // Route 接口
 export interface Route {
   path: string;
