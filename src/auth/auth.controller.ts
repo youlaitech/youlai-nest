@@ -38,7 +38,7 @@ export class AuthController {
   @ApiOperation({ summary: "短信验证码登录" })
   @Public()
   @RateLimit({ limit: 60, windowSec: 60 })
-  @Post("login/sms")
+  @Post("sms/login")
   async loginBySms(@Query("mobile") mobile: string, @Query("code") code: string) {
     return await this.authService.loginBySms(mobile, code);
   }

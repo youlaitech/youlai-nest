@@ -103,7 +103,7 @@ export class AuthService {
         operatorId: user.id,
         operatorName: user.username,
         requestMethod: "POST",
-        requestUri: "/api/v1/auth/login/sms",
+        requestUri: "/api/v1/auth/sms/login",
         status: 1,
       })
       .catch(() => {});
