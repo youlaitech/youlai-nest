@@ -5,9 +5,6 @@ import {
 
 /**
  * 实体基类，所有业务实体继承此类。
- * 包含：id、创建/更新时间、创建/更新人、逻辑删除标识。
- * 注意：createTime/updateTime 由 AuditSubscriber 自动填充，
- * 不使用 @CreateDateColumn/@UpdateDateColumn 装饰器，避免冲突。
  */
 export abstract class BaseEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })

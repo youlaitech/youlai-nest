@@ -11,9 +11,6 @@ export const RedisConstants = {
      * Field: 角色编码（roleCode）
      * Value: 权限标识集合（string[]）
      *
-     * 示例：
-     * - HGET system:role:perms "ADMIN" -> ["sys:user:create", "sys:user:update", ...]
-     * - HGET system:role:perms "OPERATOR" -> ["sys:user:list", ...]
      */
     ROLE_PERMS: "system:role:perms",
   },
