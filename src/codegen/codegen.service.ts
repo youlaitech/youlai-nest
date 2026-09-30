@@ -6,9 +6,13 @@ import * as path from "path";
 // velocityjs 没有稳定的 TS 类型定义，使用 any
 import * as Velocity from "velocityjs";
 
+import { chatJson, loadPrompt } from "../common/utils/ai.util";
+import type { AiFillConfigDto } from "./dto/ai-fill-config.dto";
 import type { CodegenPreviewDto } from "./dto/codegen-preview.dto";
 import type { GenConfigFormDto, FieldConfigDto } from "./dto/gen-config-form.dto";
 import type { TableQueryDto } from "./dto/table-query.dto";
+
+const CODEGEN_SYSTEM_PROMPT_PATH = "codegen/system.md";
 
 type TemplateName =
   | "API"
@@ -329,6 +333,23 @@ export class CodegenService {
       pageType: "classic",
       fieldConfigs,
     };
+  }
+
+  /**
+   * 用 AI 推断代码生成配置，未推断出的字段沿用原有默认值
+   */
+  async aiFillConfig(tableName: string, requirement?: string): Promise<GenConfigFormDto> {
+    const config = await this.getGenConfig(tableName);
+    const content = await chatJson<GenConfigAiDto>(
+      loadPrompt(CODEGEN_SYSTEM_PROMPT_PATH),
+      buildAiUserPrompt(config, requirement),
+    );
+
+    if (content.businessName?.trim()) {
+      config.businessName = content.businessName.trim();
+    }
+    applyAiFieldConfigs(config, content.fieldConfigs ?? []);
+    return config;
   }
 
   async saveGenConfig(tableName: string, body: GenConfigFormDto) {
@@ -785,6 +806,125 @@ function getTsTypeByColumnType(columnType: string) {
     default:
       return "string";
   }
+}
+
+/** AI 推断的代码生成配置 */
+interface GenConfigAiDto {
+  businessName?: string;
+  fieldConfigs?: GenConfigAiFieldDto[];
+}
+
+/** AI 推断的字段配置 */
+interface GenConfigAiFieldDto {
+  columnName?: string;
+  fieldComment?: string;
+  formType?: string;
+  queryType?: string;
+  isRequired?: number;
+  isShowInList?: number;
+  isShowInForm?: number;
+  isShowInQuery?: number;
+  dictType?: string;
+}
+
+/** 表单类型枚举名到存储值 */
+const FORM_TYPE_VALUES: Record<string, number> = {
+  INPUT: 1,
+  SELECT: 2,
+  RADIO: 3,
+  CHECK_BOX: 4,
+  INPUT_NUMBER: 5,
+  SWITCH: 6,
+  TEXT_AREA: 7,
+  DATE: 8,
+  DATE_TIME: 9,
+  HIDDEN: 10,
+};
+
+/** 查询类型枚举名到存储值 */
+const QUERY_TYPE_VALUES: Record<string, number> = {
+  EQ: 1,
+  LIKE: 2,
+  IN: 3,
+  BETWEEN: 4,
+  GT: 5,
+  GE: 6,
+  LT: 7,
+  LE: 8,
+  NE: 9,
+  LIKE_LEFT: 10,
+};
+
+/**
+ * 构造用户提示词，附带表结构与字段清单
+ */
+function buildAiUserPrompt(config: GenConfigFormDto, requirement?: string): string {
+  const columns = (config.fieldConfigs ?? []).map((field) => ({
+    columnName: field.columnName,
+    columnType: field.columnType,
+    fieldComment: field.fieldComment,
+    isRequired: field.isRequired,
+  }));
+
+  return [
+    `表名：${config.tableName ?? ""}`,
+    `当前业务名：${config.businessName ?? ""}`,
+    `补充说明：${requirement?.trim() || "无"}`,
+    "字段列表：",
+    JSON.stringify(columns),
+  ].join("\n");
+}
+
+/**
+ * 按列名匹配回填字段配置
+ */
+function applyAiFieldConfigs(config: GenConfigFormDto, aiFields: GenConfigAiFieldDto[]): void {
+  if (!config.fieldConfigs?.length || !aiFields.length) {
+    return;
+  }
+
+  const aiFieldMap = new Map<string, GenConfigAiFieldDto>();
+  aiFields.forEach((field) => {
+    if (field.columnName?.trim()) {
+      aiFieldMap.set(field.columnName, field);
+    }
+  });
+
+  config.fieldConfigs.forEach((field) => {
+    const aiField = field.columnName ? aiFieldMap.get(field.columnName) : undefined;
+    if (!aiField) {
+      return;
+    }
+
+    if (aiField.fieldComment?.trim()) {
+      field.fieldComment = aiField.fieldComment.trim();
+    }
+    if (aiField.dictType?.trim()) {
+      field.dictType = aiField.dictType.trim();
+    }
+
+    const formType = aiField.formType ? FORM_TYPE_VALUES[aiField.formType.trim().toUpperCase()] : undefined;
+    if (formType) {
+      field.formType = formType;
+    }
+    const queryType = aiField.queryType ? QUERY_TYPE_VALUES[aiField.queryType.trim().toUpperCase()] : undefined;
+    if (queryType) {
+      field.queryType = queryType;
+    }
+
+    if (aiField.isRequired !== undefined) {
+      field.isRequired = aiField.isRequired;
+    }
+    if (aiField.isShowInList !== undefined) {
+      field.isShowInList = aiField.isShowInList;
+    }
+    if (aiField.isShowInForm !== undefined) {
+      field.isShowInForm = aiField.isShowInForm;
+    }
+    if (aiField.isShowInQuery !== undefined) {
+      field.isShowInQuery = aiField.isShowInQuery;
+    }
+  });
 }
 
 function isDecimalColumnType(columnType: string) {

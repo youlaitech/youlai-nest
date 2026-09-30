@@ -12,6 +12,7 @@ import {
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { CodegenService } from "./codegen.service";
+import type { AiFillConfigDto } from "./dto/ai-fill-config.dto";
 import type { GenConfigFormDto } from "./dto/gen-config-form.dto";
 import { TableQueryDto } from "./dto/table-query.dto";
 
@@ -72,5 +73,11 @@ export class CodegenController {
     res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(fileName)}`);
     res.setHeader("Content-Type", "application/octet-stream");
     res.send(buffer);
+  }
+
+  @ApiOperation({ summary: "AI 填充代码生成配置" })
+  @Post(":tableName/ai-config")
+  async aiFillConfig(@Param("tableName") tableName: string, @Body() body?: AiFillConfigDto) {
+    return await this.codegenService.aiFillConfig(tableName, body?.requirement);
   }
 }
