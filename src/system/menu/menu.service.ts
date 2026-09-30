@@ -350,8 +350,10 @@ export class MenuService {
       text.push("（无）");
     } else {
       siblings.forEach((menu) => {
+        // 示例路径只展示当前这一级的路径片段
+        const routePath = (menu.routePath ?? "").replace(/^\/+/, "");
         text.push(
-          `- ${menu.name}（类型 ${menuTypeLabel(menu.type)}，路径片段 ${menu.routePath || "无"}，权限 ${menu.perm || "无"}）`,
+          `- ${menu.name}（类型 ${menuTypeLabel(menu.type)}，路径片段 ${routePath || "无"}，权限 ${menu.perm || "无"}）`,
         );
       });
     }
@@ -604,7 +606,7 @@ export class MenuService {
             hidden: menu.visible === 0,
             keepAlive: (menu.type === "M" || isEmbedded) ? menu.keepAlive === 1 : false,
             params: this.parseMenuParams(menu.params),
-            externalUrl: isEmbedded && menu.externalUrl ? menu.externalUrl : "",
+            externalUrl: isExternal && menu.externalUrl ? menu.externalUrl : "",
           },
           children: this.buildRoutes(menus, menu.id),
         };
