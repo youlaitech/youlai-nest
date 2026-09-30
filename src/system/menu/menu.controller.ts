@@ -47,6 +47,7 @@ export class MenuController {
 
   @ApiOperation({ summary: "获取菜单列表" })
   @Get()
+  @Permissions("sys:menu:list")
   @SetMetadata("resource", "sys_menu")
   async getMenus(@Query("keywords") keywords: string) {
     return await this.menuService.getMenus(keywords);

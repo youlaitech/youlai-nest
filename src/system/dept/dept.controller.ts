@@ -43,6 +43,7 @@ export class DeptController {
 
   @ApiOperation({ summary: "获取部门表格树形列表" })
   @Get()
+  @Permissions("sys:dept:list")
   @SetMetadata("resource", "sys_dept")
   @DataPermission({
     deptAlias: "dept",

@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UsePipes, ValidationPipe } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { Public } from "../../common/decorators/auth.decorator";
+import { Permissions, Public } from "../../common/decorators/auth.decorator";
 import { LogService } from "./log.service";
 import { LogQueryDto } from "./dto/log-query.dto";
 
@@ -14,6 +14,7 @@ export class LogController {
 
   @ApiOperation({ summary: "日志分页列表" })
   @Get()
+  @Permissions("sys:log:list")
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: false }))
   async getLogPage(@Query() query: LogQueryDto) {
     return await this.logService.getLogPage(query);

@@ -31,6 +31,7 @@ export class DictController {
 
   @ApiOperation({ summary: "字典分页列表" })
   @Get()
+  @Permissions("sys:dict:list")
   @SetMetadata("resource", "sys_dict")
   async getDictPage(@Query() query: DictQueryDto) {
     return await this.dictService.getDictPage(query.pageNum, query.pageSize, query.keywords);
@@ -82,7 +83,7 @@ export class DictController {
 
   @ApiOperation({ summary: "字典项分页列表" })
   @Get(":dictCode/items")
-  @Permissions("sys:dict:update")
+  @Permissions("sys:dict-item:list")
   async getDictItemPage(@Param("dictCode") dictCode: string, @Query() query: DictItemQueryDto) {
     return await this.dictService.getDictItemPage(
       query.pageNum,
