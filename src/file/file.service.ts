@@ -4,7 +4,15 @@ import * as dayjs from "dayjs";
 import { ConfigType } from "@nestjs/config";
 import ossConfig from "../config/oss.config";
 import OSS, * as Client from "ali-oss";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
+  PutBucketPolicyCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as $OpenApi from "@alicloud/openapi-client";
 import ocr_api20210707, * as $ocr_api20210707 from "@alicloud/ocr-api20210707";
@@ -31,6 +39,7 @@ export class FileService {
   private s3Client: S3Client | null = null;
   private s3Bucket: string | null = null;
   private s3Config: ConfigType<typeof ossConfig>["s3"] | null = null;
+  private bucketReady = false;
 
   // OCR 身份证识别（阿里云）
   private OCRClient: ocr_api20210707 | null = null;
@@ -89,6 +98,41 @@ export class FileService {
         },
       });
     }
+  }
+
+  // 桶不存在时创建并设置匿名只读策略，首次上传时执行一次
+  private async ensureBucket(): Promise<void> {
+    if (this.bucketReady) {
+      return;
+    }
+    try {
+      await this.s3Client!.send(new HeadBucketCommand({ Bucket: this.s3Bucket! }));
+    } catch (error) {
+      const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
+        ?.httpStatusCode;
+      if (status !== 404) {
+        throw error;
+      }
+      await this.s3Client!.send(new CreateBucketCommand({ Bucket: this.s3Bucket! }));
+      const policy = {
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Effect: "Allow",
+            Principal: { AWS: ["*"] },
+            Action: ["s3:GetObject"],
+            Resource: [`arn:aws:s3:::${this.s3Bucket}/*`],
+          },
+        ],
+      };
+      await this.s3Client!.send(
+        new PutBucketPolicyCommand({
+          Bucket: this.s3Bucket!,
+          Policy: JSON.stringify(policy),
+        })
+      );
+    }
+    this.bucketReady = true;
   }
 
   //  定义两个存储桶连接
@@ -300,6 +344,8 @@ export class FileService {
 
     // s3
     if (this.ossType === "s3" && this.s3Client && this.s3Bucket) {
+      await this.ensureBucket();
+
       const content = await getFileContent();
       if (!content) {
         throw new Error("file buffer is empty");
@@ -362,6 +408,18 @@ export class FileService {
           : filePath.replace(/^\/+/, "");
 
       await this.aliClient.delete(key);
+      return true;
+    }
+
+    // s3
+    if (this.ossType === "s3" && this.s3Client && this.s3Bucket) {
+      // 对象 key 取 URL 中桶名段之后的部分，传纯 key 时去掉前导斜杠
+      const marker = `/${this.s3Bucket}/`;
+      const markerIndex = filePath.indexOf(marker);
+      const key = markerIndex >= 0
+        ? filePath.substring(markerIndex + marker.length)
+        : filePath.replace(/^\/+/, "");
+      await this.s3Client.send(new DeleteObjectCommand({ Bucket: this.s3Bucket, Key: key }));
       return true;
     }
 
