@@ -261,6 +261,26 @@ export class RoleService {
   }
 
   /**
+   * 角色编码下拉列表
+   */
+  async getRoleCodeOptions() {
+    const reservedCodes = [ROOT_ROLE_CODE];
+    const roles = await this.roleRepository
+      .createQueryBuilder("role")
+      .where("role.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("role.code NOT IN (:...reservedCodes)", { reservedCodes })
+      .orderBy("role.sort", "ASC")
+      .getMany();
+
+    return roles
+      .filter(({ name }) => !!name?.trim())
+      .map(({ code, name }) => ({
+        label: name,
+        value: code,
+      }));
+  }
+
+  /**
    * 创建角色
    */
   async create(createRoleDto: CreateRoleDto) {

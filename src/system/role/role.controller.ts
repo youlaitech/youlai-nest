@@ -31,8 +31,15 @@ export class RoleController {
     return await this.rolesService.getRoleOptions();
   }
 
+  @ApiOperation({ summary: "角色编码下拉列表" })
+  @Get("code-options")
+  async getRoleCodeOptions() {
+    return await this.rolesService.getRoleCodeOptions();
+  }
+
   @ApiOperation({ summary: "角色分页列表" })
   @Get()
+  @Permissions("sys:role:list")
   @SetMetadata("resource", "sys_role")
   async getRolePage(@Query() query: RoleQueryDto) {
     return await this.rolesService.getRolePage(query.pageNum, query.pageSize, query.keywords);
