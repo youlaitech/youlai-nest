@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer";
 import {
   IsArray,
   IsInt,
@@ -6,6 +7,20 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+
+/**
+ * 解析 JSON 字符串入参，非字符串原样返回。
+ */
+function parseJsonField(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
 
 /**
  * 表单定义分页查询。
@@ -52,10 +67,12 @@ export class CreateFormDefinitionDto {
   description?: string;
 
   @IsOptional()
+  @Transform(({ value }) => parseJsonField(value))
   @IsArray()
   formJson?: any[];
 
   @IsOptional()
+  @Transform(({ value }) => parseJsonField(value))
   optionsJson?: Record<string, any>;
 
   @IsOptional()

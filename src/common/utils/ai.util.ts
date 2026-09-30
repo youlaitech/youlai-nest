@@ -27,23 +27,31 @@ export async function chat(systemPrompt: string, userPrompt: string): Promise<st
     throw new BusinessException("AI 功能未开启，请配置 AI_BASE_URL 与 AI_API_KEY");
   }
 
-  const response = await axios.post(
-    `${baseUrl.replace(/\/+$/, "")}/chat/completions`,
-    {
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-    },
-    {
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      timeout,
-    },
-  );
+  try {
+    const response = await axios.post(
+      `${baseUrl.replace(/\/+$/, "")}/chat/completions`,
+      {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+      },
+      {
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        timeout,
+      },
+    );
 
-  return stripCodeFence(response.data?.choices?.[0]?.message?.content ?? "");
+    return stripCodeFence(response.data?.choices?.[0]?.message?.content ?? "");
+  } catch (error) {
+    if (error instanceof BusinessException) {
+      throw error;
+    }
+    const detail = axios.isAxiosError(error) ? (error.response?.status ?? error.message) : "";
+    throw new BusinessException(`AI 服务调用失败${detail ? `：${detail}` : ""}`);
+  }
 }
 
 /**

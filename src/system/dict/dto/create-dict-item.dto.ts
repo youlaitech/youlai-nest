@@ -6,9 +6,10 @@ import { Transform } from "class-transformer";
  * 字典项创建参数
  */
 export class CreateDictItemDto {
-  @ApiProperty({ description: "字典编码" })
+  @ApiProperty({ description: "字典编码（由路径参数回填，请求体可不传）" })
+  @IsOptional()
   @IsString()
-  dictCode: string;
+  dictCode?: string;
 
   @ApiProperty({ description: "字典项标签" })
   @IsString()
@@ -27,8 +28,9 @@ export class CreateDictItemDto {
   status: number;
 
   @ApiProperty({ description: "标签类型" })
+  @IsOptional()
   @IsString()
-  tagType: string;
+  tagType?: string;
 
   @ApiProperty({ description: "备注" })
   @IsString()
