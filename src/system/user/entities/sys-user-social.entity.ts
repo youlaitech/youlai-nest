@@ -1,5 +1,4 @@
-import { Column, Entity, ManyToOne, JoinColumn } from "typeorm";
-import { BaseEntity } from "@/common/entities/base.entity";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum SocialPlatform {
   WECHAT_MINI = "WECHAT_MINI",
@@ -9,8 +8,17 @@ export enum SocialPlatform {
   APPLE = "APPLE",
 }
 
+/**
+ * 第三方账号绑定实体（sys_user_social）
+ *
+ * 该表不含审计人列与逻辑删除列，故按表结构显式声明列而不继承 BaseEntity；
+ * session_key 需显式映射，避免 SQL 使用表里不存在的 sessionKey。
+ */
 @Entity("sys_user_social")
-export class SysUserSocial extends BaseEntity {
+export class SysUserSocial {
+  @PrimaryGeneratedColumn({ type: "bigint" })
+  id: string;
+
   @Column({ name: "user_id", type: "bigint", comment: "用户ID" })
   userId: string;
 
@@ -33,9 +41,15 @@ export class SysUserSocial extends BaseEntity {
   @Column({ length: 255, nullable: true, comment: "第三方头像URL" })
   avatar?: string;
 
-  @Column({ length: 128, nullable: true, comment: "微信session_key" })
+  @Column({ name: "session_key", length: 128, nullable: true, comment: "微信session_key" })
   sessionKey?: string;
 
   @Column({ type: "tinyint", default: 1, comment: "是否已验证(1-已验证 0-未验证)" })
   verified: number;
+
+  @Column({ name: "create_time", type: "datetime", nullable: true, comment: "创建时间" })
+  createTime: Date;
+
+  @Column({ name: "update_time", type: "datetime", nullable: true, comment: "更新时间" })
+  updateTime: Date;
 }
