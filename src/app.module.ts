@@ -39,6 +39,7 @@ import jwtConfig from "./config/jwt.config";
 import typeormConfig from "./config/typeorm.config";
 import ossConfig from "./config/oss.config";
 import redisConfig from "./config/redis.config";
+import rateLimitConfig from "./config/rate-limit.config";
 import { DataScopeGuard } from "./common/guards/data-scope.guard";
 import { PermissionGuard } from "./common/guards/permission.guard";
 import { DataPermissionInterceptor } from "./common/interceptors/data-permission.interceptor";
@@ -52,7 +53,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [".env", envPath],
-      load: [typeormConfig, redisConfig, ossConfig, jwtConfig],
+      load: [typeormConfig, redisConfig, ossConfig, jwtConfig, rateLimitConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
