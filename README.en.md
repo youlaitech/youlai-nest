@@ -56,3 +56,14 @@ Software architecture description
 4.  The most valuable open source project [GVP](https://gitee.com/gvp)
 5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
 6.  The most popular members [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+
+## Optional Extensions
+
+**AI (off by default)**: fill the key in `.env.dev`; the API is OpenAI-compatible.
+
+```env
+AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+AI_API_KEY=sk-xxx
+AI_MODEL=qwen-plus
+```
+

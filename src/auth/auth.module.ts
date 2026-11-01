@@ -8,7 +8,7 @@ import { UserModule } from "../system/user/user.module";
 import { RoleModule } from "../system/role/role.module";
 import { LogModule } from "../system/log/log.module";
 import { SysUser } from "../system/user/entities/sys-user.entity";
-import { SysUserSocial } from "../system/user/entities/sys-user-social.entity";
+import { SysUserIdentity } from "../system/user/entities/sys-user-identity.entity";
 import { RedisSharedModule } from "../common/redis/redis.module";
 
 import { AuthController } from "./auth.controller";
@@ -27,7 +27,7 @@ import { WxMaAuthService } from "./wxma/wxma-auth.service";
     RoleModule,
     LogModule,
     RedisSharedModule,
-    TypeOrmModule.forFeature([SysUser, SysUserSocial]),
+    TypeOrmModule.forFeature([SysUser, SysUserIdentity]),
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

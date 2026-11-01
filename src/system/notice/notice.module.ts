@@ -5,10 +5,10 @@ import { NoticeController } from "./notice.controller";
 import { SysNotice } from "./entities/sys-notice.entity";
 import { SysUserNotice } from "./entities/sys-user-notice.entity";
 import { SysUser } from "../user/entities/sys-user.entity";
-import { SseModule } from "../../message/sse.module";
+import { RealtimeModule } from "../../realtime/realtime.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SysNotice, SysUserNotice, SysUser]), SseModule],
+  imports: [TypeOrmModule.forFeature([SysNotice, SysUserNotice, SysUser]), RealtimeModule],
   controllers: [NoticeController],
   providers: [NoticeService],
   exports: [NoticeService],

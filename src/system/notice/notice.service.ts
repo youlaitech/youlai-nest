@@ -6,7 +6,8 @@ import { SysUserNotice } from "./entities/sys-user-notice.entity";
 import { NoticeQueryDto } from "./dto/notice-query.dto";
 import { CreateNoticeDto, UpdateNoticeDto } from "./dto/notice-form.dto";
 import { SysUser } from "../user/entities/sys-user.entity";
-import { SseService } from "../../message/sse.service";
+import { RealtimeService } from "../../realtime/realtime.service";
+import { REALTIME_EVENTS } from "../../realtime/realtime.types";
 
 /**
  * 通知公告服务
@@ -20,7 +21,7 @@ export class NoticeService {
     private readonly userNoticeRepository: Repository<SysUserNotice>,
     @InjectRepository(SysUser)
     private readonly userRepository: Repository<SysUser>,
-    private readonly sseService: SseService
+    private readonly realtimeService: RealtimeService
   ) {}
 
   async getNoticePage(query: NoticeQueryDto) {
@@ -228,7 +229,7 @@ export class NoticeService {
     }
 
     // 发布后立刻推送给在线用户
-    const onlineUsers = this.sseService.getOnlineUsers();
+    const onlineUsers = this.realtimeService.getOnlineUsers();
     const onlineUsernames = onlineUsers.map((u) => u.username);
     const targetUsernames = (
       await this.userRepository.find({
@@ -238,12 +239,9 @@ export class NoticeService {
     const onlineReceivers = targetUsernames.filter((name) => onlineUsernames.includes(name));
 
     onlineReceivers.forEach((username) => {
-      this.sseService.sendToUser(username, "notice", {
-        id: notice.id,
-        title: notice.title,
-        type: notice.type,
-        level: notice.level,
-        publishTime: notice.publishTime,
+      this.realtimeService.sendToUser(username, REALTIME_EVENTS.NOTICE_CHANGED, {
+        noticeId: String(notice.id),
+        action: "published",
       });
     });
 
@@ -265,9 +263,12 @@ export class NoticeService {
     await this.userNoticeRepository.delete({ noticeId: id.toString() });
 
     // 通知前端移除该通知
-    const onlineUsers = this.sseService.getOnlineUsers();
+    const onlineUsers = this.realtimeService.getOnlineUsers();
     onlineUsers.forEach((u) => {
-      this.sseService.sendToUser(u.username, "notice-revoke", { id: notice.id });
+      this.realtimeService.sendToUser(u.username, REALTIME_EVENTS.NOTICE_CHANGED, {
+        noticeId: String(notice.id),
+        action: "revoked",
+      });
     });
 
     return true;

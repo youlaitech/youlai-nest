@@ -1,4 +1,5 @@
 import { NestFactory, Reflector } from "@nestjs/core";
+import { WsAdapter } from "@nestjs/platform-ws";
 import { AppModule } from "./app.module";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ValidationPipe, HttpStatus } from "@nestjs/common";
@@ -20,6 +21,9 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  // 使用原生 WebSocket 适配器，消息格式与其他后端保持一致
+  app.useWebSocketAdapter(new WsAdapter(app));
 
   // 全局前缀
   app.setGlobalPrefix("/api/v1");

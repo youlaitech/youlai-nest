@@ -20,7 +20,7 @@ import { RedisSharedModule } from "./common/redis/redis.module";
 import { DictModule } from "./system/dict/dict.module";
 import { FormModule } from "./form/form.module"; // 系统字典模块
 import { ConfigModule as SystemConfigModule } from "./system/config/config.module"; // 系统配置模块
-import { SseModule } from "./message/sse.module";
+import { RealtimeModule } from "./realtime/realtime.module";
 import { CodegenModule } from "./codegen/codegen.module";
 import { FileModule } from "./file/file.module";
 import { LogModule } from "./system/log/log.module";
@@ -105,7 +105,7 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
     DictModule,
     FormModule,
     SystemConfigModule,
-    SseModule,
+    RealtimeModule,
     FileModule,
     CodegenModule,
     LogModule,

@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 
 import { SysUser } from "../../system/user/entities/sys-user.entity";
-import { SysUserSocial, SocialPlatform } from "../../system/user/entities/sys-user-social.entity";
+import { SysUserIdentity, WECHAT_MINI_PROVIDER } from "../../system/user/entities/sys-user-identity.entity";
 import { UserService } from "../../system/user/user.service";
 import { TokenService } from "../token.service";
 import { WxMaLoginResultDto } from "./dto/wxma-login-result.dto";
@@ -62,8 +62,8 @@ export class WxMaAuthService {
     private readonly dataSource: DataSource,
     @InjectRepository(SysUser)
     private readonly userRepository: Repository<SysUser>,
-    @InjectRepository(SysUserSocial)
-    private readonly socialRepository: Repository<SysUserSocial>
+    @InjectRepository(SysUserIdentity)
+    private readonly identityRepository: Repository<SysUserIdentity>
   ) {
     this.appId = this.configService.get<string>("WX_MINIAPP_APP_ID") || "";
     this.appSecret = this.configService.get<string>("WX_MINIAPP_APP_SECRET") || "";
@@ -80,12 +80,12 @@ export class WxMaAuthService {
       });
     }
 
-    const social = await this.socialRepository.findOne({
-      where: { platform: SocialPlatform.WECHAT_MINI, openid: openId },
+    const identity = await this.identityRepository.findOne({
+      where: { provider: WECHAT_MINI_PROVIDER, providerAccountId: openId },
     });
 
-    if (social) {
-      const token = await this.generateTokenByUserId(social.userId);
+    if (identity) {
+      const token = await this.generateTokenByUserId(identity.userId);
       return {
         needBindMobile: false,
         ...token,
@@ -109,7 +109,7 @@ export class WxMaAuthService {
 
     const user = await this.findOrCreateUser(mobile);
 
-    await this.bindWechatOpenId(user.id, openId, session.unionid, session.session_key);
+    await this.bindWechatOpenId(user.id, openId, session.session_key);
 
     return this.generateTokenByUserId(user.id);
   }
@@ -119,7 +119,7 @@ export class WxMaAuthService {
 
     const user = await this.findOrCreateUser(mobile);
 
-    await this.bindWechatOpenId(user.id, openId, null, null);
+    await this.bindWechatOpenId(user.id, openId, null);
 
     this.logger.log(`微信小程序绑定手机号成功：mobile=${mobile}, openId=${openId}`);
 
@@ -265,29 +265,37 @@ export class WxMaAuthService {
   private async bindWechatOpenId(
     userId: string,
     openId: string,
-    unionid?: string,
     sessionKey?: string
   ): Promise<void> {
     try {
-      const existing = await this.socialRepository.findOne({
-        where: { platform: SocialPlatform.WECHAT_MINI, openid: openId },
+      const existing = await this.identityRepository.findOne({
+        where: { provider: WECHAT_MINI_PROVIDER, providerAccountId: openId },
       });
 
       if (existing) {
-        existing.userId = userId;
-        existing.unionid = unionid || null;
-        existing.sessionKey = sessionKey || null;
-        await this.socialRepository.save(existing);
+        if (existing.userId !== userId) {
+          // 账号已归属其他用户，不转移
+          this.logger.warn(`该微信账号已关联其他用户：userId=${userId}, openId=${openId}`);
+          return;
+        }
+        existing.lastLoginTime = new Date();
+        await this.identityRepository.save(existing);
       } else {
-        const social = this.socialRepository.create({
+        const identity = this.identityRepository.create({
           userId,
-          platform: SocialPlatform.WECHAT_MINI,
-          openid: openId,
-          unionid: unionid || null,
-          sessionKey: sessionKey || null,
-          verified: 1,
+          provider: WECHAT_MINI_PROVIDER,
+          providerAccountId: openId,
+          lastLoginTime: new Date(),
         });
-        await this.socialRepository.save(social);
+        await this.identityRepository.save(identity);
+      }
+
+      if (sessionKey) {
+        await this.redisService.set(
+          `auth:wxma:session_key:${WECHAT_MINI_PROVIDER}:${openId}`,
+          sessionKey,
+          3 * 24 * 3600
+        );
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
