@@ -179,7 +179,6 @@ export class NoticeService {
     const notice = await this.noticeRepository.findOne({ where: { id: idStr, isDeleted: 0 } });
     if (!notice) return false;
 
-    // 更新通知发布状态
     notice.publishStatus = 1;
     notice.publisherId = publisherId.toString();
     notice.publishTime = new Date();

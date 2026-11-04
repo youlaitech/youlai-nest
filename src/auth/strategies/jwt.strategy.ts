@@ -58,7 +58,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const roles: string[] = payload.roles || [];
 
-    // 获取角色的数据权限列表
     const dataScopes = await this.roleService.getRoleDataScopes(roles);
 
     return {

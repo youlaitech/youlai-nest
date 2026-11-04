@@ -114,9 +114,11 @@ export class ${entityName}Service {
   /**
    * 新增 ${businessName}
    */
-  async create(formData: Create${entityName}Dto) {
+  async create(formData: Create${entityName}Dto & { createBy?: string }) {
     const entity = this.${entityLowerCamel}Repository.create({
       ...formData,
+      createTime: new Date(),
+      updateTime: new Date(),
       isDeleted: 0,
     });
 
@@ -127,7 +129,7 @@ export class ${entityName}Service {
   /**
    * 修改 ${businessName}
    */
-  async update(id: string, formData: Update${entityName}Dto) {
+  async update(id: string, formData: Update${entityName}Dto & { updateBy?: string }) {
     const entity = await this.${entityLowerCamel}Repository.findOne({
       where: { id: id.toString(), isDeleted: 0 }
     });
@@ -135,7 +137,7 @@ export class ${entityName}Service {
       return false;
     }
 
-    Object.assign(entity, formData);
+    Object.assign(entity, formData, { updateTime: new Date() });
 
     await this.${entityLowerCamel}Repository.save(entity);
     return true;

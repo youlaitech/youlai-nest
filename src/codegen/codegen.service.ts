@@ -7,6 +7,8 @@ import * as path from "path";
 import * as Velocity from "velocityjs";
 
 import { chatJson, loadPrompt } from "../common/utils/ai.util";
+import { toKebabCase, toPluralKebab } from "../common/utils/case.util";
+import { MenuService } from "../system/menu/menu.service";
 import type { AiFillConfigDto } from "./dto/ai-fill-config.dto";
 import type { CodegenPreviewDto } from "./dto/codegen-preview.dto";
 import type { GenConfigFormDto, FieldConfigDto } from "./dto/gen-config-form.dto";
@@ -35,7 +37,10 @@ interface TemplateConfig {
 
 @Injectable()
 export class CodegenService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly menuService: MenuService
+  ) {}
 
   private readonly codegenConfig = {
     downloadFileName: "youlai-admin-code.zip",
@@ -249,10 +254,12 @@ export class CodegenService {
       return {
         id: String(config.id),
         tableName: config.table_name,
-        moduleName: config.module_name,
+        moduleName: config.module_name || this.codegenConfig.defaultModuleName,
         packageName: this.codegenConfig.defaultPackageName,
         businessName: config.business_name,
-        entityName: config.entity_name,
+        entityName:
+          config.entity_name ||
+          toPascalCase(trimTablePrefix(String(config.table_name), this.codegenConfig.defaultRemoveTablePrefix)),
         author: config.author,
         parentMenuId: config.parent_menu_id ? String(config.parent_menu_id) : undefined,
         backendAppName: this.codegenConfig.backendAppName,
@@ -280,11 +287,7 @@ export class CodegenService {
     const businessName = tableComment ? tableComment.replace("表", "").trim() : tableName;
 
     const removePrefix = this.codegenConfig.defaultRemoveTablePrefix;
-    const processed =
-      removePrefix && tableName.startsWith(removePrefix)
-        ? tableName.slice(removePrefix.length)
-        : tableName;
-    const entityName = toPascalCase(processed);
+    const entityName = toPascalCase(trimTablePrefix(tableName, removePrefix));
 
     const columns = await this.dataSource.query(
       `SELECT
@@ -365,7 +368,8 @@ export class CodegenService {
     const moduleName = body.moduleName || this.codegenConfig.defaultModuleName;
     const packageName = this.codegenConfig.defaultPackageName;
     const businessName = body.businessName || tableName;
-    const entityName = body.entityName || toPascalCase(tableName);
+    const removePrefix = body.removeTablePrefix || this.codegenConfig.defaultRemoveTablePrefix;
+    const entityName = body.entityName || toPascalCase(trimTablePrefix(tableName, removePrefix));
     const author = body.author || this.codegenConfig.defaultAuthor;
     const parentMenuId = body.parentMenuId ? String(body.parentMenuId) : null;
 
@@ -454,6 +458,17 @@ export class CodegenService {
           now,
           now,
         ]
+      );
+    }
+
+    // 菜单与按钮权限随配置一起保存，失败直接抛出，避免留下「有配置无权限」的半成品；重试按路由名幂等
+    if (body.parentMenuId && Number(body.parentMenuId) > 0) {
+      await this.menuService.addMenuForCodegen(
+        Number(body.parentMenuId),
+        moduleName,
+        businessName,
+        entityName,
+        resolvePermPrefix(moduleName, entityName)
       );
     }
 
@@ -620,6 +635,8 @@ export class CodegenService {
       author: config.author,
       entityLowerCamel: lowerFirst(entityName),
       entityKebab: toKebabCase(entityName),
+      entityKebabPlural: toPluralKebab(entityName),
+      permissionPrefix: resolvePermPrefix(config.moduleName, entityName),
       entityUpperSnake: toSnakeUpper(entityName),
       dollar: "$",
       businessName: config.businessName,
@@ -754,11 +771,22 @@ function toPascalCase(s: string) {
   return c ? c.charAt(0).toUpperCase() + c.slice(1) : c;
 }
 
-function toKebabCase(s: string) {
-  return String(s)
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .replace(/_/g, "-")
-    .toLowerCase();
+// 模块名 → 权限前缀，未配置时用模块名
+const permissionNamespaces: Record<string, string> = { system: "sys" };
+
+/**
+ * 权限标识前缀（如 sys:user）：后端守卫、前端 v-hasPerm、菜单按钮权限共用同一个值
+ */
+function resolvePermPrefix(moduleName: string, entityName: string) {
+  const namespace = permissionNamespaces[moduleName] ?? moduleName;
+  return `${namespace}:${toKebabCase(entityName)}`;
+}
+
+/**
+ * 去掉表前缀，避免 sys_user 推导出 SysUser 这类把模块名重复进实体名的结果
+ */
+function trimTablePrefix(tableName: string, removePrefix: string) {
+  return removePrefix && tableName.startsWith(removePrefix) ? tableName.slice(removePrefix.length) : tableName;
 }
 
 function toSnakeUpper(s: string) {

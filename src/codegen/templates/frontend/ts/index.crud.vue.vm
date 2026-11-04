@@ -34,7 +34,7 @@ import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
 import type {
   ${entityName}Form,
   ${entityName}Item,
-  ${entityName}Query,
+  ${entityName}QueryParams,
 } from "@/api/${moduleName}/${entityKebab}";
 import type {
   CrudRecord,
@@ -82,7 +82,7 @@ const searchConfig: CrudSearchConfig = {
 };
 
 const tableConfig: CrudTableConfig<${entityName}Query, ${entityName}Item> = {
-  permissionPrefix: "${moduleName}:${entityKebab}",
+  permissionPrefix: "${permissionPrefix}",
   table: { border: true },
   fetchData: ${entityName}API.getPage,
   deleteByIds: ${entityName}API.deleteByIds,

@@ -1,44 +1,66 @@
 /**
  * ${businessName} 控制器
  */
-import { Controller, Get, Post, Body, Param, Delete, Query, Put } from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, Delete, Query, Put, SetMetadata } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { ${entityName}Service } from "./${entityKebab}.service";
 import { ${entityName}QueryDto } from "./dto/${entityKebab}-query.dto";
 import { Create${entityName}Dto } from "./dto/create-${entityKebab}.dto";
 import { Update${entityName}Dto } from "./dto/update-${entityKebab}.dto";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Permissions } from "../../common/decorators/auth.decorator";
+import { Log } from "../../common/decorators/log.decorator";
+import { ActionTypeValue } from "../../common/enums/action-type.enum";
+import { LogModuleValue } from "../../common/enums/log-module.enum";
 
 @ApiTags("${businessName}接口")
-@Controller("${entityKebab}")
+@Controller("${entityKebabPlural}")
 export class ${entityName}Controller {
   constructor(private readonly ${entityLowerCamel}Service: ${entityName}Service) {}
 
   @ApiOperation({ summary: "${businessName}分页列表" })
   @Get()
+  @SetMetadata("resource", "${tableName}")
+  @Permissions("${permissionPrefix}:list")
+  @Log(LogModuleValue.OTHER, ActionTypeValue.LIST)
   async get${entityName}Page(@Query() query: ${entityName}QueryDto) {
     return await this.${entityLowerCamel}Service.get${entityName}Page(query);
   }
 
   @ApiOperation({ summary: "获取${businessName}表单数据" })
   @Get(":id/form")
+  @Permissions("${permissionPrefix}:update")
   async get${entityName}Form(@Param("id") id: string) {
     return await this.${entityLowerCamel}Service.get${entityName}FormData(id);
   }
 
   @ApiOperation({ summary: "新增${businessName}" })
   @Post()
-  async create(@Body() formData: Create${entityName}Dto) {
-    return await this.${entityLowerCamel}Service.create(formData);
+  @Permissions("${permissionPrefix}:create")
+  @Log(LogModuleValue.OTHER, ActionTypeValue.INSERT)
+  async create(
+    @CurrentUser("userId") currentUserId: string,
+    @Body() formData: Create${entityName}Dto
+  ) {
+    return await this.${entityLowerCamel}Service.create({ ...formData, createBy: currentUserId });
   }
 
   @ApiOperation({ summary: "修改${businessName}" })
   @Put(":id")
-  async update(@Param("id") id: string, @Body() formData: Update${entityName}Dto) {
-    return await this.${entityLowerCamel}Service.update(id, formData);
+  @Permissions("${permissionPrefix}:update")
+  @Log(LogModuleValue.OTHER, ActionTypeValue.UPDATE)
+  async update(
+    @Param("id") id: string,
+    @CurrentUser("userId") currentUserId: string,
+    @Body() formData: Update${entityName}Dto
+  ) {
+    return await this.${entityLowerCamel}Service.update(id, { ...formData, updateBy: currentUserId });
   }
 
   @ApiOperation({ summary: "删除${businessName}" })
   @Delete(":ids")
+  @Permissions("${permissionPrefix}:delete")
+  @Log(LogModuleValue.OTHER, ActionTypeValue.DELETE)
   async delete(@Param("ids") ids: string) {
     return await this.${entityLowerCamel}Service.delete(ids);
   }

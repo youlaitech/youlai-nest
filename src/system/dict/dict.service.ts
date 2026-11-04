@@ -166,9 +166,7 @@ export class DictService {
     return true;
   }
 
-  //---------------------------------------------------
   // 字典项相关接口
-  //---------------------------------------------------
 
   /**
    * 字典数据分页列表
@@ -258,7 +256,6 @@ export class DictService {
       throw new BusinessException(`字典项值 "${value}" 已存在`);
     }
 
-    // 创建新的字典项
     const dictItem = this.dictItemRepository.create({
       dictCode,
       label,

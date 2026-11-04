@@ -314,10 +314,8 @@ export class UserService {
     const roles = await this.roleService.findRolesByIds(roleIds);
     const roleCodes = roles.map((r) => r.code);
 
-    // 获取多角色数据权限列表
     const dataScopes = await this.roleService.getRoleDataScopes(roleCodes);
 
-    // 获取部门树路径
     let deptTreePath = "";
     if (user.deptId) {
       const depts = await this.deptService.findByIds([user.deptId]);
@@ -395,10 +393,8 @@ export class UserService {
     const roles = await this.roleService.findRolesByIds(roleIds);
     const roleCodes = roles.map((r) => r.code);
 
-    // 获取多角色数据权限列表
     const dataScopes = await this.roleService.getRoleDataScopes(roleCodes);
 
-    // 获取部门树路径
     let deptTreePath = "";
     if (user.deptId) {
       const depts = await this.deptService.findByIds([user.deptId]);
@@ -550,10 +546,8 @@ export class UserService {
       password: hashedPassword,
     });
 
-    // 保存用户
     const savedUser = await this.userRepository.save(user);
 
-    // 保存用户角色关联
     if (roleIds && roleIds.length > 0) {
       const relations = this.userRoleRepository.create(
         roleIds.map((roleId) => ({
@@ -960,7 +954,6 @@ export class UserService {
       }
     }
 
-    // 更新用户信息
     const user = await this.userRepository.findOne({ where: { id: userIdStr } });
     if (!user) {
       throw new BusinessException("用户不存在");

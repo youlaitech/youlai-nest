@@ -1,10 +1,12 @@
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { CreateMenuDto } from "./dto/create-menu.dto";
 
-import { BusinessException } from "../../common/exceptions/business.exception";import { UpdateMenuDto } from "./dto/update-menu.dto";
+import { BusinessException } from "../../common/exceptions/business.exception";
+import { UpdateMenuDto } from "./dto/update-menu.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, In, Not } from "typeorm";
 import { chatJson, loadPrompt } from "../../common/utils/ai.util";
+import { toKebabCase } from "../../common/utils/case.util";
 import { MenuAiFillDto } from "./dto/menu-ai-fill.dto";
 import { SysMenu } from "./entities/sys-menu.entity";
 import { UserService } from "../user/user.service";
@@ -216,7 +218,7 @@ export class MenuService {
       createMenuDto.sort = await this.resolveNextSort(parentId || "0");
     }
 
-    // 生成 treePath
+    // 生成 treePath（父节点ID路径，含父不含己），与种子数据、菜单搜索取祖先的口径一致
     const treePath = await this.generateMenuTreePath(parentId || "0");
 
     const menu = this.menuRepository.create({
@@ -229,17 +231,9 @@ export class MenuService {
 
     await this.menuRepository.save(menu);
 
-    // 更新菜单 ID 到 treePath
-    if (menu.parentId === "0") {
-      menu.treePath = menu.id;
-    } else {
-      menu.treePath = `${treePath},${menu.id}`;
-    }
-    await this.menuRepository.save(menu);
-
     // 新增页面菜单时按需生成增删改查按钮
     if (createMenuDto.generateCrudButtons && createMenuDto.buttonPermPrefix?.trim()) {
-      await this.saveCrudButtons(menu.id, menu.treePath, createMenuDto.buttonPermPrefix.trim());
+      await this.saveCrudButtons(menu.id, treePath, createMenuDto.buttonPermPrefix.trim());
     }
 
     return true;
@@ -374,7 +368,8 @@ export class MenuService {
     if (!parent) {
       return "0";
     }
-    return parent.treePath || "0";
+    // 父节点ID路径 = 父的树路径 + 父ID（含父不含己），如 0,1,101
+    return `${parent.treePath || "0"},${parent.id}`;
   }
 
   /**
@@ -642,80 +637,45 @@ export class MenuService {
   }
 
   /**
-   * 代码生成菜单
+   * 代码生成菜单：菜单与 CRUD 按钮沿用菜单管理的既有实现
+   * @param permPrefix 权限前缀（如 sys:user），由 codegen 统一生成，与生成的路由、页面保持一致
    */
   async addMenuForCodegen(
     parentMenuId: number,
-    tableName: string,
     moduleName: string,
     businessName: string,
-    entityName: string
+    entityName: string,
+    permPrefix: string
   ): Promise<void> {
     const parent = await this.menuRepository.findOne({ where: { id: parentMenuId.toString() } });
     if (!parent) {
+      throw new BusinessException("上级菜单不存在");
+    }
+
+    // 重复保存配置时按路由名去重，避免同一菜单挂出多份按钮
+    const existing = await this.menuRepository.findOne({ where: { routeName: entityName } });
+    if (existing) {
       return;
     }
 
-    // 计算同级最大排序号 +1
-    let sort = 1;
-    const maxSortMenu = await this.menuRepository.findOne({
-      where: { parentId: parentMenuId.toString() },
-      order: { sort: "DESC" },
-    });
-    if (maxSortMenu) {
-      sort = maxSortMenu.sort + 1;
-    }
-
-    // 构建菜单实体
-    const entityKebab = this.toKebabCase(entityName);
+    const entityKebab = toKebabCase(entityName);
     const treePath = `${parent.treePath},${parentMenuId}`;
 
-    // 创建菜单记录
-    const menu = this.menuRepository.create({
-      parentId: parentMenuId.toString(),
-      type: "M",
-      name: businessName,
-      routeName: entityName,
-      routePath: entityKebab,
-      component: `${moduleName}/${entityKebab}/index`,
-      sort,
-      visible: 1,
-      treePath,
-      createTime: new Date(),
-    });
-    await this.menuRepository.save(menu);
-
-    // 生成CRUD按钮权限
-    const permPrefix = `${moduleName}:${tableName.replace(/_/g, '-')}:`;
-    const actions = ["查询", "新增", "修改", "删除"];
-    const perms = ["list", "create", "update", "delete"];
-    for (let i = 0; i < actions.length; i++) {
-      const button = this.menuRepository.create({
-        parentId: menu.id,
-        type: "B",
-        name: actions[i],
-        perm: permPrefix + perms[i],
-        sort: i + 1,
-        treePath: `${treePath},${menu.id}`,
+    const menu = await this.menuRepository.save(
+      this.menuRepository.create({
+        parentId: parentMenuId.toString(),
+        type: "M",
+        name: businessName,
+        routeName: entityName,
+        routePath: entityKebab,
+        component: `${moduleName}/${entityKebab}/index`,
+        sort: await this.resolveNextSort(parentMenuId.toString()),
+        visible: 1,
+        treePath,
         createTime: new Date(),
-      });
-      await this.menuRepository.save(button);
-    }
-  }
+      })
+    );
 
-  /**
-   * 驼峰转换为kebab-case
-   */
-  private toKebabCase(s: string): string {
-    if (!s) return "";
-    let result = "";
-    for (let i = 0; i < s.length; i++) {
-      const c = s[i];
-      if (i > 0 && c >= "A" && c <= "Z") {
-        result += "-";
-      }
-      result += c.toLowerCase();
-    }
-    return result;
+    await this.saveCrudButtons(menu.id, treePath, permPrefix);
   }
 }

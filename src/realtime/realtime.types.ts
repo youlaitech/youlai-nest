@@ -24,10 +24,10 @@ export const REALTIME_EVENTS = {
   HEARTBEAT_PONG: "heartbeat.pong",
 } as const;
 
-/** 心跳应答超时时间（毫秒），与前端协议保持一致 */
+/** 心跳应答超时时间（毫秒） */
 export const HEARTBEAT_TIMEOUT_MS = 60000;
 
-/** 实时消息，与 youlai-boot 的协议保持一致 */
+/** 实时消息 */
 export interface RealtimeMessage {
   version: number;
   id: string;

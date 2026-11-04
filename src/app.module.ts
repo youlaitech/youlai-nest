@@ -163,7 +163,6 @@ const envPath = `.env.${process.env.NODE_ENV || "dev"}`;
 })
 export class AppModule implements NestModule, OnModuleInit {
   onModuleInit() {
-    // 初始化数据权限插件
     initDataPermissionPlugin();
   }
 

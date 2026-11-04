@@ -22,7 +22,7 @@ import {
   parsePong,
 } from "./realtime.types";
 
-/** 心跳间隔与超时（秒），与 youlai-boot 保持一致 */
+/** 心跳间隔与应答超时（秒） */
 const PING_INTERVAL_SECONDS = 25;
 const PONG_TIMEOUT_SECONDS = 60;
 

@@ -348,7 +348,6 @@ export class RoleService {
       select: ["id", "code"],
     });
 
-    // 删除旧的菜单关联
     await this.roleMenuRepository.delete({ roleId: roleIdStr });
 
     // 添加新的菜单关联
@@ -501,7 +500,6 @@ export class RoleService {
   async updateRoleDepts(roleId: string, deptIds: string[]): Promise<void> {
     const roleIdStr = roleId.toString();
 
-    // 删除旧的关联
     await this.roleDeptRepository.delete({ roleId: roleIdStr });
 
     // 添加新的关联

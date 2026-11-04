@@ -38,7 +38,6 @@ export class RolePermService {
     // 从数据库获取所有角色权限映射
     const rolePermsList = await this.getRolePermsListFromDB();
 
-    // 写入缓存
     for (const item of rolePermsList) {
       if (item.perms && item.perms.length > 0) {
         await this.redisService.hset(this.cacheKey, item.roleCode, item.perms);
@@ -71,13 +70,11 @@ export class RolePermService {
    * @param newRoleCode 新角色编码
    */
   async refreshRolePermsCacheOnCodeChange(oldRoleCode: string, newRoleCode: string): Promise<void> {
-    // 删除新旧两个角色的缓存
     await this.redisService.hdel(this.cacheKey, oldRoleCode, newRoleCode);
 
     // 重新获取新角色编码的权限
     const perms = await this.getRolePermsByRoleCodeFromDB(newRoleCode);
 
-    // 写入缓存
     await this.redisService.hset(this.cacheKey, newRoleCode, perms);
 
     this.logger.log(`角色编码变更: ${oldRoleCode} -> ${newRoleCode}，权限缓存已刷新`);
@@ -135,7 +132,6 @@ export class RolePermService {
   private async getRolePermsListFromDB(
     roleCode?: string
   ): Promise<{ roleCode: string; perms: string[] }[]> {
-    // 查询角色-菜单关联
     const queryBuilder = this.roleMenuRepository
       .createQueryBuilder("rm")
       .innerJoin("rm.role", "role")

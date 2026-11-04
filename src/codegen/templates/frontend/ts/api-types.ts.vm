@@ -2,10 +2,10 @@
  * ${entityName} $!{businessName}类型定义
  */
 
-import type { BaseQueryParams } from "@/api/common";
+import type { PageQuery } from "@/api/common";
 
 /** $!{businessName}查询参数 */
-export interface ${entityName}QueryParams extends BaseQueryParams {
+export interface ${entityName}QueryParams extends PageQuery {
 #foreach($fieldConfig in $fieldConfigs)
   #if($fieldConfig.isShowInQuery)
     #if("$!fieldConfig.fieldComment" != "")
