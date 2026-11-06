@@ -16,7 +16,9 @@ export interface DataPermissionConfig {
   userIdColumnName?: string;
 }
 
-/** 数据权限装饰器 */
+/**
+ * 数据权限装饰器
+ */
 export function DataPermission(config?: DataPermissionConfig): MethodDecorator & ClassDecorator {
   return (
     target: any,
@@ -40,7 +42,9 @@ export function DataPermission(config?: DataPermissionConfig): MethodDecorator &
 
 export const SKIP_DATA_PERMISSION_KEY = "skip_data_permission";
 
-/** 跳过数据权限装饰器 */
+/**
+ * 跳过数据权限装饰器
+ */
 export function SkipDataPermission(): MethodDecorator {
   return SetMetadata(SKIP_DATA_PERMISSION_KEY, true);
 }

@@ -7,7 +7,7 @@ import * as path from "path";
 import * as Velocity from "velocityjs";
 
 import { chatJson, loadPrompt } from "../common/utils/ai.util";
-import { toKebabCase, toPluralKebab } from "../common/utils/case.util";
+import { lowerFirst, toCamelCase, toKebabCase, toPascalCase, toPluralKebab, toSnakeUpper } from "../common/utils/case.util";
 import { MenuService } from "../system/menu/menu.service";
 import type { AiFillConfigDto } from "./dto/ai-fill-config.dto";
 import type { CodegenPreviewDto } from "./dto/codegen-preview.dto";
@@ -755,22 +755,6 @@ function resolveBootTemplatePath(templatePath: string) {
   );
 }
 
-function lowerFirst(s: string) {
-  if (!s) return s;
-  return s.charAt(0).toLowerCase() + s.slice(1);
-}
-
-function toCamelCase(s: string) {
-  return String(s)
-    .toLowerCase()
-    .replace(/[_-](\w)/g, (_, c) => String(c).toUpperCase());
-}
-
-function toPascalCase(s: string) {
-  const c = toCamelCase(s);
-  return c ? c.charAt(0).toUpperCase() + c.slice(1) : c;
-}
-
 // 模块名 → 权限前缀，未配置时用模块名
 const permissionNamespaces: Record<string, string> = { system: "sys" };
 
@@ -787,13 +771,6 @@ function resolvePermPrefix(moduleName: string, entityName: string) {
  */
 function trimTablePrefix(tableName: string, removePrefix: string) {
   return removePrefix && tableName.startsWith(removePrefix) ? tableName.slice(removePrefix.length) : tableName;
-}
-
-function toSnakeUpper(s: string) {
-  return String(s)
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .replace(/-/g, "_")
-    .toUpperCase();
 }
 
 function formatDateTime(d: Date) {

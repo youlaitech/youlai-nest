@@ -56,7 +56,9 @@ export interface RealtimePongPayload {
   pingId: string;
 }
 
-/** 创建服务端消息并生成唯一标识 */
+/**
+ * 创建服务端消息并生成唯一标识
+ */
 export function createRealtimeMessage(type: string, payload?: unknown): RealtimeMessage {
   return {
     version: 1,
@@ -66,7 +68,9 @@ export function createRealtimeMessage(type: string, payload?: unknown): Realtime
   };
 }
 
-/** 解析客户端心跳响应，非心跳消息返回 null */
+/**
+ * 解析客户端心跳响应，非心跳消息返回 null
+ */
 export function parsePong(raw: string): string | null {
   try {
     const parsed = JSON.parse(raw);
