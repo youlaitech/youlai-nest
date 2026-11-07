@@ -1,6 +1,6 @@
 <div align="center">
 
-# <img alt="youlai-nest" width="40" height="40" src="./docs/images/logo/logo.png" align="center"> youlai-nest
+# <img alt="youlai-nest" width="40" height="40" src="./docs/images/logo/logo.png" valign="middle"> youlai-nest
 
 **Node.js 20 + NestJS 11 企业级权限管理系统后端**
 
