@@ -45,13 +45,17 @@ export class CaptchaService {
     return {
       captchaBase64: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
       captchaId,
-      captchaCode: captcha.text,
     };
   }
 
-  /** 校验图形验证码，大小写不敏感 */
+  /** 校验图形验证码，大小写不敏感，校验后立即作废 */
   async verify(captchaId: string, captchaCode: string): Promise<void> {
-    const cached = await this.redisService.get<string>(`${CAPTCHA_KEY_PREFIX}:${captchaId}`);
+    const key = `${CAPTCHA_KEY_PREFIX}:${captchaId}`;
+    const cached = await this.redisService.get<string>(key);
+    // 一次性使用：无论校验是否通过都删除，避免同一验证码被重复尝试
+    if (cached) {
+      await this.redisService.del(key);
+    }
 
     if (!cached) {
       throw new BusinessException(ErrorCode.USER_VERIFICATION_CODE_EXPIRED);

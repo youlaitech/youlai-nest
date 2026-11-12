@@ -10,6 +10,7 @@ import { BusinessException } from "../common/exceptions/business.exception";
 import { ErrorCode } from "../common/enums/error-code.enum";
 import type { LoginResultDto } from "./dto/login-result.dto";
 import type { JwtPayload } from "./interfaces/jwt-payload.interface";
+import { UserService } from "../system/user/user.service";
 
 /**
  * 令牌服务：统一 JWT 与 Redis-Token 两种会话模式的签发、刷新与撤销。
@@ -23,7 +24,8 @@ export class TokenService {
     private readonly config: ConfigType<typeof jwtConfig>,
     private readonly jwtService: JwtService,
     private readonly redisCacheService: RedisService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly userService: UserService
   ) {}
 
   /** 获取用户 JWT 会话缓存键 */
@@ -38,9 +40,7 @@ export class TokenService {
 
   /** 签发令牌，入参为含 id/username/deptId/dataScopes/roles 的用户信息 */
   async issueTokens(user: any): Promise<LoginResultDto> {
-    return this.sessionType === "jwt"
-      ? this.issueJwtTokens(user)
-      : this.issueRedisTokens(user);
+    return this.sessionType === "jwt" ? this.issueJwtTokens(user) : this.issueRedisTokens(user);
   }
 
   /** 刷新访问令牌，刷新令牌本身原样返回 */
@@ -150,6 +150,7 @@ export class TokenService {
       userId: userId,
       username: user.username,
       deptId: user.deptId,
+      deptTreePath: user.deptTreePath,
       dataScopes: user.dataScopes,
       roles: user.roles,
     };
@@ -202,15 +203,21 @@ export class TokenService {
       }
     }
 
+    // 刷新时按用户 ID 回查角色与数据权限，角色变更后旧令牌不能继续沿用
+    const user = await this.userService.getAuthInfoByUserId(Number(userId));
+    if (!user || user.status === 0) {
+      throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
     // 显式构造载荷，避免把刷新令牌的 exp/iat 带入新令牌
     const newAccessToken = await this.jwtService.signAsync(
       {
         sub: payload.sub,
-        username: payload.username,
-        deptId: payload.deptId,
-        dataScopes: payload.dataScopes,
-        deptTreePath: payload.deptTreePath,
-        roles: payload.roles,
+        username: user.username,
+        deptId: user.deptId,
+        dataScopes: user.dataScopes,
+        deptTreePath: user.deptTreePath,
+        roles: user.roles,
         tokenVersion,
         jti: uuidv4(),
       },

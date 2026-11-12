@@ -19,6 +19,53 @@ interface ResponseLogContext {
   contentLength?: number;
 }
 
+// 日志脱敏：请求头与请求体中的凭据、验证码不落盘
+const SENSITIVE_HEADERS = ["authorization", "cookie", "set-cookie"];
+const SENSITIVE_FIELDS = [
+  "password",
+  "oldpassword",
+  "newpassword",
+  "confirmpassword",
+  "token",
+  "accesstoken",
+  "refreshtoken",
+  "captchacode",
+  "smscode",
+  "code",
+  "x-api-key",
+];
+
+export function maskBody(body: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!body || typeof body !== "object") return {};
+  const masked: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (SENSITIVE_FIELDS.includes(key.toLowerCase())) {
+      masked[key] = "***";
+    } else if (value instanceof Date) {
+      masked[key] = value;
+    } else if (Array.isArray(value)) {
+      masked[key] = value.map((item) =>
+        item && typeof item === "object" && !(item instanceof Date)
+          ? maskBody(item as Record<string, unknown>)
+          : item
+      );
+    } else if (value && typeof value === "object") {
+      masked[key] = maskBody(value as Record<string, unknown>);
+    } else {
+      masked[key] = value;
+    }
+  }
+  return masked;
+}
+
+function maskHeaders(headers: IncomingHttpHeaders): IncomingHttpHeaders {
+  const masked = { ...headers };
+  for (const key of SENSITIVE_HEADERS) {
+    if (key in masked) masked[key] = "***";
+  }
+  return masked;
+}
+
 export class LoggerUtils {
   static captureRequestContext(req: Request): RequestLogContext {
     return {
@@ -29,8 +76,8 @@ export class LoggerUtils {
       referrer: req.headers.referer,
       params: req.params as Record<string, unknown>,
       query: req.query as Record<string, unknown>,
-      headers: req.headers,
-      body: req.body as Record<string, unknown>,
+      headers: maskHeaders(req.headers),
+      body: maskBody(req.body as Record<string, unknown>),
     };
   }
 

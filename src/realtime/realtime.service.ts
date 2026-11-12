@@ -1,4 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 import { createHash, randomUUID } from "node:crypto";
 import { RedisService } from "../common/redis/redis.service";
 import { RealtimeSessionRegistry } from "./realtime-session-registry.service";
@@ -26,8 +28,32 @@ export class RealtimeService {
 
   constructor(
     private readonly sessionRegistry: RealtimeSessionRegistry,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService
   ) {}
+
+  /** 校验访问令牌，返回用户名；JWT 模式校验签名，redis-token 模式校验会话存在 */
+  async verifyAccessToken(accessToken: string): Promise<string | null> {
+    if (!accessToken) {
+      return null;
+    }
+
+    if ((this.configService.get<string>("SESSION_TYPE") || "jwt") === "redis-token") {
+      const session = await this.redisService.get<{ username?: string }>(
+        `auth:token:access:${accessToken}`
+      );
+      return session?.username || null;
+    }
+
+    try {
+      const secret = this.configService.getOrThrow<string>("jwt.secretKey");
+      const payload = await this.jwtService.verifyAsync(accessToken, { secret });
+      return payload?.username || null;
+    } catch {
+      return null;
+    }
+  }
 
   /** 签发一次性握手票据 */
   async createTicket(username: string, accessToken: string, topics: string[]): Promise<string> {
@@ -44,16 +70,12 @@ export class RealtimeService {
 
   /** 取出并删除票据，无效、已使用或已过期返回 null */
   async consumeTicket(ticket: string): Promise<RealtimeTicketGrant | null> {
-    if (!ticket || ticket.length < 43 || ticket.length > 256) {
+    // 票据为 32 位无连字符 UUID，与 createTicket 的签发格式一致
+    if (!ticket || ticket.length !== 32) {
       return null;
     }
-    const key = this.ticketKey(ticket);
-    const grant = await this.redisService.get<RealtimeTicketGrant>(key);
-    if (!grant) {
-      return null;
-    }
-    await this.redisService.del(key);
-    if (grant.expiresAt <= Date.now()) {
+    const grant = await this.redisService.getDel<RealtimeTicketGrant>(this.ticketKey(ticket));
+    if (!grant || grant.expiresAt <= Date.now()) {
       return null;
     }
     return grant;

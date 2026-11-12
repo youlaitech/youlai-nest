@@ -8,13 +8,12 @@ import {
 } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { tap, map } from "rxjs/operators";
-import { utils, XCommonRet } from "xmcommon";
 import { Response, Request } from "express";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../decorators/auth.decorator";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
-import { LoggerUtils } from "../../common/utils/logger.utils";
+import { LoggerUtils, maskBody } from "../../common/utils/logger.utils";
 
 let requestSeq = 0;
 
@@ -35,7 +34,7 @@ export class XRequestInterceptor implements NestInterceptor {
 
     const isCheckAPI = !this.reflector.get<boolean>(IS_PUBLIC_KEY, context.getHandler());
 
-    // 日志记录保持原始数据
+    // 请求上下文按脱敏规则记录，响应体同样脱敏
     const logRequest = () => ({
       request: LoggerUtils.captureRequestContext(req),
       latency: Date.now() - startTime,
@@ -46,7 +45,7 @@ export class XRequestInterceptor implements NestInterceptor {
         if (isCheckAPI) {
           this.logger.info("API Response", {
             ...logRequest(),
-            response: data,
+            response: maskBody(data as Record<string, unknown>),
           });
 
           if (res.statusCode === HttpStatus.CREATED && req.method === "POST") {
@@ -54,7 +53,7 @@ export class XRequestInterceptor implements NestInterceptor {
           }
         }
 
-        return data instanceof XCommonRet ? this.formatXCommonRet(data) : data;
+        return data;
       }),
       tap(() => {
         this.logger.info(`Request ${seq} Completed`, {
@@ -63,13 +62,5 @@ export class XRequestInterceptor implements NestInterceptor {
         });
       })
     );
-  }
-
-  private formatXCommonRet(paramData: XCommonRet) {
-    return {
-      ret: paramData.err,
-      msg: paramData.msg,
-      data: utils.isNull(paramData.data) ? undefined : paramData.data,
-    };
   }
 }

@@ -1,4 +1,11 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, HttpException } from "@nestjs/common";
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpStatus,
+  HttpException,
+  Logger,
+} from "@nestjs/common";
 import { Response } from "express";
 import { BusinessException } from "../../common/exceptions/business.exception";
 import { ErrorCode } from "../../common/enums/error-code.enum";
@@ -111,10 +118,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = HttpStatus.INTERNAL_SERVER_ERROR;
     const error = exception as Error;
 
+    // 未知异常只记录服务端日志，响应返回兜底文案，避免泄露内部实现
+    Logger.error(`未处理异常: ${error?.message}`, error?.stack, "HttpExceptionFilter");
+
     return response
       .status(status)
-      .json(
-        buildResponseBody(ErrorCode.SYSTEM_ERROR.code, error.message || ErrorCode.SYSTEM_ERROR.msg)
-      );
+      .json(buildResponseBody(ErrorCode.SYSTEM_ERROR.code, ErrorCode.SYSTEM_ERROR.msg));
   }
 }

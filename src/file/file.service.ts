@@ -20,6 +20,7 @@ import Util, * as $Util from "@alicloud/tea-util";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
+import { BusinessException } from "../common/exceptions/business.exception";
 
 /**
  * 文件服务（阿里云 OSS/S3(RustFS)/本地存储）
@@ -135,7 +136,6 @@ export class FileService {
     this.bucketReady = true;
   }
 
-  //  定义两个存储桶连接
   async getSignature() {
     // 阿里云 OSS：保持原有签名行为
     if (this.ossType === "aliyun") {
@@ -312,11 +312,11 @@ export class FileService {
     const ext = rawExt.toLowerCase();
     const allowed = this.ossConf.upload?.allowedExtensions || [];
     if (allowed.length > 0 && !allowed.includes(ext)) {
-      throw new Error(`不支持的文件类型: .${ext || "未知"}`);
+      throw new BusinessException(`不支持的文件类型: .${ext || "未知"}`);
     }
     const maxSize = this.ossConf.upload?.maxFileSize || 50 * 1024 * 1024;
     if (file?.size && file.size > maxSize) {
-      throw new Error(`文件大小超过限制: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+      throw new BusinessException(`文件大小超过限制: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
     }
 
     const dateFolder = dayjs().format("YYYYMMDD");
@@ -416,21 +416,37 @@ export class FileService {
       // 对象 key 取 URL 中桶名段之后的部分，传纯 key 时去掉前导斜杠
       const marker = `/${this.s3Bucket}/`;
       const markerIndex = filePath.indexOf(marker);
-      const key = markerIndex >= 0
-        ? filePath.substring(markerIndex + marker.length)
-        : filePath.replace(/^\/+/, "");
+      const key =
+        markerIndex >= 0
+          ? filePath.substring(markerIndex + marker.length)
+          : filePath.replace(/^\/+/, "");
       await this.s3Client.send(new DeleteObjectCommand({ Bucket: this.s3Bucket, Key: key }));
       return true;
     }
 
-    // local
+    // local：兼容传入完整 URL，只取 pathname 作为存储相对路径
     try {
-      const storageRoot = this.ossConf.local.storagePath;
-      const rel = filePath.startsWith("/") ? filePath.substring(1) : filePath;
-      const fullPath = path.isAbsolute(filePath) ? filePath : path.join(storageRoot, rel);
+      let rel = filePath;
+      try {
+        rel = new URL(filePath).pathname;
+      } catch {
+        // 非完整 URL，按存储相对路径处理
+      }
+      rel = decodeURIComponent(rel).replace(/^\/+/, "");
+
+      const storageRoot = path.resolve(this.ossConf.local.storagePath);
+      const fullPath = path.resolve(storageRoot, rel);
+      // 只允许删除存储根目录内的文件，拦截绝对路径与 ../ 逃逸
+      if (fullPath !== storageRoot && !fullPath.startsWith(storageRoot + path.sep)) {
+        throw new BusinessException("非法文件路径");
+      }
       await fs.promises.unlink(fullPath);
       return true;
-    } catch {
+    } catch (err) {
+      // 路径逃逸属于参数错误，需向上抛出；文件不存在等失败返回 false
+      if (err instanceof BusinessException) {
+        throw err;
+      }
       return false;
     }
   }

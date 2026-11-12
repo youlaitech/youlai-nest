@@ -558,7 +558,9 @@ export class UserService {
       await this.userRoleRepository.save(relations);
     }
 
-    return savedUser;
+    // 响应不返回密码哈希
+    const { password: _password, ...safeUser } = savedUser;
+    return safeUser as SysUser;
   }
 
   async updateUserStatus(userId: string, status: number): Promise<boolean> {
@@ -786,6 +788,11 @@ export class UserService {
   }
 
   async importUsersFromBuffer(buffer: Buffer) {
+    // 限制导入文件大小与行数，降低解析异常文件的资源风险
+    if (buffer.length > 10 * 1024 * 1024) {
+      throw new BusinessException("导入文件不能超过 10MB");
+    }
+
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames?.[0];
     const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
@@ -794,6 +801,9 @@ export class UserService {
     }
 
     const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
+    if (rows.length > 1000) {
+      throw new BusinessException("单次导入不能超过 1000 行");
+    }
     const excelResult = {
       code: ErrorCode.SUCCESS.code,
       validCount: 0,
@@ -923,16 +933,6 @@ export class UserService {
   }
 
   /**
-   * 获取用户表单数据
-   */
-  async getUserForm(userId: string): Promise<SysUser> {
-    return await this.userRepository.findOne({
-      where: { id: userId.toString() },
-      relations: ["roles"],
-    });
-  }
-
-  /**
    * 更新用户
    */
   async update(userId: string, updateUserDto: UpdateUserDto) {
@@ -967,7 +967,7 @@ export class UserService {
 
     const dto: Record<string, any> = { ...updateUserDto };
     // clearable 字段未传时置为 null
-    for (const field of ['avatar', 'mobile', 'email']) {
+    for (const field of ["avatar", "mobile", "email"]) {
       if (dto[field] === undefined) dto[field] = null;
     }
     Object.assign(user, {
@@ -1004,7 +1004,10 @@ export class UserService {
       await this.invalidateUserSessions(userIdStr);
     }
 
-    return await this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    // 响应不返回密码哈希
+    const { password: _password, ...safeUser } = saved;
+    return safeUser as SysUser;
   }
 
   /**

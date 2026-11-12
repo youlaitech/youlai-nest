@@ -62,13 +62,8 @@ export class RealtimeGateway
     }
 
     // 复核访问凭证，避免票据签发后令牌失效仍能建立连接
-    try {
-      const secret = this.configService.getOrThrow<string>("jwt.secretKey");
-      const payload = await this.jwtService.verifyAsync(grant.accessToken, { secret });
-      if (!payload.username) {
-        throw new Error("invalid token");
-      }
-    } catch {
+    const username = await this.realtimeService.verifyAccessToken(grant.accessToken);
+    if (!username) {
       this.logger.warn("握手票据对应的访问凭证已失效");
       client.close(4001, "invalid credential");
       return;
@@ -82,7 +77,9 @@ export class RealtimeGateway
     this.sessionRegistry.userConnected(grant.username, client);
     this.send(
       client,
-      createRealtimeMessage(REALTIME_EVENTS.CONNECTION_READY, { heartbeatTimeoutMs: HEARTBEAT_TIMEOUT_MS })
+      createRealtimeMessage(REALTIME_EVENTS.CONNECTION_READY, {
+        heartbeatTimeoutMs: HEARTBEAT_TIMEOUT_MS,
+      })
     );
     this.realtimeService.sendOnlineCount();
   }

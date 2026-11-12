@@ -46,6 +46,17 @@ export class RedisService {
     }
   }
 
+  /** 读取并删除键（Redis GETDEL），用于一次性票据 */
+  async getDel<T = any>(key: string): Promise<T | null> {
+    try {
+      const data = await this.client.getdel(key);
+      return data ? JSON.parse(data) : null;
+    } catch (err) {
+      this.logger.error("Redis getdel error", err);
+      return null;
+    }
+  }
+
   async del(key: string): Promise<boolean> {
     try {
       const result = await this.client.del(key);

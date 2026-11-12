@@ -5,7 +5,6 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ValidationPipe, HttpStatus } from "@nestjs/common";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
 import { ConfigService } from "@nestjs/config";
-import * as session from "express-session";
 import type { ValidationError } from "class-validator";
 import { BusinessException } from "./common/exceptions/business.exception";
 import { ErrorCode } from "./common/enums/error-code.enum";
@@ -22,15 +21,22 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // 使用原生 WebSocket 适配器，消息格式与其他后端保持一致
+  // 使用原生 WebSocket 适配器
   app.useWebSocketAdapter(new WsAdapter(app));
 
   // 全局前缀
   app.setGlobalPrefix("/api/v1");
 
-  // 跨域设置
+  // 跨域设置：来源由 CORS_ALLOWED_ORIGINS 控制（逗号分隔），未配置时仅放行本地开发前端
+  const allowedOrigins = (configService.get<string>("CORS_ALLOWED_ORIGINS") || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: true,
+    origin:
+      allowedOrigins.length > 0
+        ? allowedOrigins
+        : ["http://localhost:5173", "http://127.0.0.1:5173"],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   });
@@ -89,18 +95,6 @@ async function bootstrap() {
       tagsSorter: "alpha",
     },
   });
-
-  // Session 配置
-  app.use(
-    session({
-      secret: configService.getOrThrow<string>("jwt.secretKey"),
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7天
-      },
-    })
-  );
 
   // 端口通过环境变量 SERVER_PORT 配置（默认 8000）
   const portRaw = configService.get("APP_PORT") ?? configService.get("SERVER_PORT") ?? 8000;
