@@ -56,6 +56,17 @@ export class ${entityName}Service {
   #elseif($fieldConfig.queryType == "BETWEEN")
       const ${fieldConfig.fieldName}Range = query.${fieldConfig.fieldName};
       if (Array.isArray(${fieldConfig.fieldName}Range) && ${fieldConfig.fieldName}Range.length === 2) {
+  #if($fieldConfig.formType == "DATE_TIME")
+        // 时间列区间查询结束日期补到当天末尾，避免漏当天数据
+        const ${fieldConfig.fieldName}End = String(${fieldConfig.fieldName}Range[1]);
+        queryBuilder.andWhere(
+          "${entityLowerCamel}.${fieldConfig.fieldName} BETWEEN :${fieldConfig.fieldName}Start AND :${fieldConfig.fieldName}End",
+          {
+            ${fieldConfig.fieldName}Start: ${fieldConfig.fieldName}Range[0],
+            ${fieldConfig.fieldName}End: ${fieldConfig.fieldName}End.length === 10 ? ${fieldConfig.fieldName}End + " 23:59:59" : ${fieldConfig.fieldName}End,
+          }
+        );
+  #else
         queryBuilder.andWhere(
           "${entityLowerCamel}.${fieldConfig.fieldName} BETWEEN :${fieldConfig.fieldName}Start AND :${fieldConfig.fieldName}End",
           {
@@ -63,6 +74,7 @@ export class ${entityName}Service {
             ${fieldConfig.fieldName}End: ${fieldConfig.fieldName}Range[1],
           }
         );
+  #end
       }
   #elseif($fieldConfig.queryType == "GT")
       queryBuilder.andWhere("${entityLowerCamel}.${fieldConfig.fieldName} > :${fieldConfig.fieldName}", {

@@ -6,8 +6,16 @@ import * as path from "path";
 // velocityjs 没有稳定的 TS 类型定义，使用 any
 import * as Velocity from "velocityjs";
 
+import { BusinessException } from "../common/exceptions/business.exception";
 import { chatJson, loadPrompt } from "../common/utils/ai.util";
-import { lowerFirst, toCamelCase, toKebabCase, toPascalCase, toPluralKebab, toSnakeUpper } from "../common/utils/case.util";
+import {
+  lowerFirst,
+  toCamelCase,
+  toKebabCase,
+  toPascalCase,
+  toPluralKebab,
+  toSnakeUpper,
+} from "../common/utils/case.util";
 import { MenuService } from "../system/menu/menu.service";
 import type { AiFillConfigDto } from "./dto/ai-fill-config.dto";
 import type { CodegenPreviewDto } from "./dto/codegen-preview.dto";
@@ -15,6 +23,11 @@ import type { GenConfigFormDto, FieldConfigDto } from "./dto/gen-config-form.dto
 import type { TableQueryDto } from "./dto/table-query.dto";
 
 const CODEGEN_SYSTEM_PROMPT_PATH = "codegen/system.md";
+
+// 输出名约束：实体为 PascalCase，模块为小写包目录名，字段为驼峰字母数字
+const ENTITY_NAME_PATTERN = /^[A-Z][A-Za-z0-9]*$/;
+const MODULE_NAME_PATTERN = /^[a-z][a-z0-9]*$/;
+const FIELD_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9]*$/;
 
 type TemplateName =
   | "API"
@@ -219,7 +232,7 @@ export class CodegenService {
 
   async getGenConfig(tableName: string): Promise<GenConfigFormDto> {
     const configRows = await this.dataSource.query(
-      `SELECT id, table_name, module_name, package_name, business_name, entity_name, author, parent_menu_id
+      `SELECT id, table_name, module_name, package_name, business_name, entity_name, author, parent_menu_id, page_type
        FROM gen_table
        WHERE table_name = ? AND is_deleted = b'0'
        LIMIT 1`,
@@ -247,7 +260,7 @@ export class CodegenService {
           dict_type AS dictType
         FROM gen_table_column
         WHERE table_id = ?
-        ORDER BY field_sort ASC`,
+        ORDER BY field_sort ASC, id ASC`,
         [config.id]
       );
 
@@ -259,13 +272,16 @@ export class CodegenService {
         businessName: config.business_name,
         entityName:
           config.entity_name ||
-          toPascalCase(trimTablePrefix(String(config.table_name), this.codegenConfig.defaultRemoveTablePrefix)),
+          toPascalCase(
+            trimTablePrefix(String(config.table_name), this.codegenConfig.defaultRemoveTablePrefix)
+          ),
         author: config.author,
         parentMenuId: config.parent_menu_id ? String(config.parent_menu_id) : undefined,
         backendAppName: this.codegenConfig.backendAppName,
         frontendAppName: this.codegenConfig.frontendAppName,
-        removeTablePrefix: this.codegenConfig.defaultRemoveTablePrefix,
-        pageType: "classic",
+        removeTablePrefix:
+          config.remove_table_prefix || this.codegenConfig.defaultRemoveTablePrefix,
+        pageType: config.page_type === "classic" ? "classic" : "crud",
         // 存量 field_type 可能是早期版本的 Java 类型，统一按 column_type 重新推导
         fieldConfigs: (fieldRows || []).map((row: any) => ({
           ...row,
@@ -333,7 +349,7 @@ export class CodegenService {
       backendAppName: this.codegenConfig.backendAppName,
       frontendAppName: this.codegenConfig.frontendAppName,
       removeTablePrefix: removePrefix,
-      pageType: "classic",
+      pageType: "crud",
       fieldConfigs,
     };
   }
@@ -345,7 +361,7 @@ export class CodegenService {
     const config = await this.getGenConfig(tableName);
     const content = await chatJson<GenConfigAiDto>(
       loadPrompt(CODEGEN_SYSTEM_PROMPT_PATH),
-      buildAiUserPrompt(config, requirement),
+      buildAiUserPrompt(config, requirement)
     );
 
     if (content.businessName?.trim()) {
@@ -372,55 +388,86 @@ export class CodegenService {
     const entityName = body.entityName || toPascalCase(trimTablePrefix(tableName, removePrefix));
     const author = body.author || this.codegenConfig.defaultAuthor;
     const parentMenuId = body.parentMenuId ? String(body.parentMenuId) : null;
+    const pageType = body.pageType === "classic" ? "classic" : "crud";
+    const fieldConfigs = body.fieldConfigs || [];
 
-    let configId: string;
-    if (cfgRows?.[0]?.id) {
-      configId = String(cfgRows[0].id);
-      await this.dataSource.query(
-        `UPDATE gen_table
-         SET module_name = ?,
-             package_name = ?,
-             business_name = ?,
-             entity_name = ?,
-             author = ?,
-             parent_menu_id = ?,
-             update_time = ?,
-             is_deleted = b'0'
-         WHERE id = ?`,
-        [moduleName, packageName, businessName, entityName, author, parentMenuId, now, configId]
-      );
-    } else {
-      const insertResult: any = await this.dataSource.query(
-        `INSERT INTO gen_table(
-            table_name, module_name, package_name, business_name, entity_name, author, parent_menu_id,
-            create_time, update_time, is_deleted
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, b'0')`,
-        [
-          tableName,
-          moduleName,
-          packageName,
-          businessName,
-          entityName,
-          author,
-          parentMenuId,
-          now,
-          now,
-        ]
-      );
-
-      configId = String(insertResult?.insertId);
+    // 输出名进入类型名、目录与导入路径，必须是合法标识符
+    if (!ENTITY_NAME_PATTERN.test(entityName)) {
+      throw new BusinessException("实体名须为 PascalCase 字母数字组合");
+    }
+    if (!MODULE_NAME_PATTERN.test(moduleName)) {
+      throw new BusinessException("模块名须为全小写字母数字");
+    }
+    for (const f of fieldConfigs) {
+      if (f.fieldName && !FIELD_NAME_PATTERN.test(f.fieldName)) {
+        throw new BusinessException(`字段名 ${f.fieldName} 须为驼峰字母数字组合`);
+      }
     }
 
-    // 先清理旧字段配置，再写入新配置
-    await this.dataSource.query(`DELETE FROM gen_table_column WHERE table_id = ?`, [configId]);
+    // 表配置与字段配置同一事务写入，失败整体回滚
+    await this.dataSource.transaction(async (manager) => {
+      let configId: string;
+      if (cfgRows?.[0]?.id) {
+        configId = String(cfgRows[0].id);
+        await manager.query(
+          `UPDATE gen_table
+        SET module_name = ?,
+            package_name = ?,
+            business_name = ?,
+            entity_name = ?,
+            author = ?,
+            parent_menu_id = ?,
+            page_type = ?,
+            remove_table_prefix = ?,
+            update_time = ?,
+            is_deleted = b'0'
+        WHERE id = ?`,
+          [
+            moduleName,
+            packageName,
+            businessName,
+            entityName,
+            author,
+            parentMenuId,
+            pageType,
+            removePrefix,
+            now,
+            configId,
+          ]
+        );
+      } else {
+        const insertResult: any = await manager.query(
+          `INSERT INTO gen_table(
+            table_name, module_name, package_name, business_name, entity_name, author, parent_menu_id,
+            page_type, remove_table_prefix, create_time, update_time, is_deleted
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, b'0')`,
+          [
+            tableName,
+            moduleName,
+            packageName,
+            businessName,
+            entityName,
+            author,
+            parentMenuId,
+            pageType,
+            removePrefix,
+            now,
+            now,
+          ]
+        );
 
-    const fieldConfigs = body.fieldConfigs || [];
-    for (let i = 0; i < fieldConfigs.length; i++) {
-      const f = fieldConfigs[i] as FieldConfigDto;
-      const columnType = String(f.columnType || "");
+        configId = String(insertResult?.insertId);
+      }
 
-      await this.dataSource.query(
-        `INSERT INTO gen_table_column(
+      // 先清理旧字段配置，再写入新配置
+      await manager.query(`DELETE FROM gen_table_column WHERE table_id = ?`, [configId]);
+
+      for (let i = 0; i < fieldConfigs.length; i++) {
+        const f = fieldConfigs[i] as FieldConfigDto;
+        const columnType = String(f.columnType || "");
+
+        await manager.query(
+          `INSERT INTO gen_table_column(
             table_id,
             column_name,
             column_type,
@@ -439,27 +486,28 @@ export class CodegenService {
             create_time,
             update_time
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          configId,
-          f.columnName || null,
-          columnType || null,
-          f.fieldName || null,
-          getTsTypeByColumnType(columnType),
-          f.fieldSort ?? i + 1,
-          f.fieldComment || null,
-          f.maxLength ?? null,
-          f.isRequired ?? 0,
-          f.isShowInList ?? 0,
-          f.isShowInForm ?? 0,
-          f.isShowInQuery ?? 0,
-          f.queryType ?? 1,
-          f.formType ?? getDefaultFormTypeByColumnType(columnType),
-          f.dictType ?? null,
-          now,
-          now,
-        ]
-      );
-    }
+          [
+            configId,
+            f.columnName || null,
+            columnType || null,
+            f.fieldName || null,
+            getTsTypeByColumnType(columnType),
+            f.fieldSort ?? i + 1,
+            f.fieldComment || null,
+            f.maxLength ?? null,
+            f.isRequired ?? 0,
+            f.isShowInList ?? 0,
+            f.isShowInForm ?? 0,
+            f.isShowInQuery ?? 0,
+            f.queryType ?? 1,
+            f.formType ?? getDefaultFormTypeByColumnType(columnType),
+            f.dictType ?? null,
+            now,
+            now,
+          ]
+        );
+      }
+    });
 
     // 菜单与按钮权限随配置一起保存，失败直接抛出，避免留下「有配置无权限」的半成品；重试按路由名幂等
     if (body.parentMenuId && Number(body.parentMenuId) > 0) {
@@ -507,11 +555,18 @@ export class CodegenService {
    */
   async getPreview(
     tableName: string,
-    pageType: "classic" | "crud" = "classic",
+    pageType?: "classic" | "crud",
     type: "ts" | "js" = "ts"
   ): Promise<CodegenPreviewDto[]> {
     const config = await this.getGenConfig(tableName);
-    const fieldConfigs = config.fieldConfigs || [];
+    // 未显式指定时使用已保存的页面类型，默认 crud
+    const effectivePageType =
+      pageType === "classic" || pageType === "crud" ? pageType : config.pageType || "crud";
+    // 存量 column_type 可能带长度/unsigned 等后缀，统一归一化后再交给模板与类型推导
+    const fieldConfigs = (config.fieldConfigs || []).map((f) => {
+      const columnType = normalizeColumnType(f.columnType || "");
+      return { ...f, columnType, tsType: getTsTypeByColumnType(columnType) };
+    });
     const frontendType = type === "js" ? "js" : "ts";
 
     const previews: CodegenPreviewDto[] = [];
@@ -549,7 +604,7 @@ export class CodegenService {
         templateConfig.subpackageName,
         config,
         fieldConfigs,
-        pageType
+        effectivePageType
       );
       previews.push({
         path: filePath,
@@ -569,11 +624,7 @@ export class CodegenService {
    * @param pageType 页面类型
    * @param type 前端类型
    */
-  async downloadZip(
-    tableNames: string[],
-    pageType: "classic" | "crud" = "classic",
-    type: "ts" | "js" = "ts"
-  ) {
+  async downloadZip(tableNames: string[], pageType?: "classic" | "crud", type: "ts" | "js" = "ts") {
     const zip = new JSZip();
 
     for (const tableName of tableNames) {
@@ -742,15 +793,19 @@ export class CodegenService {
 }
 
 function resolveBootTemplatePath(templatePath: string) {
-  // 使用本地模板目录，模板路径：<project-root>/src/codegen/templates/<templatePath>
-  const p = path.resolve(process.cwd(), "src", "codegen", "templates", templatePath);
+  // 编译产物（dist）与开发目录（src）各有一份候选，取存在的那个
+  const candidates = [
+    path.resolve(__dirname, "templates", templatePath),
+    path.resolve(process.cwd(), "src", "codegen", "templates", templatePath),
+  ];
+  const found = candidates.find((candidate) => fs.existsSync(candidate));
 
-  if (fs.existsSync(p)) {
-    return p;
+  if (found) {
+    return found;
   }
 
   throw new Error(
-    `Codegen template not found: '${templatePath}'. Expected location:\n  - ${p}\n\n` +
+    `Codegen template not found: '${templatePath}'. Expected location:\n  - ${candidates.join("\n  - ")}\n\n` +
       `Please place templates under 'src/codegen/templates'.`
   );
 }
@@ -770,7 +825,9 @@ function resolvePermPrefix(moduleName: string, entityName: string) {
  * 去掉表前缀，避免 sys_user 推导出 SysUser 这类把模块名重复进实体名的结果
  */
 function trimTablePrefix(tableName: string, removePrefix: string) {
-  return removePrefix && tableName.startsWith(removePrefix) ? tableName.slice(removePrefix.length) : tableName;
+  return removePrefix && tableName.startsWith(removePrefix)
+    ? tableName.slice(removePrefix.length)
+    : tableName;
 }
 
 function formatDateTime(d: Date) {
@@ -908,11 +965,15 @@ function applyAiFieldConfigs(config: GenConfigFormDto, aiFields: GenConfigAiFiel
       field.dictType = aiField.dictType.trim();
     }
 
-    const formType = aiField.formType ? FORM_TYPE_VALUES[aiField.formType.trim().toUpperCase()] : undefined;
+    const formType = aiField.formType
+      ? FORM_TYPE_VALUES[aiField.formType.trim().toUpperCase()]
+      : undefined;
     if (formType) {
       field.formType = formType;
     }
-    const queryType = aiField.queryType ? QUERY_TYPE_VALUES[aiField.queryType.trim().toUpperCase()] : undefined;
+    const queryType = aiField.queryType
+      ? QUERY_TYPE_VALUES[aiField.queryType.trim().toUpperCase()]
+      : undefined;
     if (queryType) {
       field.queryType = queryType;
     }
