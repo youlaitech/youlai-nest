@@ -6,10 +6,32 @@
     :load-form-data="loadFormData"
   >
 #foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInQuery == 1 && $fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+#if($fieldConfig.isShowInQuery == 1)
+#if($fieldConfig.queryType == "IN")
+#if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+    <template #search-${fieldConfig.fieldName}="{ formData, prop, attrs }">
+      <DictSelect v-model="formData[prop]" type="checkbox" code="$fieldConfig.dictType" v-bind="attrs" />
+    </template>
+#end
+#elseif($fieldConfig.queryType == "BETWEEN" && $fieldConfig.formType != "DATE" && $fieldConfig.formType != "DATE_TIME")
+    <template #search-${fieldConfig.fieldName}="{ formData, prop, attrs }">
+      <div class="flex w-full items-center gap-2" v-bind="attrs">
+#if($fieldConfig.tsType == "number")
+        <el-input-number v-model="formData[prop][0]" placeholder="最小值" class="flex-1" />
+        <span class="text-[var(--el-text-color-placeholder)]">~</span>
+        <el-input-number v-model="formData[prop][1]" placeholder="最大值" class="flex-1" />
+#else
+        <el-input v-model="formData[prop][0]" placeholder="开始值" clearable class="flex-1" />
+        <span class="text-[var(--el-text-color-placeholder)]">~</span>
+        <el-input v-model="formData[prop][1]" placeholder="结束值" clearable class="flex-1" />
+#end
+      </div>
+    </template>
+#elseif($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
     <template #search-${fieldConfig.fieldName}="{ formData, prop, attrs }">
       <DictSelect v-model="formData[prop]" code="$fieldConfig.dictType" v-bind="attrs" />
     </template>
+#end
 #end
 #end
 #foreach($fieldConfig in $fieldConfigs)
@@ -52,20 +74,42 @@ const searchConfig: CrudSearchConfig = {
     {
       prop: "$fieldConfig.fieldName",
       label: "$fieldConfig.fieldComment",
+#if($fieldConfig.queryType == "IN")
 #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
       type: "custom",
+      initialValue: [],
       attrs: { clearable: true },
-#elseif($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
+#else
+      type: "input-tag",
+      attrs: { clearable: true },
+#end
+#elseif($fieldConfig.queryType == "BETWEEN")
+#if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
       type: "date-picker",
-#if($fieldConfig.queryType == "BETWEEN")
       initialValue: [],
       attrs: {
+#if($fieldConfig.formType == "DATE_TIME")
+        type: "datetimerange",
+        valueFormat: "YYYY-MM-DD HH:mm:ss",
+        startPlaceholder: "开始时间",
+        endPlaceholder: "结束时间",
+#else
         type: "daterange",
         valueFormat: "YYYY-MM-DD",
         startPlaceholder: "开始日期",
         endPlaceholder: "结束日期",
+#end
       },
-#elseif($fieldConfig.formType == "DATE_TIME")
+#else
+      type: "custom",
+      initialValue: [null, null],
+#end
+#elseif($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+      type: "custom",
+      attrs: { clearable: true },
+#elseif($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
+      type: "date-picker",
+#if($fieldConfig.formType == "DATE_TIME")
       attrs: { type: "datetime", valueFormat: "YYYY-MM-DD HH:mm:ss", clearable: true },
 #else
       attrs: { type: "date", valueFormat: "YYYY-MM-DD", clearable: true },
@@ -83,7 +127,7 @@ const searchConfig: CrudSearchConfig = {
   ],
 };
 
-const tableConfig: CrudTableConfig<${entityName}Query, ${entityName}Item> = {
+const tableConfig: CrudTableConfig<${entityName}QueryParams, ${entityName}Item> = {
   permissionPrefix: "${permissionPrefix}",
   table: { border: true },
   fetchData: ${entityName}API.getPage,

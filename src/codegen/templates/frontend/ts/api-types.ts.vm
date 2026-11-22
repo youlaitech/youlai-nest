@@ -14,11 +14,19 @@ export interface ${entityName}QueryParams extends PageQuery {
     #if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
       #if($fieldConfig.queryType == "BETWEEN")
   ${fieldConfig.fieldName}?: [string, string];
+      #elseif($fieldConfig.queryType == "IN")
+  ${fieldConfig.fieldName}?: string[];
       #else
   ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
       #end
     #else
+      #if($fieldConfig.queryType == "IN")
+  ${fieldConfig.fieldName}?: string[];
+      #elseif($fieldConfig.queryType == "BETWEEN")
+  ${fieldConfig.fieldName}: [${fieldConfig.tsType} | null, ${fieldConfig.tsType} | null];
+      #else
   ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
+      #end
     #end
   #end
 #end
@@ -28,7 +36,7 @@ export interface ${entityName}QueryParams extends PageQuery {
 export interface ${entityName}Form {
   id?: string;
 #foreach($fieldConfig in $fieldConfigs)
-  #if($fieldConfig.isShowInForm)
+  #if($fieldConfig.isShowInForm && $fieldConfig.fieldName != "id")
     #if("$!fieldConfig.fieldComment" != "")
   /** ${fieldConfig.fieldComment} */
     #end
@@ -42,8 +50,10 @@ export type ${entityName}Detail = ${entityName}Item & ${entityName}Form;
 
 /** $!{businessName}列表项 */
 export interface ${entityName}Item {
+  /** 稳定主键，不受列表显示配置影响 */
+  id: string;
 #foreach($fieldConfig in $fieldConfigs)
-  #if($fieldConfig.isShowInList)
+  #if($fieldConfig.isShowInList && $fieldConfig.fieldName != "id")
     #if("$!fieldConfig.fieldComment" != "")
   /** ${fieldConfig.fieldComment} */
     #end
