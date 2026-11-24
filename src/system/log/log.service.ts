@@ -2,10 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SysLog } from "./entities/sys-log.entity";
+import { SysUser } from "../user/entities/sys-user.entity";
 import { LogQueryDto } from "./dto/log-query.dto";
 import { LogPageDto } from "./dto/log-page.dto";
-import { VisitTrendDto } from "./dto/visit-trend.dto";
-import { VisitStatsDto } from "./dto/visit-stats.dto";
+import { VisitTrendDto, VisitTrendPointDto } from "./dto/visit-trend.dto";
+import { UserSummaryDto, VisitSummaryDto } from "./dto/visit-stats.dto";
 import { ActionTypeEnum, ActionTypeValue } from "../../common/enums/action-type.enum";
 import { LogModuleEnum } from "../../common/enums/log-module.enum";
 import { parseUserAgent } from "../../common/utils/user-agent.util";
@@ -30,8 +31,17 @@ export interface ManualLogParams {
 export class LogService {
   constructor(
     @InjectRepository(SysLog)
-    private readonly logRepository: Repository<SysLog>
+    private readonly logRepository: Repository<SysLog>,
+    @InjectRepository(SysUser)
+    private readonly userRepository: Repository<SysUser>
   ) {}
+
+  /**
+   * 用户汇总
+   */
+  async getUserSummary(): Promise<UserSummaryDto> {
+    return { total: await this.userRepository.count({ where: { isDeleted: 0 } }) };
+  }
 
   async getLogPage(query: LogQueryDto) {
     const { pageNum, pageSize, keywords, createTime, sortBy, order } = query;
@@ -141,7 +151,7 @@ export class LogService {
     }
 
     if (!dates.length) {
-      return { dates: [], pvList: [], uvList: [] };
+      return { startDate, endDate, points: [] };
     }
 
     const startStr = `${dates[0]} 00:00:00`;
@@ -169,73 +179,77 @@ export class LogService {
     const uvMap = new Map<string, number>();
     uvRows.forEach((row) => uvMap.set(row.date, Number(row.count) || 0));
 
-    const pvList = dates.map((d) => pvMap.get(d) ?? 0);
-    const uvList = dates.map((d) => uvMap.get(d) ?? 0);
+    const points: VisitTrendPointDto[] = dates.map((d) => ({
+      date: d,
+      pv: pvMap.get(d) ?? 0,
+      uv: uvMap.get(d) ?? 0,
+    }));
 
     return {
-      dates,
-      pvList,
-      uvList,
+      startDate,
+      endDate,
+      points,
     };
   }
 
-  async getVisitStats(): Promise<VisitStatsDto> {
+  async getVisitSummary(): Promise<VisitSummaryDto> {
     const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, "0");
-    const d = String(today.getDate()).padStart(2, "0");
-    const todayStr = `${y}-${m}-${d}`;
+    const dayStart = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} 00:00:00`;
+    const dayEnd = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} 23:59:59`;
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
 
-    const todayStart = `${todayStr} 00:00:00`;
-    const todayEnd = `${todayStr} 23:59:59`;
+    const ranges = {
+      today: { start: dayStart(today), end: dayEnd(today) },
+      yesterday: { start: dayStart(yesterday), end: dayEnd(yesterday) },
+    };
 
-    // UV 统计：按 IP 粗略统计
-    const [todayUvRow, totalUvRow] = await Promise.all([
-      this.logRepository
+    const countIp = (range?: { start: string; end: string }) => {
+      const qb = this.logRepository
         .createQueryBuilder("log")
-        .select("COUNT(DISTINCT log.ip)", "count")
-        .where("log.create_time BETWEEN :start AND :end", { start: todayStart, end: todayEnd })
-        .getRawOne<{ count: string }>(),
-      this.logRepository
+        .select("COUNT(DISTINCT log.ip)", "count");
+      if (range) {
+        qb.where("log.create_time BETWEEN :start AND :end", range);
+      }
+      return qb.getRawOne<{ count: string }>();
+    };
+    const countAll = (range?: { start: string; end: string }) => {
+      const qb = this.logRepository
         .createQueryBuilder("log")
-        .select("COUNT(DISTINCT log.ip)", "count")
-        .getRawOne<{ count: string }>(),
-    ]);
+        .select("COUNT(*)", "count");
+      if (range) {
+        qb.where("log.create_time BETWEEN :start AND :end", range);
+      }
+      return qb.getRawOne<{ count: string }>();
+    };
 
-    const todayUvCount = Number(todayUvRow?.count ?? 0);
-    const totalUvCount = Number(totalUvRow?.count ?? 0);
+    const [todayUvRow, yesterdayUvRow, totalUvRow, todayPvRow, yesterdayPvRow, totalPvRow] =
+      await Promise.all([
+        countIp(ranges.today),
+        countIp(ranges.yesterday),
+        countIp(),
+        countAll(ranges.today),
+        countAll(ranges.yesterday),
+        countAll(),
+      ]);
 
-    // PV 统计
-    const [todayPvRow, totalPvRow] = await Promise.all([
-      this.logRepository
-        .createQueryBuilder("log")
-        .select("COUNT(*)", "count")
-        .where("log.create_time BETWEEN :start AND :end", { start: todayStart, end: todayEnd })
-        .getRawOne<{ count: string }>(),
-      this.logRepository
-        .createQueryBuilder("log")
-        .select("COUNT(*)", "count")
-        .getRawOne<{ count: string }>(),
-    ]);
-
-    const todayPvCount = Number(todayPvRow?.count ?? 0);
-    const totalPvCount = Number(totalPvRow?.count ?? 0);
-
-    const prevUvTotal = totalUvCount - todayUvCount;
-    const prevPvTotal = totalPvCount - todayPvCount;
-
-    const uvGrowthRate =
-      prevUvTotal > 0 ? Number(((todayUvCount / prevUvTotal - 1) * 100).toFixed(2)) : null;
-    const pvGrowthRate =
-      prevPvTotal > 0 ? Number(((todayPvCount / prevPvTotal - 1) * 100).toFixed(2)) : null;
+    const todayUv = Number(todayUvRow?.count ?? 0);
+    const yesterdayUv = Number(yesterdayUvRow?.count ?? 0);
+    const todayPv = Number(todayPvRow?.count ?? 0);
+    const yesterdayPv = Number(yesterdayPvRow?.count ?? 0);
+    const rate = (today: number, yesterday: number) =>
+      yesterday > 0 ? Number(((today - yesterday) / yesterday).toFixed(4)) : null;
 
     return {
-      todayUvCount,
-      totalUvCount,
-      uvGrowthRate,
-      todayPvCount,
-      totalPvCount,
-      pvGrowthRate,
+      todayUv,
+      yesterdayUv,
+      totalUv: Number(totalUvRow?.count ?? 0),
+      todayPv,
+      yesterdayPv,
+      totalPv: Number(totalPvRow?.count ?? 0),
+      uvGrowthRate: rate(todayUv, yesterdayUv),
+      pvGrowthRate: rate(todayPv, yesterdayPv),
     };
   }
 
