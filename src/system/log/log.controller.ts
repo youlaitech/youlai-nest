@@ -27,7 +27,7 @@ export class LogController {
  *
  * 访问统计按服务器配置的时区以自然日聚合，统计区间为闭区间。
  */
-@ApiTags("10.统计接口")
+@ApiTags("15.统计接口")
 @Controller("analytics")
 export class AnalyticsController {
   constructor(private readonly logService: LogService) {}

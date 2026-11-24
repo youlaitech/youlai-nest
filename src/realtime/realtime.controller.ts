@@ -9,7 +9,7 @@ import { REALTIME_TOPICS, SUPPORTED_TOPICS } from "./realtime.types";
 /** 单次订阅主题上限，避免异常客户端占用过多服务端资源 */
 const MAX_TOPICS = 20;
 
-@ApiTags("13. 实时推送")
+@ApiTags("13.实时推送")
 @ApiBearerAuth()
 @Controller("realtime")
 export class RealtimeController {
