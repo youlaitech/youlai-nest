@@ -10,7 +10,7 @@ export interface RateLimitOptions {
 }
 
 /**
- * 接口限流装饰器；未指定的 limit / windowSec 回退到 RATE_LIMIT_DEFAULT_* 配置
+ * 接口限流装饰器；未指定的 limit / windowSec 回退到 RATE_LIMIT_LIMIT / RATE_LIMIT_WINDOW_SEC
  */
 export const RateLimit = (options: Partial<RateLimitOptions> = {}) =>
   SetMetadata(RATE_LIMIT_KEY, options);

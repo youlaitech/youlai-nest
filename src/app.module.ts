@@ -28,7 +28,6 @@ import { NoticeModule } from "./system/notice/notice.module";
 
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
 import { RequestContextMiddleware } from "./common/middleware/request-context.middleware";
-import { RateLimitMiddleware } from "./common/middleware/rate-limit.middleware";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { XRequestInterceptor } from "./common/interceptors/request.interceptor";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
@@ -170,7 +169,5 @@ export class AppModule implements NestModule, OnModuleInit {
     // 请求上下文中间件必须在最前面，确保 AsyncLocalStorage 正确初始化
     consumer.apply(RequestContextMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
     consumer.apply(LoggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
-    // IP 全局限流 + 特定接口限流中间件，对所有请求生效
-    consumer.apply(RateLimitMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
   }
 }

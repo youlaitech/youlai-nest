@@ -20,13 +20,10 @@ redis.call('PEXPIRE', key, window + 1000)
 return redis.call('ZCARD', key)
 `;
 
-// 配置缺失时的兜底阈值（与 src/config/rate-limit.config.ts 默认值一致）
-const DEFAULT_LIMIT = 60;
-const DEFAULT_WINDOW_SEC = 60;
-
 interface RateLimitDefaults {
-  defaultLimit?: number;
-  defaultWindowSec?: number;
+  enabled: boolean;
+  limit: number;
+  windowSec: number;
 }
 
 @Injectable()
@@ -49,10 +46,12 @@ export class RateLimitGuard implements CanActivate {
       return true;
     }
 
-    // 装饰器未显式指定时，回退到配置默认值（RATE_LIMIT_DEFAULT_*）
-    const defaults = this.configService.get<RateLimitDefaults>("rateLimit") ?? {};
-    const limit = options.limit ?? defaults.defaultLimit ?? DEFAULT_LIMIT;
-    const windowSec = options.windowSec ?? defaults.defaultWindowSec ?? DEFAULT_WINDOW_SEC;
+    const defaults = this.configService.get<RateLimitDefaults>("rateLimit")!;
+    if (!defaults.enabled) {
+      return true;
+    }
+    const limit = options.limit ?? defaults.limit;
+    const windowSec = options.windowSec ?? defaults.windowSec;
 
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
